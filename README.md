@@ -8,7 +8,7 @@ Prosty projekt CRM dla branży nieruchomości, oparty na Javie i Mavenie.
 - Maven
 
 ## Budowanie
-Witam
+Witam 2
 
 ```bash
 mvn clean install
