@@ -1,0 +1,87 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------
+   Delta CRM — design tokens ("Nordic Clean")
+   Jasny, gęsty, narzędziowy. Separacja przez hairline, nie przez cień.
+   ------------------------------------------------------------------ */
+@theme {
+  /* Powierzchnie i tekst */
+  --color-canvas: #fafafa; /* plan strony */
+  --color-surface: #ffffff; /* karty, panele */
+  --color-subtle: #f4f5f7; /* wypełnienia drugorzędne, hover */
+  --color-line: #e7e7ea; /* hairline 1px */
+  --color-line-strong: #d4d4d8; /* baseline, dzielniki nagłówków */
+
+  --color-ink: #1a1d21; /* tekst podstawowy */
+  --color-ink-secondary: #5b6068; /* opisy, etykiety */
+  --color-ink-muted: #8a9099; /* osie, podpisy, placeholdery */
+
+  /* Akcent */
+  --color-accent: #2f5fe0;
+  --color-accent-hover: #2549b8;
+  --color-accent-subtle: #eef2fd;
+  --color-accent-ring: #b8c8f5;
+
+  /* Status — zarezerwowane, nigdy jako kolor serii */
+  --color-good: #0ca30c;
+  --color-warning: #fab219;
+  --color-serious: #ec835a;
+  --color-critical: #d03b3b;
+  --color-delta-up: #006300; /* zieleń o kontraście tekstowym */
+  --color-delta-down: #d03b3b;
+
+  /* Wykresy — paleta kategorialna (zwalidowana na tle #ffffff) */
+  --color-series-1: #2a78d6; /* blue   */
+  --color-series-2: #eb6834; /* orange */
+
+  /* Wykresy — ramp sekwencyjny (jeden odcień, light -> dark) */
+  --color-seq-1: #86b6ef;
+  --color-seq-2: #5598e7;
+  --color-seq-3: #2a78d6;
+  --color-seq-4: #1c5cab;
+  --color-seq-5: #104281;
+
+  /* Wykresy — chrome */
+  --color-grid: #ededf0;
+  --color-axis: #d4d4d8;
+
+  --radius-card: 8px;
+
+  --font-sans: "Inter var", "Inter", system-ui, -apple-system, "Segoe UI",
+    sans-serif;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Liczby w tabelach i na osiach muszą się pionowo zgadzać */
+  th,
+  td,
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  .card {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+  }
+}

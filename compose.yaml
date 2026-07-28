@@ -1,0 +1,26 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: delta-crm-postgres
+    environment:
+      POSTGRES_DB: delta_crm
+      POSTGRES_USER: delta
+      POSTGRES_PASSWORD: delta
+    ports:
+      # 5434, bo 5432 zajmuje Postgres zainstalowany natywnie na tej maszynie,
+      # a 5433 kontener innego projektu (estatemanager-postgres). Na czystej
+      # maszynie możesz wrócić do "5432:5432" — pamiętaj wtedy o porcie
+      # w spring.datasource.url.
+      - "5434:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      # Aplikacja startuje szybciej niż baza — bez tego pierwsze połączenie potrafi
+      # trafić w moment, gdy Postgres jeszcze przyjmuje tylko połączenia lokalne.
+      test: ["CMD-SHELL", "pg_isready -U delta -d delta_crm"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  postgres-data:
