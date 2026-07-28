@@ -1,0 +1,14 @@
+# Datasource wstrzykuje Testcontainers przez @ServiceConnection — celowo nie ma
+# go tutaj. Migracje Flyway jadą na tym samym kontenerze co produkcyjne, więc
+# testy weryfikują też same migracje, nie tylko kod.
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+
+delta:
+  jwt:
+    secret: test-secret-key-o-dlugosci-co-najmniej-32-bajtow
+    ttl: 1h
+    issuer: delta-crm

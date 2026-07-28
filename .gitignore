@@ -1,5 +1,15 @@
 target/
 !.mvn/wrapper/maven-wrapper.jar
+
+### Delta CRM ###
+# Pozostałość po H2 (baza jest teraz w kontenerze — katalog można skasować)
+data/
+*.mv.db
+*.trace.db
+# Sekrety i nadpisania lokalne
+.env
+application-local.properties
+application-local.yml
 !**/src/main/**/target/
 !**/src/test/**/target/
 .kotlin
