@@ -20,6 +20,7 @@ import jakarta.persistence.Table;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import pl.delta.crm.agency.Agency;
+import pl.delta.crm.client.Client;
 import pl.delta.crm.property.dictionary.CommercialUse;
 import pl.delta.crm.property.dictionary.Feature;
 import pl.delta.crm.property.dictionary.HeatingType;
@@ -71,6 +72,16 @@ public class Property {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "created_by", nullable = false, updatable = false)
     private User createdBy;
+
+    /**
+     * Właściciel-zleceniodawca. Opcjonalny: oferta może powstać jako szkic, zanim
+     * skojarzy się ją z klientem. To ta relacja — a nie pole na kliencie —
+     * decyduje, czy klient jest „sprzedającym" czy „wynajmującym": wynika to
+     * z {@code transactionType} powierzonych przez niego ofert.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_client_id")
+    private Client owner;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "property_type", nullable = false, length = 30)
@@ -284,16 +295,36 @@ public class Property {
         return createdBy;
     }
 
+    public Client getOwner() {
+        return owner;
+    }
+
+    public void setOwner(Client owner) {
+        this.owner = owner;
+    }
+
     public PropertyType getPropertyType() {
         return propertyType;
+    }
+
+    public void setPropertyType(PropertyType propertyType) {
+        this.propertyType = propertyType;
     }
 
     public TransactionType getTransactionType() {
         return transactionType;
     }
 
+    public void setTransactionType(TransactionType transactionType) {
+        this.transactionType = transactionType;
+    }
+
     public MarketType getMarketType() {
         return marketType;
+    }
+
+    public void setMarketType(MarketType marketType) {
+        this.marketType = marketType;
     }
 
     public PropertyStatus getStatus() {
@@ -322,6 +353,10 @@ public class Property {
 
     public Pricing getPricing() {
         return pricing;
+    }
+
+    public void setPricing(Pricing pricing) {
+        this.pricing = pricing;
     }
 
     public BigDecimal getTotalArea() {
@@ -402,6 +437,10 @@ public class Property {
 
     public Address getAddress() {
         return address;
+    }
+
+    public void setAddress(Address address) {
+        this.address = address;
     }
 
     public EnergyCertificate getEnergyCertificate() {

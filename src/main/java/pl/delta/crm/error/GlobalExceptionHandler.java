@@ -61,6 +61,14 @@ public class GlobalExceptionHandler {
         return problem;
     }
 
+    @ExceptionHandler(ClientNotFoundException.class)
+    public ProblemDetail handleClientNotFound(ClientNotFoundException exception) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.NOT_FOUND, exception.getMessage());
+        problem.setTitle("Nie znaleziono");
+        return problem;
+    }
+
     /**
      * Ciało żądania, którego nie da się odczytać — uszkodzony JSON albo wartość
      * spoza słownika w polu enumowym. Bez tej obsługi błąd trafiał do domyślnego

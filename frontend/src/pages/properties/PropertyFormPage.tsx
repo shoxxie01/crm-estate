@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Info } from "lucide-react";
 import {
   createProperty,
   fetchDictionaries,
+  fetchProperty,
+  updateProperty,
   type Dictionaries,
 } from "../../api/properties";
 import { ApiError } from "../../api/client";
@@ -71,6 +73,8 @@ const INITIAL: Fields = {
 
 export function PropertyFormPage() {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const isEdit = Boolean(id);
   const [dict, setDict] = useState<Dictionaries | null>(null);
   const [fields, setFields] = useState<Fields>(INITIAL);
   const [features, setFeatures] = useState<Set<string>>(new Set());
@@ -89,7 +93,11 @@ export function PropertyFormPage() {
     exportable: true,
   });
 
+  // `errors` trzyma wyłącznie błędy z backendu (ApiError). Błędy walidacji
+  // klienta liczymy na żywo z fields — patrz liveErrors/errorFor niżej.
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [touched, setTouched] = useState<Set<string>>(new Set());
+  const [submitted, setSubmitted] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [dictError, setDictError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -109,8 +117,92 @@ export function PropertyFormPage() {
 
   useEffect(loadDictionaries, []);
 
+  // Tryb edycji: wczytaj ofertę i rozłóż ją z powrotem na pola formularza.
+  useEffect(() => {
+    if (!id) return;
+    fetchProperty(id)
+      .then((p) => {
+        setFields({
+          propertyType: p.propertyType,
+          transactionType: p.transactionType,
+          marketType: p.marketType,
+          status: p.status,
+          title: p.title,
+          description: p.description,
+          price: str(p.pricing.price),
+          priceCurrency: p.pricing.priceCurrency,
+          rent: str(p.pricing.rent),
+          deposit: str(p.pricing.deposit),
+          commissionPercent: str(p.pricing.commissionPercent),
+          totalArea: str(p.area.totalArea),
+          usableArea: str(p.area.usableArea),
+          plotArea: str(p.area.plotArea),
+          roomsCount: str(p.area.roomsCount),
+          bathroomsCount: str(p.area.bathroomsCount),
+          floorNo: str(p.area.floorNo),
+          buildingFloorsCount: str(p.area.buildingFloorsCount),
+          ceilingHeight: str(p.area.ceilingHeight),
+          voivodeship: p.address.voivodeship,
+          county: p.address.county ?? "",
+          commune: p.address.commune ?? "",
+          city: p.address.city,
+          district: p.address.district ?? "",
+          street: p.address.street ?? "",
+          buildingNumber: p.address.buildingNumber ?? "",
+          postalCode: p.address.postalCode ?? "",
+          buildYear: str(p.building.buildYear),
+          buildingType: p.building.buildingType ?? "",
+          buildingMaterial: p.building.buildingMaterial ?? "",
+          constructionStatus: p.building.constructionStatus ?? "",
+          ownershipForm: p.building.ownershipForm ?? "",
+          windowsType: p.building.windowsType ?? "",
+          surroundings: p.building.surroundings ?? "",
+          plotType: p.land.plotType ?? "",
+          plotDimensions: p.land.dimensions ?? "",
+          roadAccess: p.land.roadAccess ?? "",
+          zoningPlan: p.land.zoningPlan ?? "",
+          hallStructure: p.commercial.structure ?? "",
+          flooring: p.commercial.flooring ?? "",
+          parkingType: p.commercial.parkingType ?? "",
+          energyPrimary: str(p.energy.energyPrimary),
+          energyFinal: str(p.energy.energyFinal),
+          energyClass: p.energy.energyClass ?? "",
+          energyCertNumber: p.energy.certificateNumber ?? "",
+          availableFrom: p.availableFrom ?? "",
+          videoUrl: p.videoUrl ?? "",
+          panoramaUrl: p.panoramaUrl ?? "",
+          keysInfo: p.keysInfo ?? "",
+          privateNotes: p.privateNotes ?? "",
+          energyExemptNote: p.energy.exemptNote ?? "",
+        });
+        setFeatures(new Set(p.features));
+        setHeating(new Set(p.heatingTypes));
+        setUses(new Set(p.commercialUses));
+        setFlags({
+          priceNegotiable: p.pricing.priceNegotiable,
+          priceIncludesRent: p.pricing.priceIncludesRent,
+          hideExactAddress: p.address.hideExactAddress,
+          furnished: p.building.furnished ?? false,
+          plotFenced: p.land.fenced ?? false,
+          officeSpace: p.commercial.officeSpace ?? false,
+          socialFacilities: p.commercial.socialFacilities ?? false,
+          loadingRamp: p.commercial.loadingRamp ?? false,
+          energyExempt: p.energy.exempt,
+          exportable: p.exportable,
+        });
+      })
+      .catch(() => setFormError("Nie udało się wczytać oferty do edycji."));
+  }, [id]);
+
   const set = (name: string) => (event: { target: { value: string } }) =>
     setFields((current) => ({ ...current, [name]: event.target.value }));
+
+  // Oznacza pole jako „dotknięte" (opuszczone) — od tej chwili jego błąd jest
+  // widoczny i aktualizuje się na żywo przy każdej zmianie.
+  const markTouched = (key: string) => () =>
+    setTouched((current) =>
+      current.has(key) ? current : new Set(current).add(key),
+    );
 
   const toggle = (
     collection: Set<string>,
@@ -156,14 +248,146 @@ export function PropertyFormPage() {
     [dict],
   );
 
+  // Walidacja realnych zakresów — Bean Validation na backendzie pilnuje reszty,
+  // ale sensowne granice („piętro do 154", „rok budowy nie z przyszłości") lepiej
+  // pokazać od razu przy polu, zanim żądanie w ogóle poleci.
+  function validate(): Record<string, string> {
+    const e: Record<string, string> = {};
+    const n = (v: string): number | null => {
+      const t = v.trim().replace(",", ".");
+      return t === "" ? null : Number(t);
+    };
+    // Reguła „maks. 2 miejsca po przecinku": łapie 3+ cyfry po przecinku/kropce.
+    const tooManyDecimals = (v: string): boolean => /[.,]\d{3,}/.test(v.trim());
+    const maxYear = new Date().getFullYear() + 10;
+
+    const price = n(fields.price);
+    if (price == null || Number.isNaN(price) || price <= 0)
+      e["pricing.price"] = "Podaj cenę większą od zera.";
+    else if (price > 9_999_999_999)
+      e["pricing.price"] = "Cena jest nierealnie wysoka.";
+
+    const rent = n(fields.rent);
+    if (rent != null && (Number.isNaN(rent) || rent < 0))
+      e["pricing.rent"] = "Czynsz nie może być ujemny.";
+    else if (rent != null && rent > 1_000_000)
+      e["pricing.rent"] = "Czynsz jest nierealnie wysoki.";
+
+    const deposit = n(fields.deposit);
+    if (deposit != null && (Number.isNaN(deposit) || deposit < 0))
+      e["pricing.deposit"] = "Kaucja nie może być ujemna.";
+
+    const commission = n(fields.commissionPercent);
+    if (commission != null && (Number.isNaN(commission) || commission < 0 || commission > 100))
+      e["pricing.commissionPercent"] = "Prowizja musi być w zakresie 0–100%.";
+
+    const total = n(fields.totalArea);
+    if (total == null || Number.isNaN(total) || total <= 0)
+      e["area.totalArea"] = "Podaj powierzchnię większą od zera.";
+    else if (total > 1_000_000)
+      e["area.totalArea"] = "Powierzchnia jest nierealnie duża.";
+
+    const usable = n(fields.usableArea);
+    if (usable != null && (Number.isNaN(usable) || usable <= 0))
+      e["area.usableArea"] = "Powierzchnia użytkowa musi być większa od zera.";
+    else if (usable != null && total != null && usable > total)
+      e["area.usableArea"] = "Powierzchnia użytkowa nie może przekraczać całkowitej.";
+
+    const plot = n(fields.plotArea);
+    if (plot != null && (Number.isNaN(plot) || plot <= 0))
+      e["area.plotArea"] = "Powierzchnia działki musi być większa od zera.";
+
+    const rooms = n(fields.roomsCount);
+    if (rooms != null && (!Number.isInteger(rooms) || rooms < 1 || rooms > 100))
+      e["area.roomsCount"] = "Liczba pokoi musi być z zakresu 1–100.";
+
+    const baths = n(fields.bathroomsCount);
+    if (baths != null && (!Number.isInteger(baths) || baths < 0 || baths > 50))
+      e["area.bathroomsCount"] = "Liczba łazienek musi być z zakresu 0–50.";
+
+    const floor = n(fields.floorNo);
+    if (floor != null && (!Number.isInteger(floor) || floor < -1 || floor > 160))
+      e["area.floorNo"] = "Piętro musi być z zakresu od -1 (suterena) do 160.";
+
+    const buildingFloors = n(fields.buildingFloorsCount);
+    if (buildingFloors != null && (!Number.isInteger(buildingFloors) || buildingFloors < 1 || buildingFloors > 200))
+      e["area.buildingFloorsCount"] = "Liczba pięter musi być z zakresu 1–200.";
+
+    if (
+      floor != null && buildingFloors != null &&
+      Number.isInteger(floor) && Number.isInteger(buildingFloors) &&
+      floor > buildingFloors
+    )
+      e["area.floorNo"] = "Piętro nie może być wyższe niż liczba pięter w budynku.";
+
+    const ceiling = n(fields.ceilingHeight);
+    if (ceiling != null && (Number.isNaN(ceiling) || ceiling < 1 || ceiling > 50))
+      e["area.ceilingHeight"] = "Wysokość pomieszczeń musi być z zakresu 1–50 m.";
+
+    const year = n(fields.buildYear);
+    if (year != null && (!Number.isInteger(year) || year < 1800 || year > maxYear))
+      e["building.buildYear"] = `Rok budowy musi być z zakresu 1800–${maxYear}.`;
+
+    const ep = n(fields.energyPrimary);
+    if (ep != null && (Number.isNaN(ep) || ep < 0 || ep > 5000))
+      e["energy.energyPrimary"] = "Wskaźnik EP jest poza realnym zakresem (0–5000).";
+
+    const ek = n(fields.energyFinal);
+    if (ek != null && (Number.isNaN(ek) || ek < 0 || ek > 5000))
+      e["energy.energyFinal"] = "Wskaźnik EK jest poza realnym zakresem (0–5000).";
+
+    const postal = fields.postalCode.trim();
+    if (postal !== "" && !/^\d{2}-\d{3}$/.test(postal))
+      e["address.postalCode"] = "Kod pocztowy w formacie 00-000.";
+
+    // Wszystkie pola dziesiętne: maksymalnie 2 miejsca po przecinku. Sprawdzamy
+    // na końcu, więc ten komunikat wygrywa z ewentualnym błędem zakresu.
+    const decimalFields: [string, string][] = [
+      ["price", "pricing.price"],
+      ["rent", "pricing.rent"],
+      ["deposit", "pricing.deposit"],
+      ["commissionPercent", "pricing.commissionPercent"],
+      ["totalArea", "area.totalArea"],
+      ["usableArea", "area.usableArea"],
+      ["plotArea", "area.plotArea"],
+      ["ceilingHeight", "area.ceilingHeight"],
+      ["energyPrimary", "energy.energyPrimary"],
+      ["energyFinal", "energy.energyFinal"],
+    ];
+    for (const [field, key] of decimalFields) {
+      if (tooManyDecimals(fields[field]))
+        e[key] = "Maksymalnie 2 miejsca po przecinku.";
+    }
+
+    return e;
+  }
+
+  // Wynik walidacji klienta liczony przy każdym renderze — zawsze świeży.
+  const liveErrors = validate();
+
+  // Błąd pokazujemy, gdy: backend go zwrócił, albo formularz był już wysłany,
+  // albo użytkownik opuścił to pole. Dzięki temu komunikat pojawia się od razu,
+  // a nie dopiero po kliknięciu „Zapisz".
+  const errorFor = (key: string): string | undefined =>
+    errors[key] ??
+    (submitted || touched.has(key) ? liveErrors[key] : undefined);
+
   async function submit(event: React.FormEvent) {
     event.preventDefault();
-    setSaving(true);
+    setSubmitted(true);
     setErrors({});
     setFormError(null);
 
+    const fieldErrors = validate();
+    if (Object.keys(fieldErrors).length > 0) {
+      setFormError("Popraw zaznaczone pola formularza.");
+      return;
+    }
+
+    setSaving(true);
+
     try {
-      const created = await createProperty({
+      const payload = {
         propertyType: fields.propertyType,
         transactionType: fields.transactionType,
         marketType: fields.marketType,
@@ -248,9 +472,14 @@ export function PropertyFormPage() {
         keysInfo: blank(fields.keysInfo),
         privateNotes: blank(fields.privateNotes),
         exportable: flags.exportable,
-      });
+      };
 
-      navigate("/nieruchomosci", { state: { created: created.id } });
+      const saved =
+        isEdit && id
+          ? await updateProperty(id, payload)
+          : await createProperty(payload);
+
+      navigate("/nieruchomosci", { state: { saved: saved.id } });
     } catch (cause) {
       if (cause instanceof ApiError) {
         setErrors(cause.fieldErrors ?? {});
@@ -277,7 +506,7 @@ export function PropertyFormPage() {
             Wróć
           </Button>
           <h1 className="text-base font-semibold tracking-tight text-ink">
-            Nowa oferta
+            {isEdit ? "Edytuj ofertę" : "Nowa oferta"}
           </h1>
         </div>
 
@@ -366,10 +595,13 @@ export function PropertyFormPage() {
         <Input
           label="Cena"
           type="number"
+          inputMode="decimal"
           step="0.01"
+          min={0}
           value={fields.price}
           onChange={set("price")}
-          error={errors["pricing.price"]}
+          onBlur={markTouched("pricing.price")}
+          error={errorFor("pricing.price")}
           required
         />
         <Select
@@ -381,25 +613,38 @@ export function PropertyFormPage() {
         <Input
           label="Prowizja biura (%)"
           type="number"
+          inputMode="decimal"
           step="0.01"
+          min={0}
+          max={100}
           value={fields.commissionPercent}
           onChange={set("commissionPercent")}
+          onBlur={markTouched("pricing.commissionPercent")}
+          error={errorFor("pricing.commissionPercent")}
           hint="Nie trafia do ogłoszenia."
         />
         <Input
           label="Czynsz administracyjny"
           type="number"
+          inputMode="decimal"
           step="0.01"
+          min={0}
           value={fields.rent}
           onChange={set("rent")}
+          onBlur={markTouched("pricing.rent")}
+          error={errorFor("pricing.rent")}
         />
         {isRent && (
           <Input
             label="Kaucja"
             type="number"
+            inputMode="decimal"
             step="0.01"
+            min={0}
             value={fields.deposit}
             onChange={set("deposit")}
+            onBlur={markTouched("pricing.deposit")}
+            error={errorFor("pricing.deposit")}
           />
         )}
         <div className="flex flex-col justify-end gap-2 pb-1">
@@ -426,26 +671,37 @@ export function PropertyFormPage() {
         <Input
           label="Powierzchnia całkowita (m²)"
           type="number"
+          inputMode="decimal"
           step="0.01"
+          min={0}
           value={fields.totalArea}
           onChange={set("totalArea")}
-          error={errors["area.totalArea"]}
+          onBlur={markTouched("area.totalArea")}
+          error={errorFor("area.totalArea")}
           required
         />
         <Input
           label="Powierzchnia użytkowa (m²)"
           type="number"
+          inputMode="decimal"
           step="0.01"
+          min={0}
           value={fields.usableArea}
           onChange={set("usableArea")}
+          onBlur={markTouched("area.usableArea")}
+          error={errorFor("area.usableArea")}
         />
         {showLand && (
           <Input
             label="Powierzchnia działki (m²)"
             type="number"
+            inputMode="decimal"
             step="0.01"
+            min={0}
             value={fields.plotArea}
             onChange={set("plotArea")}
+            onBlur={markTouched("area.plotArea")}
+            error={errorFor("area.plotArea")}
           />
         )}
         {!isLand && (
@@ -453,9 +709,14 @@ export function PropertyFormPage() {
             <Input
               label={`Liczba pokoi${roomsRequired ? "" : " (opcjonalnie)"}`}
               type="number"
+              inputMode="numeric"
+              step="1"
+              min={1}
+              max={100}
               value={fields.roomsCount}
               onChange={set("roomsCount")}
-              error={errors["area.roomsCount"]}
+              onBlur={markTouched("area.roomsCount")}
+              error={errorFor("area.roomsCount")}
               hint={
                 roomsRequired
                   ? "Wymagana — bez niej portal odrzuci ofertę."
@@ -466,22 +727,39 @@ export function PropertyFormPage() {
             <Input
               label="Liczba łazienek"
               type="number"
+              inputMode="numeric"
+              step="1"
+              min={0}
+              max={50}
               value={fields.bathroomsCount}
               onChange={set("bathroomsCount")}
+              onBlur={markTouched("area.bathroomsCount")}
+              error={errorFor("area.bathroomsCount")}
             />
             <Input
               label="Piętro"
               type="number"
+              inputMode="numeric"
+              step="1"
+              min={-1}
+              max={160}
               value={fields.floorNo}
               onChange={set("floorNo")}
-              error={errors["area.floorNo"]}
+              onBlur={markTouched("area.floorNo")}
+              error={errorFor("area.floorNo")}
               hint="-1 = suterena, 0 = parter."
             />
             <Input
               label="Liczba pięter w budynku"
               type="number"
+              inputMode="numeric"
+              step="1"
+              min={1}
+              max={200}
               value={fields.buildingFloorsCount}
               onChange={set("buildingFloorsCount")}
+              onBlur={markTouched("area.buildingFloorsCount")}
+              error={errorFor("area.buildingFloorsCount")}
             />
           </>
         )}
@@ -489,9 +767,14 @@ export function PropertyFormPage() {
           <Input
             label="Wysokość pomieszczeń (m)"
             type="number"
+            inputMode="decimal"
             step="0.01"
+            min={1}
+            max={50}
             value={fields.ceilingHeight}
             onChange={set("ceilingHeight")}
+            onBlur={markTouched("area.ceilingHeight")}
+            error={errorFor("area.ceilingHeight")}
           />
         )}
       </Section>
@@ -537,8 +820,11 @@ export function PropertyFormPage() {
           label="Kod pocztowy"
           value={fields.postalCode}
           onChange={set("postalCode")}
-          error={errors["address.postalCode"]}
+          onBlur={markTouched("address.postalCode")}
+          error={errorFor("address.postalCode")}
           placeholder="00-000"
+          inputMode="numeric"
+          maxLength={6}
         />
         <Input label="Ulica" value={fields.street} onChange={set("street")} />
         <Input
@@ -562,9 +848,14 @@ export function PropertyFormPage() {
           <Input
             label="Rok budowy"
             type="number"
+            inputMode="numeric"
+            step="1"
+            min={1800}
+            max={new Date().getFullYear() + 10}
             value={fields.buildYear}
             onChange={set("buildYear")}
-            error={errors["building.buildYear"]}
+            onBlur={markTouched("building.buildYear")}
+            error={errorFor("building.buildYear")}
           />
           <Select
             label="Rodzaj zabudowy"
@@ -759,18 +1050,25 @@ export function PropertyFormPage() {
             <Input
               label="EP — energia pierwotna"
               type="number"
+              inputMode="decimal"
               step="0.01"
+              min={0}
               value={fields.energyPrimary}
               onChange={set("energyPrimary")}
-              error={errors["energy.energyPrimary"]}
+              onBlur={markTouched("energy.energyPrimary")}
+              error={errorFor("energy.energyPrimary")}
               hint="kWh/(m²·rok)"
             />
             <Input
               label="EK — energia końcowa"
               type="number"
+              inputMode="decimal"
               step="0.01"
+              min={0}
               value={fields.energyFinal}
               onChange={set("energyFinal")}
+              onBlur={markTouched("energy.energyFinal")}
+              error={errorFor("energy.energyFinal")}
               hint="kWh/(m²·rok)"
             />
             <Select
@@ -937,11 +1235,20 @@ function CheckGroup({
   );
 }
 
-const num = (value: string): number | null =>
-  value.trim() === "" ? null : Number(value);
+// Przecinek jako separator dziesiętny (polska konwencja) sprowadzamy do kropki
+// przed parsowaniem — inaczej Number("2,5") to NaN.
+const num = (value: string): number | null => {
+  const trimmed = value.trim().replace(",", ".");
+  return trimmed === "" ? null : Number(trimmed);
+};
 
-const int = (value: string): number | null =>
-  value.trim() === "" ? null : Math.trunc(Number(value));
+const int = (value: string): number | null => {
+  const trimmed = value.trim().replace(",", ".");
+  return trimmed === "" ? null : Math.trunc(Number(trimmed));
+};
 
 const blank = (value: string): string | undefined =>
   value.trim() === "" ? undefined : value.trim();
+
+const str = (value: number | null): string =>
+  value == null ? "" : String(value);

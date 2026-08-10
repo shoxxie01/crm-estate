@@ -97,6 +97,76 @@ public class PropertyService {
         return PropertyResponse.from(properties.save(property));
     }
 
+    /**
+     * Pełne nadpisanie oferty. Numer oferty, autor, właściciel, zdjęcia
+     * i publikacje zostają nietknięte — zmienia się tylko to, co obejmuje
+     * formularz. Pola spoza formularza (np. typ dachu) wracają do wartości
+     * domyślnej, dokładnie jak przy tworzeniu — formularz jest granicą tego,
+     * co edytowalne.
+     */
+    @Transactional
+    public PropertyResponse update(UUID id, CreatePropertyRequest request, User editor) {
+        Property property = properties.findByIdAndAgencyId(id, editor.getAgency().getId())
+                .orElseThrow(PropertyNotFoundException::new);
+
+        validate(request);
+
+        property.setPropertyType(request.propertyType());
+        property.setTransactionType(request.transactionType());
+        property.setMarketType(request.marketType());
+        property.setTitle(request.title().trim());
+        property.setDescription(request.description().trim());
+        property.setTotalArea(request.area().totalArea());
+
+        Pricing pricing = new Pricing(
+                request.pricing().price(),
+                orDefault(request.pricing().priceCurrency(), Currency.PLN));
+        applyPricing(pricing, request.pricing());
+        property.setPricing(pricing);
+
+        property.setAddress(buildAddress(request.address()));
+
+        applyArea(property, request.area());
+        applyBuilding(property.getBuilding(), request.building());
+        applyEnergy(property.getEnergyCertificate(), request.energy());
+        applyLand(property.getLand(), request.land());
+        applyCommercial(property.getCommercial(), request.commercial());
+
+        property.setStatus(orDefault(request.status(), property.getStatus()));
+        property.setAvailableFrom(request.availableFrom());
+        property.setVideoUrl(request.videoUrl());
+        property.setPanoramaUrl(request.panoramaUrl());
+        property.setPrivateNotes(request.privateNotes());
+        property.setKeysInfo(request.keysInfo());
+        property.setExportable(orDefault(request.exportable(), Boolean.TRUE));
+
+        // Pusty agentId przy edycji znaczy „nie ruszaj prowadzącego" — inaczej
+        // każda zmiana przez inną osobę przepisywałaby ofertę na nią.
+        if (request.agentId() != null) {
+            property.setAgent(resolveAgent(request.agentId(), editor));
+        }
+        if (request.features() != null) {
+            property.setFeatures(request.features());
+        }
+        if (request.heatingTypes() != null) {
+            property.setHeatingTypes(request.heatingTypes());
+        }
+        if (request.commercialUses() != null) {
+            property.setCommercialUses(request.commercialUses());
+        }
+
+        return PropertyResponse.from(properties.save(property));
+    }
+
+    @Transactional
+    public void delete(UUID id, User actor) {
+        Property property = properties.findByIdAndAgencyId(id, actor.getAgency().getId())
+                .orElseThrow(PropertyNotFoundException::new);
+        // Zdjęcia, publikacje i kolekcje cech znikają kaskadowo (cascade/orphan
+        // po stronie JPA oraz ON DELETE CASCADE w migracji V3).
+        properties.delete(property);
+    }
+
     @Transactional(readOnly = true)
     public Page<PropertySummary> list(User viewer, PropertyStatus status, PropertyType type,
                                       TransactionType transaction, Pageable pageable) {
@@ -145,6 +215,11 @@ public class PropertyService {
         if (area.floorNo() != null && area.buildingFloorsCount() != null
                 && area.floorNo() > area.buildingFloorsCount()) {
             errors.put("area.floorNo", "Piętro nie może być wyższe niż liczba pięter w budynku.");
+        }
+
+        if (area.usableArea() != null
+                && area.usableArea().compareTo(area.totalArea()) > 0) {
+            errors.put("area.usableArea", "Powierzchnia użytkowa nie może przekraczać całkowitej.");
         }
 
         EnergyRequest energy = request.energy();
