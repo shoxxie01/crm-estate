@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import {
+  fetchCurrentUser,
   login as loginRequest,
   register as registerRequest,
   type AuthResponse,
@@ -15,7 +16,7 @@ import {
   type RegisterPayload,
   type User,
 } from "../api/auth";
-import { setAuthToken } from "../api/client";
+import { setAuthToken, setUnauthorizedHandler } from "../api/client";
 
 const STORAGE_KEY = "delta-crm.session";
 
@@ -49,13 +50,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const session = readSession();
-    if (session) {
-      setAuthToken(session.token);
-      setUser(session.user);
-      setStatus("authenticated");
-    } else {
+    if (!session) {
       setStatus("anonymous");
+      return;
     }
+
+    // Token z localStorage trzeba zweryfikować, a nie uznać za ważny na słowo.
+    // Potrafi wygasnąć (12 h) albo przestać się weryfikować, gdy backend
+    // wystartuje z innym DELTA_JWT_SECRET. Bez tego sprawdzenia aplikacja
+    // pokazuje interfejs zalogowanego użytkownika, w którym nic nie działa:
+    // listy są puste, a słowniki nie mają się skąd wziąć.
+    setAuthToken(session.token);
+    fetchCurrentUser()
+      .then((fresh) => {
+        localStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify({ token: session.token, user: fresh }),
+        );
+        setUser(fresh);
+        setStatus("authenticated");
+      })
+      .catch(() => {
+        localStorage.removeItem(STORAGE_KEY);
+        setAuthToken(null);
+        setUser(null);
+        setStatus("anonymous");
+      });
   }, []);
 
   const persist = useCallback((response: AuthResponse) => {
@@ -81,6 +101,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setStatus("anonymous");
   }, []);
+
+  // Token potrafi stracić ważność w trakcie pracy. Wtedy zamiast interfejsu,
+  // w którym nic nie działa, użytkownik wraca na ekran logowania.
+  useEffect(() => {
+    setUnauthorizedHandler(logout);
+    return () => setUnauthorizedHandler(null);
+  }, [logout]);
 
   const value = useMemo(
     () => ({ user, status, login, register, logout }),

@@ -17,6 +17,18 @@ export function setAuthToken(token: string | null) {
   authToken = token;
 }
 
+let onUnauthorized: (() => void) | null = null;
+
+/**
+ * Wołane, gdy serwer odrzuci *nasz* token. Token żyje 12 h i przestaje być
+ * ważny także wtedy, gdy backend wystartuje z innym `DELTA_JWT_SECRET` —
+ * bez tej ścieżki aplikacja zostaje na ekranie zalogowanego użytkownika,
+ * a każde żądanie po cichu wraca z 401.
+ */
+export function setUnauthorizedHandler(handler: (() => void) | null) {
+  onUnauthorized = handler;
+}
+
 export async function apiFetch<T>(
   path: string,
   init: RequestInit = {},
@@ -38,6 +50,12 @@ export async function apiFetch<T>(
   const payload = await response.json().catch(() => null);
 
   if (!response.ok) {
+    // 401 przy ustawionym tokenie znaczy, że sesja jest nieważna — nie że
+    // użytkownik podał złe hasło (przy logowaniu tokenu jeszcze nie ma).
+    if (response.status === 401 && authToken) {
+      onUnauthorized?.();
+    }
+
     // Format zgodny z RFC 7807 (Spring `ProblemDetail`) + mapa błędów pól.
     const message =
       payload?.detail ?? payload?.message ?? "Wystąpił nieoczekiwany błąd.";

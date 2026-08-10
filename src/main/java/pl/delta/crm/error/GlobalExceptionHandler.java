@@ -1,8 +1,10 @@
 package pl.delta.crm.error;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -39,6 +41,50 @@ public class GlobalExceptionHandler {
                 HttpStatus.CONFLICT, exception.getMessage());
         problem.setTitle("Konflikt");
         problem.setProperty("errors", Map.of("email", "Ten adres e-mail jest już zajęty."));
+        return problem;
+    }
+
+    @ExceptionHandler(BusinessValidationException.class)
+    public ProblemDetail handleBusinessValidation(BusinessValidationException exception) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST, exception.getMessage());
+        problem.setTitle("Błąd walidacji");
+        problem.setProperty("errors", exception.getErrors());
+        return problem;
+    }
+
+    @ExceptionHandler(PropertyNotFoundException.class)
+    public ProblemDetail handlePropertyNotFound(PropertyNotFoundException exception) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.NOT_FOUND, exception.getMessage());
+        problem.setTitle("Nie znaleziono");
+        return problem;
+    }
+
+    /**
+     * Ciało żądania, którego nie da się odczytać — uszkodzony JSON albo wartość
+     * spoza słownika w polu enumowym. Bez tej obsługi błąd trafiał do domyślnego
+     * `/error` i wracał w innym kształcie niż reszta API, więc front nie miał
+     * czego pokazać poza komunikatem zastępczym.
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ProblemDetail handleUnreadableBody(HttpMessageNotReadableException exception) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST,
+                "Nie udało się odczytać danych formularza. Sprawdź, czy wszystkie pola mają poprawne wartości.");
+        problem.setTitle("Błędne dane");
+        return problem;
+    }
+
+    /**
+     * Naruszenie więzów bazy, którego nie wychwyciła wcześniejsza walidacja.
+     * Nie pokazujemy treści błędu SQL — poszłyby w niej nazwy kolumn i tabel.
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ProblemDetail handleDataIntegrity(DataIntegrityViolationException exception) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.CONFLICT, "Nie udało się zapisać danych — sprawdź poprawność pól.");
+        problem.setTitle("Konflikt danych");
         return problem;
     }
 

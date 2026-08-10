@@ -78,8 +78,17 @@ Frontend oczekuje od Spring Boota:
 | `POST /api/auth/login` | `{ email, password }` | `{ token, user }` |
 | `POST /api/auth/register` | `{ firstName, lastName, email, password, agencyName }` | `{ token, user }` |
 | `GET /api/auth/me` | — | `User` |
+| `GET /api/properties` | — | strona `PropertySummary` |
+| `POST /api/properties` | `CreatePropertyPayload` | pełna oferta |
+| `GET /api/properties/dictionaries` | — | słowniki formularza |
 
 `User`: `{ id, email, firstName, lastName, role: "AGENT"｜"MANAGER"｜"ADMIN", agencyName }`
+
+**Słowniki nie są przepisywane do TypeScriptu.** Wartości takie jak rodzaj
+nieruchomości, forma własności czy materiał budowy to po stronie frontu zwykłe
+stringi, a listy wyboru pochodzą z `/api/properties/dictionaries` — razem
+z polskimi etykietami. Powielenie tych dwudziestu kilku enumów oznaczałoby dwa
+źródła prawdy rozjeżdżające się przy każdej zmianie w backendzie.
 
 Błędy: `ProblemDetail` (RFC 7807). Pole `detail` trafia do komunikatu ogólnego,
 opcjonalna mapa `errors: { pole: komunikat }` — pod konkretne pola formularza.
