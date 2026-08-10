@@ -1,5 +1,6 @@
 package pl.delta.crm.config;
 
+import jakarta.servlet.DispatcherType;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -73,6 +74,12 @@ public class SecurityConfig {
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        // Kontener obsługuje błędy osobnym przebiegiem przez /error.
+                        // Bez tej reguły ten przebieg wpada na `anyRequest().authenticated()`
+                        // i każdy błąd — 400 z niepoprawnego JSON-a, 500 z bazy — wraca do
+                        // przeglądarki jako 401. Klient traktuje to wtedy jak wygasłą sesję
+                        // i wylogowuje użytkownika zamiast pokazać, co się naprawdę stało.
+                        .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/register").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
                         .anyRequest().authenticated())

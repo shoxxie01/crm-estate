@@ -66,6 +66,62 @@ brak sesji po stronie serwera, brak CSRF.
 
 Każdy inny endpoint pod `/api/**` wymaga tokenu.
 
+## Nieruchomości
+
+| Endpoint | Body | Odpowiedź |
+|---|---|---|
+| `POST /api/properties` | `CreatePropertyRequest` | `201` + pełna oferta |
+| `GET /api/properties` | — | `200` + strona `PropertySummary` |
+| `GET /api/properties/{id}` | — | `200` + pełna oferta |
+| `GET /api/properties/dictionaries` | — | `200` + wszystkie słowniki formularza |
+
+Filtry listy: `?status=`, `?type=`, `?transaction=`, plus standardowe `page`,
+`size`, `sort` (domyślnie `createdAt,desc`).
+
+**Numer oferty nadaje serwer** w formacie `RRRR/MM/NNN`, osobno dla każdego
+biura — nie ma go w `CreatePropertyRequest`. Portal rozpoznaje po nim ogłoszenie
+przy kolejnych wysyłkach, więc musi być stabilny, ale nie ma powodu, by wpisywał
+go człowiek.
+
+### Co jest wymagane, a co dopiero do publikacji
+
+Do zapisu oferty wystarczy: rodzaj, transakcja, rynek, tytuł, opis, cena,
+powierzchnia oraz województwo i miejscowość. Powiat, gmina i dzielnica są
+opcjonalne — agent często zakłada ofertę z telefonu od właściciela i uzupełnia
+resztę po oględzinach, a blokowanie zapisu wypychałoby takie oferty do notatnika.
+
+Kompletności pod kątem portalu pilnuje `Property.readyForExport()`, które
+sprawdza m.in. powiat (Otodom wymaga pary województwo + powiat), liczbę pokoi
+dla mieszkania i domu, co najmniej jedno zdjęcie oraz świadectwo energetyczne.
+Lista ofert pokazuje ten stan w kolumnie „Eksport".
+
+**Zakres widoczności bierze się z tokenu.** Identyfikator biura nie jest
+parametrem żądania i nie da się go podmienić — repozytorium nie ma ani jednej
+metody potrafiącej zwrócić ofertę bez podania agencji, łącznie z `findById`.
+Oferta obcego biura daje `404`, nie `403`, żeby po kodzie odpowiedzi nie dało
+się sprawdzać, co ma konkurencja.
+
+### Skąd wziął się zestaw pól
+
+Z wymagań importu portali ogłoszeniowych — punktem odniesienia jest
+[specyfikacja Otodom Import](https://cdn.prod.website-files.com/61a78ba1bfb5df5455656f40/6638c399538563422cecdd31_otoDom_Import_170130.pdf)
+(format XML wysyłany przez FTP, paczki przetwarzane co godzinę).
+
+Zasada, na której stoi cały model: **w bazie nie ma ani jednego kodu
+portalowego**. Portale opisują ten sam atrybut różnymi słownikami, a Otodom
+używa różnych słowników dla różnych typów obiektu — ta sama liczba `2` znaczy
+„dom wolnostojący" przy mieszkaniu, „szeregowiec" przy domu i „w bloku" przy
+lokalu użytkowym. Do tego ich dokumentacja zaleca częste odświeżanie słowników.
+Trzymamy więc własne, jednoznaczne nazwy (`pl.delta.crm.property.dictionary`),
+a tłumaczenie na kody portalu będzie należało do modułu eksportu.
+
+Świadectwo charakterystyki energetycznej jest w modelu, mimo że specyfikacja
+Otodom z 2017 r. go nie zna — obowiązek podania wskaźnika EP w ogłoszeniu
+wynika z ustawy i obowiązuje od 28.04.2023 niezależnie od formatu XML.
+
+Słowniki mają polskie etykiety po stronie backendu i wychodzą jednym
+endpointem, więc front nie powiela dwudziestu kilku enumów w TypeScripcie.
+
 **Payload tokenu:** `iss`, `sub` (UUID użytkownika), `email`, `role`, `iat`, `exp`.
 Podmiotem jest id, nie e-mail — token przeżyje zmianę adresu.
 
