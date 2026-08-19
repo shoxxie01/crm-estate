@@ -1,15 +1,19 @@
 package pl.delta.crm.property.dto;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import pl.delta.crm.property.dictionary.CommercialUse;
 import pl.delta.crm.property.dictionary.Feature;
+import pl.delta.crm.property.dictionary.GarageType;
 import pl.delta.crm.property.dictionary.HeatingType;
 import pl.delta.crm.property.dictionary.MarketType;
 import pl.delta.crm.property.dictionary.PropertyStatus;
 import pl.delta.crm.property.dictionary.PropertyType;
+import pl.delta.crm.property.dictionary.RoomBathroom;
 import pl.delta.crm.property.dictionary.TransactionType;
 
 import java.time.LocalDate;
@@ -65,6 +69,16 @@ public record CreatePropertyRequest(
         @Valid LandRequest land,
 
         @Valid CommercialRequest commercial,
+
+        /* Garaż / miejsce postojowe. */
+        GarageType garageType,
+
+        /* Pokój (wynajem). */
+        @Min(value = 1, message = "Liczba osób musi być dodatnia.")
+        @Max(value = 20, message = "Zbyt duża liczba osób.")
+        Short occupants,
+
+        RoomBathroom roomBathroom,
 
         LocalDate availableFrom,
 

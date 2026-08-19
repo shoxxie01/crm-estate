@@ -22,6 +22,7 @@ import pl.delta.crm.property.dto.PropertySummary;
 import pl.delta.crm.user.User;
 import pl.delta.crm.user.UserRepository;
 
+import java.math.BigDecimal;
 import java.time.YearMonth;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -52,7 +53,7 @@ public class PropertyService {
         Pricing pricing = new Pricing(
                 request.pricing().price(),
                 orDefault(request.pricing().priceCurrency(), Currency.PLN));
-        applyPricing(pricing, request.pricing());
+        applyPricing(pricing, request.pricing(), request.area().totalArea());
 
         Address address = buildAddress(request.address());
 
@@ -75,6 +76,9 @@ public class PropertyService {
         applyEnergy(property.getEnergyCertificate(), request.energy());
         applyLand(property.getLand(), request.land());
         applyCommercial(property.getCommercial(), request.commercial());
+        property.setGarageType(request.garageType());
+        property.setOccupants(request.occupants());
+        property.setRoomBathroom(request.roomBathroom());
 
         property.setStatus(orDefault(request.status(), PropertyStatus.ROBOCZA));
         property.setAvailableFrom(request.availableFrom());
@@ -121,7 +125,7 @@ public class PropertyService {
         Pricing pricing = new Pricing(
                 request.pricing().price(),
                 orDefault(request.pricing().priceCurrency(), Currency.PLN));
-        applyPricing(pricing, request.pricing());
+        applyPricing(pricing, request.pricing(), request.area().totalArea());
         property.setPricing(pricing);
 
         property.setAddress(buildAddress(request.address()));
@@ -131,6 +135,9 @@ public class PropertyService {
         applyEnergy(property.getEnergyCertificate(), request.energy());
         applyLand(property.getLand(), request.land());
         applyCommercial(property.getCommercial(), request.commercial());
+        property.setGarageType(request.garageType());
+        property.setOccupants(request.occupants());
+        property.setRoomBathroom(request.roomBathroom());
 
         property.setStatus(orDefault(request.status(), property.getStatus()));
         property.setAvailableFrom(request.availableFrom());
@@ -282,12 +289,18 @@ public class PropertyService {
                         Map.of("agentId", "Wybrany agent nie należy do tego biura.")));
     }
 
-    private static void applyPricing(Pricing pricing, pl.delta.crm.property.dto.PricingRequest request) {
+    private static void applyPricing(Pricing pricing, pl.delta.crm.property.dto.PricingRequest request,
+                                     BigDecimal totalArea) {
         pricing.setPriceNegotiable(orDefault(request.priceNegotiable(), Boolean.FALSE));
         pricing.setPriceIncludesRent(orDefault(request.priceIncludesRent(), Boolean.FALSE));
         pricing.setRent(request.rent(), orDefault(request.rentCurrency(), Currency.PLN));
         pricing.setDeposit(request.deposit(), orDefault(request.depositCurrency(), Currency.PLN));
         pricing.setCommissionPercent(request.commissionPercent());
+        // Front zwykle przysyła cenę za m², ale gdy jej brak — liczymy z ceny
+        // i powierzchni, żeby w bazie zawsze była wartość spójna z ceną.
+        pricing.setPricePerM2(request.pricePerM2() != null
+                ? request.pricePerM2()
+                : pricing.pricePerSquareMeter(totalArea));
     }
 
     private static Address buildAddress(AddressRequest request) {
@@ -369,6 +382,9 @@ public class PropertyService {
         commercial.setOfficeSpace(request.officeSpace());
         commercial.setSocialFacilities(request.socialFacilities());
         commercial.setLoadingRamp(request.loadingRamp());
+        commercial.setPowerConnectionKw(request.powerConnectionKw());
+        commercial.setFloorLoadPerM2(request.floorLoadPerM2());
+        commercial.setLoadingDocksCount(request.loadingDocksCount());
     }
 
     private static <T> T orDefault(T value, T fallback) {

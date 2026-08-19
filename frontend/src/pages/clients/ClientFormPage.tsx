@@ -36,12 +36,23 @@ export function ClientFormPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Set<string>>(new Set());
   const [submitted, setSubmitted] = useState(false);
+  const [errorSignal, setErrorSignal] = useState(0);
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     fetchClientDictionaries().then(setDict).catch(() => undefined);
   }, []);
+
+  // Po nieudanym zapisie przewiń do pierwszego błędnego pola i ustaw kursor.
+  useEffect(() => {
+    if (errorSignal === 0) return;
+    const invalid = document.querySelector<HTMLElement>('[aria-invalid="true"]');
+    if (invalid) {
+      invalid.scrollIntoView({ behavior: "smooth", block: "center" });
+      invalid.focus({ preventScroll: true });
+    }
+  }, [errorSignal]);
 
   // Tryb edycji: wczytaj klienta i wypełnij formularz jego danymi.
   useEffect(() => {
@@ -100,6 +111,7 @@ export function ClientFormPage() {
     const fieldErrors = validate();
     if (Object.keys(fieldErrors).length > 0) {
       setFormError("Popraw zaznaczone pola formularza.");
+      setErrorSignal((s) => s + 1);
       return;
     }
 

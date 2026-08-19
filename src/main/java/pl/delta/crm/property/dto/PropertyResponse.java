@@ -45,6 +45,9 @@ public record PropertyResponse(
         EnergyView energy,
         LandView land,
         CommercialView commercial,
+        String garageType,
+        Short occupants,
+        String roomBathroom,
         LocalDate availableFrom,
         Set<Feature> features,
         Set<HeatingType> heatingTypes,
@@ -96,7 +99,9 @@ public record PropertyResponse(
     }
 
     public record CommercialView(String structure, String flooring, String parkingType,
-                                 Boolean officeSpace, Boolean socialFacilities, Boolean loadingRamp) {
+                                 Boolean officeSpace, Boolean socialFacilities, Boolean loadingRamp,
+                                 BigDecimal powerConnectionKw, BigDecimal floorLoadPerM2,
+                                 Short loadingDocksCount) {
     }
 
     public record MediaView(UUID id, MediaType mediaType, String fileName, String storageKey,
@@ -130,7 +135,7 @@ public record PropertyResponse(
                 p.getDescription(),
                 new PricingView(
                         pricing.getPrice(), pricing.getPriceCurrency(), pricing.isPriceNegotiable(),
-                        pricing.pricePerSquareMeter(p.getTotalArea()), pricing.getRent(),
+                        pricing.getPricePerM2(), pricing.getRent(),
                         pricing.getRentCurrency(), pricing.isPriceIncludesRent(), pricing.getDeposit(),
                         pricing.getDepositCurrency(), pricing.getCommissionPercent()),
                 new AreaView(
@@ -160,7 +165,12 @@ public record PropertyResponse(
                 new CommercialView(
                         name(commercial.getStructure()), name(commercial.getFlooring()),
                         name(commercial.getParkingType()), commercial.getOfficeSpace(),
-                        commercial.getSocialFacilities(), commercial.getLoadingRamp()),
+                        commercial.getSocialFacilities(), commercial.getLoadingRamp(),
+                        commercial.getPowerConnectionKw(), commercial.getFloorLoadPerM2(),
+                        commercial.getLoadingDocksCount()),
+                name(p.getGarageType()),
+                p.getOccupants(),
+                name(p.getRoomBathroom()),
                 p.getAvailableFrom(),
                 // Kopie, nie referencje. Kolekcje encji są leniwe, a rekord
                 // przeżywa transakcję — Jackson rozwijałby je, kiedy sesja

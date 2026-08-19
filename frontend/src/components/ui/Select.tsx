@@ -23,6 +23,7 @@ export function Select({
   placeholder,
   className,
   id,
+  required,
   ...props
 }: SelectProps) {
   const generatedId = useId();
@@ -37,10 +38,12 @@ export function Select({
     <div className="flex flex-col gap-1.5">
       <label htmlFor={selectId} className="text-[13px] font-medium text-ink">
         {label}
+        {required && <span className="ml-0.5 text-critical">*</span>}
       </label>
 
       <select
         id={selectId}
+        required={required}
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy}
         className={cn(

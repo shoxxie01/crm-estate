@@ -43,7 +43,7 @@ public record PropertySummary(
                 property.getStatus(),
                 property.getPricing().getPrice(),
                 property.getPricing().getPriceCurrency(),
-                property.getPricing().pricePerSquareMeter(property.getTotalArea()),
+                property.getPricing().getPricePerM2(),
                 property.getTotalArea(),
                 property.getRoomsCount(),
                 property.getAddress().getCity(),

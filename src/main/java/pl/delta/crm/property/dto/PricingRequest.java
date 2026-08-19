@@ -37,6 +37,13 @@ public record PricingRequest(
         @DecimalMin(value = "0.00")
         @DecimalMax(value = "100.00", message = "Prowizja nie może przekraczać 100%.")
         @Digits(integer = 3, fraction = 2, message = "Maksymalnie 2 miejsca po przecinku.")
-        BigDecimal commissionPercent
+        BigDecimal commissionPercent,
+
+        /* Cena za m² — w formularzu pole wymagane (wpisywane ręcznie albo liczone
+           z ceny i powierzchni). W API opcjonalne: gdy go brak, serwis wylicza je
+           sam z ceny i powierzchni całkowitej, więc wartość zawsze trafia do bazy. */
+        @DecimalMin(value = "0.01", message = "Cena za m² musi być większa od zera.")
+        @Digits(integer = 12, fraction = 2, message = "Maksymalnie 2 miejsca po przecinku.")
+        BigDecimal pricePerM2
 ) {
 }

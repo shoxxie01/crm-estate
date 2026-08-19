@@ -71,6 +71,7 @@ export function PropertyDetailPage() {
       dict.roofType, dict.roofing, dict.garretType, dict.surroundings,
       dict.heatingType, dict.plotType, dict.roadAccess, dict.commercialUse,
       dict.hallStructure, dict.flooring, dict.parkingType, dict.energyClass,
+      dict.garageType, dict.roomBathroom,
     ];
     for (const group of groups) for (const entry of group) map.set(entry.value, entry.label);
     for (const fg of dict.featureGroups) for (const entry of fg.features) map.set(entry.value, entry.label);
@@ -118,11 +119,47 @@ export function PropertyDetailPage() {
   }
 
   const p = property;
-  const isLand = p.propertyType === "DZIALKA";
-  const isCommercial =
-    p.propertyType === "LOKAL_UZYTKOWY" || p.propertyType === "HALA_MAGAZYN";
-  const showBuilding = !isLand;
-  const showLand = isLand || p.propertyType === "DOM";
+  const type = p.propertyType;
+  const isMieszkanie = type === "MIESZKANIE";
+  const isDom = type === "DOM";
+  const isDzialka = type === "DZIALKA";
+  const isLokal = type === "LOKAL_UZYTKOWY";
+  const isHala = type === "HALA_MAGAZYN";
+  const isGaraz = type === "GARAZ";
+  const isPokoj = type === "POKOJ";
+
+  // Ta sama logika widoczności co w formularzu — szczegóły muszą pokazywać
+  // dokładnie te pola, które dla danego typu mają sens.
+  const showUsableArea = isMieszkanie || isDom || isLokal || isHala;
+  const showPlotArea = isDom;
+  const showRooms = isMieszkanie || isDom || isLokal;
+  const roomsLabel = isLokal ? "Liczba pomieszczeń" : "Liczba pokoi";
+  const showBaths = isMieszkanie || isDom || isLokal;
+  const showFloor = isMieszkanie || isLokal || isPokoj || isGaraz;
+  const floorLabel = isGaraz ? "Poziom" : "Piętro";
+  const showBuildingFloors = isMieszkanie || isDom || isLokal;
+  const showCeiling = isLokal || isHala;
+  const totalAreaLabel = isDzialka
+    ? "Powierzchnia działki"
+    : isGaraz
+      ? "Powierzchnia"
+      : isPokoj
+        ? "Powierzchnia pokoju"
+        : "Powierzchnia całkowita";
+  const showPricePerM2 = !isGaraz && !isPokoj;
+
+  const buildingFull = isMieszkanie || isDom;
+  const showBuildingSection = !isDzialka;
+  const showBuildYear = isMieszkanie || isDom || isLokal || isHala;
+  const showConstructionStatus = isMieszkanie || isDom || isLokal || isHala;
+  const showOwnershipForm = isMieszkanie || isDom || isLokal || isHala || isGaraz;
+  const showFurnished = isMieszkanie || isDom || isPokoj;
+  const showAvailableFrom = !isDzialka;
+  const buildingTitle = isGaraz || isPokoj ? "Szczegóły" : "Budynek";
+
+  const showLandSection = isDom || isDzialka;
+  const showCommercialSection = isLokal || isHala;
+  const showEnergy = isMieszkanie || isDom || isLokal || isHala;
 
   return (
     <div className="flex max-w-4xl flex-col gap-4 pb-10">
@@ -211,14 +248,16 @@ export function PropertyDetailPage() {
           label="Cena"
           value={`${formatCurrency(p.pricing.price)}${p.pricing.priceNegotiable ? " (do negocjacji)" : ""}`}
         />
-        <Field
-          label="Cena za m²"
-          value={
-            p.pricing.pricePerSquareMeter
-              ? `${formatNumber(Math.round(p.pricing.pricePerSquareMeter))} zł/m²`
-              : null
-          }
-        />
+        {showPricePerM2 && (
+          <Field
+            label="Cena za m²"
+            value={
+              p.pricing.pricePerSquareMeter
+                ? `${formatNumber(Math.round(p.pricing.pricePerSquareMeter))} zł/m²`
+                : null
+            }
+          />
+        )}
         <Field
           label="Czynsz administracyjny"
           value={p.pricing.rent != null ? formatCurrency(p.pricing.rent) : null}
@@ -238,20 +277,23 @@ export function PropertyDetailPage() {
       </Section>
 
       <Section title="Powierzchnia i układ">
-        <Field label="Powierzchnia całkowita" value={`${formatNumber(p.area.totalArea)} m²`} />
-        <Field label="Powierzchnia użytkowa" value={area(p.area.usableArea)} />
-        {showLand && <Field label="Powierzchnia działki" value={area(p.area.plotArea)} />}
-        {!isLand && <Field label="Liczba pokoi" value={numOrNull(p.area.roomsCount)} />}
-        {!isLand && <Field label="Liczba łazienek" value={numOrNull(p.area.bathroomsCount)} />}
-        {!isLand && <Field label="Piętro" value={floor(p.area.floorNo)} />}
-        {!isLand && <Field label="Liczba pięter" value={numOrNull(p.area.buildingFloorsCount)} />}
-        {isCommercial && (
+        <Field label={totalAreaLabel} value={`${formatNumber(p.area.totalArea)} m²`} />
+        {showUsableArea && <Field label="Powierzchnia użytkowa" value={area(p.area.usableArea)} />}
+        {showPlotArea && <Field label="Powierzchnia działki" value={area(p.area.plotArea)} />}
+        {isGaraz && <Field label="Typ" value={L(p.garageType)} />}
+        {showRooms && <Field label={roomsLabel} value={numOrNull(p.area.roomsCount)} />}
+        {showBaths && <Field label="Liczba łazienek" value={numOrNull(p.area.bathroomsCount)} />}
+        {isPokoj && <Field label="Dla ilu osób" value={numOrNull(p.occupants)} />}
+        {isPokoj && <Field label="Łazienka" value={L(p.roomBathroom)} />}
+        {showFloor && <Field label={floorLabel} value={floor(p.area.floorNo)} />}
+        {showBuildingFloors && <Field label="Liczba pięter" value={numOrNull(p.area.buildingFloorsCount)} />}
+        {showCeiling && (
           <Field
             label="Wysokość pomieszczeń"
             value={p.area.ceilingHeight != null ? `${formatNumber(p.area.ceilingHeight)} m` : null}
           />
         )}
-        <Field label="Dostępna od" value={p.availableFrom} />
+        {showAvailableFrom && <Field label="Dostępna od" value={p.availableFrom} />}
       </Section>
 
       <Section title="Lokalizacja">
@@ -269,20 +311,20 @@ export function PropertyDetailPage() {
         />
       </Section>
 
-      {showBuilding && (
-        <Section title="Budynek">
-          <Field label="Rok budowy" value={numOrNull(p.building.buildYear)} />
-          <Field label="Rodzaj zabudowy" value={L(p.building.buildingType)} />
-          <Field label="Materiał" value={L(p.building.buildingMaterial)} />
-          <Field label="Stan wykończenia" value={L(p.building.constructionStatus)} />
-          <Field label="Forma własności" value={L(p.building.ownershipForm)} />
-          <Field label="Okna" value={L(p.building.windowsType)} />
-          <Field label="Położenie" value={L(p.building.surroundings)} />
-          <Field label="Umeblowane" value={bool(p.building.furnished)} />
+      {showBuildingSection && (
+        <Section title={buildingTitle}>
+          {showBuildYear && <Field label="Rok budowy" value={numOrNull(p.building.buildYear)} />}
+          {buildingFull && <Field label="Rodzaj zabudowy" value={L(p.building.buildingType)} />}
+          {buildingFull && <Field label="Materiał" value={L(p.building.buildingMaterial)} />}
+          {showConstructionStatus && <Field label="Stan wykończenia" value={L(p.building.constructionStatus)} />}
+          {showOwnershipForm && <Field label="Forma własności" value={L(p.building.ownershipForm)} />}
+          {buildingFull && <Field label="Okna" value={L(p.building.windowsType)} />}
+          {buildingFull && <Field label="Położenie" value={L(p.building.surroundings)} />}
+          {showFurnished && <Field label="Umeblowane" value={bool(p.building.furnished)} />}
         </Section>
       )}
 
-      {showLand && (
+      {showLandSection && (
         <Section title="Działka">
           <Field label="Typ działki" value={L(p.land.plotType)} />
           <Field label="Wymiary" value={p.land.dimensions} />
@@ -292,17 +334,31 @@ export function PropertyDetailPage() {
         </Section>
       )}
 
-      {isCommercial && (
-        <Section title="Lokal / hala">
-          <Field label="Konstrukcja" value={L(p.commercial.structure)} />
-          <Field label="Posadzka" value={L(p.commercial.flooring)} />
+      {showCommercialSection && (
+        <Section title={isHala ? "Hala / magazyn" : "Lokal użytkowy"}>
+          {isHala && <Field label="Konstrukcja" value={L(p.commercial.structure)} />}
+          {isHala && <Field label="Posadzka" value={L(p.commercial.flooring)} />}
           <Field label="Parking" value={L(p.commercial.parkingType)} />
+          {isHala && (
+            <Field
+              label="Moc przyłącza"
+              value={p.commercial.powerConnectionKw != null ? `${formatNumber(p.commercial.powerConnectionKw)} kW` : null}
+            />
+          )}
+          {isHala && (
+            <Field
+              label="Nośność posadzki"
+              value={p.commercial.floorLoadPerM2 != null ? `${formatNumber(p.commercial.floorLoadPerM2)} t/m²` : null}
+            />
+          )}
+          {isHala && <Field label="Liczba bram / doków" value={numOrNull(p.commercial.loadingDocksCount)} />}
           <Field label="Pomieszczenia biurowe" value={bool(p.commercial.officeSpace)} />
           <Field label="Zaplecze socjalne" value={bool(p.commercial.socialFacilities)} />
-          <Field label="Rampa" value={bool(p.commercial.loadingRamp)} />
+          {isHala && <Field label="Rampa" value={bool(p.commercial.loadingRamp)} />}
         </Section>
       )}
 
+      {showEnergy && (
       <Section title="Charakterystyka energetyczna">
         {p.energy.exempt ? (
           <Field label="Zwolnienie" value={p.energy.exemptNote ?? "Tak"} />
@@ -321,6 +377,7 @@ export function PropertyDetailPage() {
           </>
         )}
       </Section>
+      )}
 
       {(p.features.length > 0 ||
         p.heatingTypes.length > 0 ||

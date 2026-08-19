@@ -14,10 +14,15 @@ export interface DictionaryEntry {
   label: string;
 }
 
+export interface FeatureEntry extends DictionaryEntry {
+  /** Typy obiektu, dla których cecha ma sens (np. ["MIESZKANIE","DOM"]). */
+  types: string[];
+}
+
 export interface FeatureGroup {
   category: string;
   label: string;
-  features: DictionaryEntry[];
+  features: FeatureEntry[];
 }
 
 export interface Dictionaries {
@@ -43,6 +48,8 @@ export interface Dictionaries {
   hallStructure: DictionaryEntry[];
   flooring: DictionaryEntry[];
   parkingType: DictionaryEntry[];
+  garageType: DictionaryEntry[];
+  roomBathroom: DictionaryEntry[];
   energyClass: DictionaryEntry[];
   featureGroups: FeatureGroup[];
 }
@@ -93,6 +100,7 @@ export interface CreatePropertyPayload {
     deposit?: number | null;
     depositCurrency?: string;
     commissionPercent?: number | null;
+    pricePerM2: number | null;
   };
   area: {
     totalArea: number;
@@ -122,6 +130,9 @@ export interface CreatePropertyPayload {
   energy?: Record<string, unknown>;
   land?: Record<string, unknown>;
   commercial?: Record<string, unknown>;
+  garageType?: string | null;
+  occupants?: number | null;
+  roomBathroom?: string | null;
   availableFrom?: string | null;
   features?: string[];
   heatingTypes?: string[];
@@ -212,7 +223,13 @@ export interface PropertyDetail {
     officeSpace: boolean | null;
     socialFacilities: boolean | null;
     loadingRamp: boolean | null;
+    powerConnectionKw: number | null;
+    floorLoadPerM2: number | null;
+    loadingDocksCount: number | null;
   };
+  garageType: string | null;
+  occupants: number | null;
+  roomBathroom: string | null;
   availableFrom: string | null;
   features: string[];
   heatingTypes: string[];
