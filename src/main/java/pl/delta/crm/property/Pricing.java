@@ -51,6 +51,14 @@ public class Pricing {
     @Column(name = "commission_percent", precision = 5, scale = 2)
     private BigDecimal commissionPercent;
 
+    /**
+     * Cena za metr kwadratowy. W formularzu wpisywana ręcznie albo wyliczana
+     * automatycznie z ceny i powierzchni — dlatego trzymamy ją wprost, a nie
+     * liczymy dopiero przy odczycie.
+     */
+    @Column(name = "price_per_m2", precision = 14, scale = 2)
+    private BigDecimal pricePerM2;
+
     protected Pricing() {
         // wymagane przez JPA
     }
@@ -135,5 +143,13 @@ public class Pricing {
 
     public void setCommissionPercent(BigDecimal commissionPercent) {
         this.commissionPercent = commissionPercent;
+    }
+
+    public BigDecimal getPricePerM2() {
+        return pricePerM2;
+    }
+
+    public void setPricePerM2(BigDecimal pricePerM2) {
+        this.pricePerM2 = pricePerM2;
     }
 }

@@ -20,12 +20,15 @@ import jakarta.persistence.Table;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import pl.delta.crm.agency.Agency;
+import pl.delta.crm.client.Client;
 import pl.delta.crm.property.dictionary.CommercialUse;
 import pl.delta.crm.property.dictionary.Feature;
+import pl.delta.crm.property.dictionary.GarageType;
 import pl.delta.crm.property.dictionary.HeatingType;
 import pl.delta.crm.property.dictionary.MarketType;
 import pl.delta.crm.property.dictionary.PropertyStatus;
 import pl.delta.crm.property.dictionary.PropertyType;
+import pl.delta.crm.property.dictionary.RoomBathroom;
 import pl.delta.crm.property.dictionary.TransactionType;
 import pl.delta.crm.user.User;
 
@@ -71,6 +74,16 @@ public class Property {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "created_by", nullable = false, updatable = false)
     private User createdBy;
+
+    /**
+     * Właściciel-zleceniodawca. Opcjonalny: oferta może powstać jako szkic, zanim
+     * skojarzy się ją z klientem. To ta relacja — a nie pole na kliencie —
+     * decyduje, czy klient jest „sprzedającym" czy „wynajmującym": wynika to
+     * z {@code transactionType} powierzonych przez niego ofert.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_client_id")
+    private Client owner;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "property_type", nullable = false, length = 30)
@@ -139,6 +152,20 @@ public class Property {
 
     @Embedded
     private CommercialDetails commercial = new CommercialDetails();
+
+    /** Rodzaj garażu / miejsca postojowego — tylko dla typu GARAZ. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "garage_type", length = 30)
+    private GarageType garageType;
+
+    /** Dla ilu osób przeznaczony pokój — tylko dla typu POKOJ. */
+    @Column(name = "occupants")
+    private Short occupants;
+
+    /** Dostęp do łazienki przy wynajmie pokoju — tylko dla typu POKOJ. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "room_bathroom", length = 20)
+    private RoomBathroom roomBathroom;
 
     /** Od kiedy wolne (Otodom: FreeFrom). */
     @Column(name = "available_from")
@@ -252,6 +279,10 @@ public class Property {
         if (media.isEmpty()) {
             return false;
         }
+        // Działka, garaż i pokój nie wymagają świadectwa energetycznego.
+        if (!propertyType.requiresEnergyCertificate()) {
+            return true;
+        }
         return getEnergyCertificate().satisfiesLegalRequirement();
     }
 
@@ -284,16 +315,36 @@ public class Property {
         return createdBy;
     }
 
+    public Client getOwner() {
+        return owner;
+    }
+
+    public void setOwner(Client owner) {
+        this.owner = owner;
+    }
+
     public PropertyType getPropertyType() {
         return propertyType;
+    }
+
+    public void setPropertyType(PropertyType propertyType) {
+        this.propertyType = propertyType;
     }
 
     public TransactionType getTransactionType() {
         return transactionType;
     }
 
+    public void setTransactionType(TransactionType transactionType) {
+        this.transactionType = transactionType;
+    }
+
     public MarketType getMarketType() {
         return marketType;
+    }
+
+    public void setMarketType(MarketType marketType) {
+        this.marketType = marketType;
     }
 
     public PropertyStatus getStatus() {
@@ -322,6 +373,10 @@ public class Property {
 
     public Pricing getPricing() {
         return pricing;
+    }
+
+    public void setPricing(Pricing pricing) {
+        this.pricing = pricing;
     }
 
     public BigDecimal getTotalArea() {
@@ -404,6 +459,10 @@ public class Property {
         return address;
     }
 
+    public void setAddress(Address address) {
+        this.address = address;
+    }
+
     public EnergyCertificate getEnergyCertificate() {
         if (energyCertificate == null) {
             energyCertificate = new EnergyCertificate();
@@ -423,6 +482,30 @@ public class Property {
             commercial = new CommercialDetails();
         }
         return commercial;
+    }
+
+    public GarageType getGarageType() {
+        return garageType;
+    }
+
+    public void setGarageType(GarageType garageType) {
+        this.garageType = garageType;
+    }
+
+    public Short getOccupants() {
+        return occupants;
+    }
+
+    public void setOccupants(Short occupants) {
+        this.occupants = occupants;
+    }
+
+    public RoomBathroom getRoomBathroom() {
+        return roomBathroom;
+    }
+
+    public void setRoomBathroom(RoomBathroom roomBathroom) {
+        this.roomBathroom = roomBathroom;
     }
 
     public LocalDate getAvailableFrom() {

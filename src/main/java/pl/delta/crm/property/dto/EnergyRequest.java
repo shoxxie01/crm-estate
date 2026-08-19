@@ -15,11 +15,11 @@ import java.time.LocalDate;
 public record EnergyRequest(
 
         @DecimalMin(value = "0.00")
-        @Digits(integer = 5, fraction = 2)
+        @Digits(integer = 5, fraction = 2, message = "Maksymalnie 2 miejsca po przecinku.")
         BigDecimal energyPrimary,
 
         @DecimalMin(value = "0.00")
-        @Digits(integer = 5, fraction = 2)
+        @Digits(integer = 5, fraction = 2, message = "Maksymalnie 2 miejsca po przecinku.")
         BigDecimal energyFinal,
 
         EnergyClass energyClass,

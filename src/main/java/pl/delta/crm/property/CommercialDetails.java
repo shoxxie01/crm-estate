@@ -8,6 +8,8 @@ import pl.delta.crm.property.dictionary.Flooring;
 import pl.delta.crm.property.dictionary.HallStructure;
 import pl.delta.crm.property.dictionary.ParkingType;
 
+import java.math.BigDecimal;
+
 /**
  * Parametry lokalu użytkowego i hali. Otodom trzyma je w dwóch osobnych tagach
  * (CommercialPropertyDetails, HallDetails), ale zbiory pól w dużej części się
@@ -37,6 +39,18 @@ public class CommercialDetails {
 
     @Column(name = "has_loading_ramp")
     private Boolean loadingRamp;
+
+    /** Moc przyłącza energetycznego [kW] — istotna dla hal i magazynów. */
+    @Column(name = "power_connection_kw", precision = 8, scale = 2)
+    private BigDecimal powerConnectionKw;
+
+    /** Nośność (dopuszczalne obciążenie) posadzki [t/m²]. */
+    @Column(name = "floor_load_t_per_m2", precision = 6, scale = 2)
+    private BigDecimal floorLoadPerM2;
+
+    /** Liczba bram / doków rozładunkowych. */
+    @Column(name = "loading_docks_count")
+    private Short loadingDocksCount;
 
     public HallStructure getStructure() {
         return structure;
@@ -84,5 +98,29 @@ public class CommercialDetails {
 
     public void setLoadingRamp(Boolean loadingRamp) {
         this.loadingRamp = loadingRamp;
+    }
+
+    public BigDecimal getPowerConnectionKw() {
+        return powerConnectionKw;
+    }
+
+    public void setPowerConnectionKw(BigDecimal powerConnectionKw) {
+        this.powerConnectionKw = powerConnectionKw;
+    }
+
+    public BigDecimal getFloorLoadPerM2() {
+        return floorLoadPerM2;
+    }
+
+    public void setFloorLoadPerM2(BigDecimal floorLoadPerM2) {
+        this.floorLoadPerM2 = floorLoadPerM2;
+    }
+
+    public Short getLoadingDocksCount() {
+        return loadingDocksCount;
+    }
+
+    public void setLoadingDocksCount(Short loadingDocksCount) {
+        this.loadingDocksCount = loadingDocksCount;
     }
 }

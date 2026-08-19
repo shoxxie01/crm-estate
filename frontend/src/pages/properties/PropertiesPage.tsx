@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { AlertTriangle, Building2, CheckCircle2, Plus } from "lucide-react";
 import {
   fetchDictionaries,
@@ -28,6 +28,7 @@ const statusTones: Record<
 };
 
 export function PropertiesPage() {
+  const navigate = useNavigate();
   const [dictionaries, setDictionaries] = useState<Dictionaries | null>(null);
   const [page, setPage] = useState<PageResponse<PropertySummary> | null>(null);
   const [status, setStatus] = useState("");
@@ -168,7 +169,8 @@ export function PropertiesPage() {
                 page?.content.map((property) => (
                   <tr
                     key={property.id}
-                    className="border-b border-line last:border-0 hover:bg-subtle"
+                    onClick={() => navigate(`/nieruchomosci/${property.id}`)}
+                    className="cursor-pointer border-b border-line last:border-0 hover:bg-subtle"
                   >
                     <td className="px-4 py-2.5 font-mono text-[12px] text-ink-secondary">
                       {property.referenceNumber}

@@ -16,6 +16,7 @@ export function Textarea({
   counter,
   className,
   id,
+  required,
   ...props
 }: TextareaProps) {
   const generatedId = useId();
@@ -31,6 +32,7 @@ export function Textarea({
       <div className="flex items-baseline justify-between gap-2">
         <label htmlFor={textareaId} className="text-[13px] font-medium text-ink">
           {label}
+          {required && <span className="ml-0.5 text-critical">*</span>}
         </label>
         {counter && (
           <span
@@ -46,6 +48,7 @@ export function Textarea({
 
       <textarea
         id={textareaId}
+        required={required}
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy}
         className={cn(

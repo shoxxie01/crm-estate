@@ -3,10 +3,14 @@ package pl.delta.crm.property;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import pl.delta.crm.property.dictionary.PropertyStatus;
 import pl.delta.crm.property.dictionary.PropertyType;
 import pl.delta.crm.property.dictionary.TransactionType;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -31,6 +35,21 @@ public interface PropertyRepository extends JpaRepository<Property, UUID> {
     Page<Property> findByAgencyIdAndTransactionType(UUID agencyId, TransactionType type, Pageable pageable);
 
     boolean existsByAgencyIdAndReferenceNumber(UUID agencyId, String referenceNumber);
+
+    /** Oferty powierzone przez danego właściciela — na kartę klienta. */
+    List<Property> findByOwnerId(UUID ownerId);
+
+    /**
+     * Rozkład ofert na typy transakcji dla wielu właścicieli naraz — jednym
+     * zapytaniem, żeby lista klientów nie robiła N+1 na kolekcji ofert.
+     */
+    @Query("""
+            select p.owner.id as ownerId, p.transactionType as transactionType, count(p) as count
+            from Property p
+            where p.owner.id in :ownerIds
+            group by p.owner.id, p.transactionType
+            """)
+    List<OwnerTransactionCount> countByTransactionForOwners(@Param("ownerIds") Collection<UUID> ownerIds);
 
     /** Ile ofert biura ma już numer z danego miesiąca — podstawa kolejnego numeru. */
     long countByAgencyIdAndReferenceNumberStartingWith(UUID agencyId, String prefix);

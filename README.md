@@ -1,7 +1,8 @@
 # Delta CRM
 
 CRM dla biura nieruchomości. Moduły: dashboard, kalendarz, nieruchomości,
-klienci i ich predyspozycje, umowy, eksport na portale ogłoszeniowe.
+klienci (właściciele powierzający sprzedaż lub najem), umowy, eksport na portale
+ogłoszeniowe.
 
 - **Backend** — Java 25 + Spring Boot 4.0.7 (`src/`)
 - **Frontend** — React 19 + TypeScript + Vite + Tailwind v4 (`frontend/`),
@@ -73,6 +74,8 @@ Każdy inny endpoint pod `/api/**` wymaga tokenu.
 | `POST /api/properties` | `CreatePropertyRequest` | `201` + pełna oferta |
 | `GET /api/properties` | — | `200` + strona `PropertySummary` |
 | `GET /api/properties/{id}` | — | `200` + pełna oferta |
+| `PUT /api/properties/{id}` | `CreatePropertyRequest` | `200` + zaktualizowana oferta |
+| `DELETE /api/properties/{id}` | — | `204` |
 | `GET /api/properties/dictionaries` | — | `200` + wszystkie słowniki formularza |
 
 Filtry listy: `?status=`, `?type=`, `?transaction=`, plus standardowe `page`,
@@ -93,7 +96,10 @@ resztę po oględzinach, a blokowanie zapisu wypychałoby takie oferty do notatn
 Kompletności pod kątem portalu pilnuje `Property.readyForExport()`, które
 sprawdza m.in. powiat (Otodom wymaga pary województwo + powiat), liczbę pokoi
 dla mieszkania i domu, co najmniej jedno zdjęcie oraz świadectwo energetyczne.
-Lista ofert pokazuje ten stan w kolumnie „Eksport".
+Warunki zależą od typu: świadectwa energetycznego **nie wymagają** działka,
+garaż i pokój (`PropertyType.requiresEnergyCertificate()`) — dla nich brak
+świadectwa nie blokuje publikacji. Lista ofert pokazuje ten stan w kolumnie
+„Eksport".
 
 **Zakres widoczności bierze się z tokenu.** Identyfikator biura nie jest
 parametrem żądania i nie da się go podmienić — repozytorium nie ma ani jednej
@@ -125,6 +131,43 @@ endpointem, więc front nie powiela dwudziestu kilku enumów w TypeScripcie.
 **Payload tokenu:** `iss`, `sub` (UUID użytkownika), `email`, `role`, `iat`, `exp`.
 Podmiotem jest id, nie e-mail — token przeżyje zmianę adresu.
 
+### Pola zależne od typu obiektu
+
+Formularz oferty pokazuje inny zestaw pól i cech dla każdego z siedmiu rodzajów
+obiektu (mieszkanie, dom, działka, lokal użytkowy, hala/magazyn,
+garaż/miejsce postojowe, pokój). Garaż nie pyta o liczbę pokoi ani łazienek,
+działka nie ma sekcji budynku ani świadectwa energetycznego, hala ma wysokość
+i rampę zamiast pięter. Ta sama widoczność obowiązuje w formularzu i w widoku
+szczegółów.
+
+Pola specyficzne dla typu (migracja `V9`):
+
+- **hala/magazyn** — moc przyłącza [kW], nośność posadzki [t/m²], liczba bram/doków,
+- **garaż** — typ (`GarageType`: murowany, blaszany, podziemny, w hali, naziemny),
+- **pokój** — dla ilu osób, dostęp do łazienki (`RoomBathroom`: osobna/współdzielona).
+
+**Cena za m²** (`price_per_m2`, migracja `V8`) liczona jest dwukierunkowo z ceny
+i powierzchni — wpisanie jednej wartości wylicza drugą (cena z ceny za m² jest
+zaokrąglana do pełnych złotych). Dla garażu i pokoju pole jest ukryte, bo wycena
+nie jest metrażowa.
+
+**Cechy** (sekcja „Cechy") są filtrowane per pozycja: każda cecha (`Feature`)
+zna typy obiektu, dla których ma sens, więc mieszkanie nie widzi „studni" ani
+„ogrodzenia", a garaż „pralki". Kategoria bez pasujących cech w ogóle się nie
+pokazuje.
+
+### Formularze i walidacja
+
+Walidacja działa po obu stronach — Bean Validation na backendzie i lustrzane
+reguły w formularzu, żeby błąd był widoczny od razu, zanim żądanie poleci:
+
+- pola liczbowe przyjmują tylko cyfry; kwoty i powierzchnie maks. 2 miejsca po
+  przecinku; realne zakresy (piętro do 160, rok budowy do bieżącego + 10),
+- kod pocztowy w formacie `00-000`, telefon wyłącznie `+000 000 000 000`,
+- nazwy własne (miejscowość, ulica, numer budynku…) są automatycznie kapitalizowane,
+- pola wymagane mają gwiazdkę `*`, a po nieudanym zapisie strona przewija się do
+  pierwszego błędnego pola i ustawia na nim kursor.
+
 ### Błędy
 
 Jednolity `ProblemDetail` (RFC 7807). Pole `detail` to komunikat ogólny,
@@ -148,6 +191,32 @@ opcjonalna mapa `errors` mapuje nazwę pola na komunikat:
 - **Pierwszy użytkownik** zakładający konto biura dostaje rolę `ADMIN`.
 - **Sekret JWT** nie ma wartości domyślnej — brak `DELTA_JWT_SECRET` to błąd startu,
   a nie ciche użycie czegoś słabego. Minimum 32 bajty (wymóg HS256).
+
+## Klienci
+
+Klient to **właściciel powierzający ofertę** — na tym etapie wyłącznie osoba
+fizyczna. Rozróżnienie sprzedający / wynajmujący **nie jest polem klienta**:
+wynika z typu transakcji ofert do niego przypisanych (`properties.owner_client_id`,
+migracja `V7`). Ten sam właściciel może jednocześnie coś sprzedawać i coś
+wynajmować, więc rola na sztywno przy kliencie byłaby fałszem.
+
+| Endpoint | Body | Odpowiedź |
+|---|---|---|
+| `POST /api/clients` | `CreateClientRequest` | `201` + `ClientResponse` |
+| `GET /api/clients` | — | `200` + strona `ClientSummary` |
+| `GET /api/clients/{id}` | — | `200` + `ClientResponse` |
+| `PUT /api/clients/{id}` | `CreateClientRequest` | `200` + zaktualizowany klient |
+| `DELETE /api/clients/{id}` | — | `204` |
+| `PUT /api/clients/{clientId}/properties/{propertyId}` | — | `200` — przypisz ofertę |
+| `DELETE /api/clients/{clientId}/properties/{propertyId}` | — | `204` — odłącz ofertę |
+
+Filtry listy: `?status=`, `?search=` (imię, nazwisko, telefon, e-mail) plus
+standardowe `page`, `size`, `sort`.
+
+Wymagany jest **telefon albo e-mail** — kontakt bez żadnego z nich nie ma sensu.
+Usunięcie klienta **odłącza** jego oferty (ustawia właściciela na `null`), a nie
+kasuje ich. Zakres, jak wszędzie, bierze się z tokenu — nie ma metody
+repozytorium zwracającej klienta bez podania biura.
 
 ## Baza danych
 
@@ -184,10 +253,14 @@ niego migracje Flyway — weryfikują więc także sam schemat, nie tylko kod.
 
 `AuthFlowTest` pokrywa pełną ścieżkę: rejestracja → hash hasła → logowanie
 (w tym niewrażliwość na wielkość liter) → `/me` z tokenem i bez → odrzucenie
-podrobionego tokenu → duplikat e-maila → walidacja pól.
+podrobionego tokenu → duplikat e-maila → walidacja pól. `PropertyModuleTest`
+sprawdza zapis i odczyt oferty (w tym wyliczaną cenę za m²) oraz izolację
+między biurami.
 
 ## Przed produkcją
 
+- [ ] upload zdjęć oferty (model `PropertyMedia` gotowy; planowany zapis na dysku
+      serwera + ścieżka w bazie) — bez zdjęcia `readyForExport()` nie przepuści oferty
 - [ ] refresh tokeny albo krótszy TTL z odświeżaniem
 - [ ] rate limiting na `/api/auth/login`
 - [ ] `delta.cors.allowed-origins` na prawdziwą domenę

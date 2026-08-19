@@ -15,6 +15,7 @@ export function Input({
   trailing,
   className,
   id,
+  required,
   ...props
 }: InputProps) {
   const generatedId = useId();
@@ -29,11 +30,13 @@ export function Input({
     <div className="flex flex-col gap-1.5">
       <label htmlFor={inputId} className="text-[13px] font-medium text-ink">
         {label}
+        {required && <span className="ml-0.5 text-critical">*</span>}
       </label>
 
       <div className="relative">
         <input
           id={inputId}
+          required={required}
           aria-invalid={error ? true : undefined}
           aria-describedby={describedBy}
           className={cn(

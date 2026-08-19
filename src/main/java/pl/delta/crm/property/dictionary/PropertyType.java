@@ -34,4 +34,13 @@ public enum PropertyType implements Dictionary {
     public boolean rentOnly() {
         return this == POKOJ;
     }
+
+    /**
+     * Czy typ wymaga świadectwa energetycznego do publikacji. Działka nie ma
+     * budynku, a garaż i pojedynczy pokój są z obowiązku zwolnione — dla nich
+     * brak świadectwa nie może blokować eksportu.
+     */
+    public boolean requiresEnergyCertificate() {
+        return this != DZIALKA && this != GARAZ && this != POKOJ;
+    }
 }

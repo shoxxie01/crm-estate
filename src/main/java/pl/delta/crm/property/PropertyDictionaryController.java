@@ -11,6 +11,7 @@ import pl.delta.crm.property.dictionary.Currency;
 import pl.delta.crm.property.dictionary.EnergyClass;
 import pl.delta.crm.property.dictionary.Feature;
 import pl.delta.crm.property.dictionary.Flooring;
+import pl.delta.crm.property.dictionary.GarageType;
 import pl.delta.crm.property.dictionary.GarretType;
 import pl.delta.crm.property.dictionary.HallStructure;
 import pl.delta.crm.property.dictionary.HeatingType;
@@ -21,6 +22,7 @@ import pl.delta.crm.property.dictionary.PlotType;
 import pl.delta.crm.property.dictionary.PropertyStatus;
 import pl.delta.crm.property.dictionary.PropertyType;
 import pl.delta.crm.property.dictionary.RoadAccess;
+import pl.delta.crm.property.dictionary.RoomBathroom;
 import pl.delta.crm.property.dictionary.RoofType;
 import pl.delta.crm.property.dictionary.Roofing;
 import pl.delta.crm.property.dictionary.Surroundings;
@@ -71,6 +73,8 @@ public class PropertyDictionaryController {
         result.put("hallStructure", DictionaryEntry.of(HallStructure.class));
         result.put("flooring", DictionaryEntry.of(Flooring.class));
         result.put("parkingType", DictionaryEntry.of(ParkingType.class));
+        result.put("garageType", DictionaryEntry.of(GarageType.class));
+        result.put("roomBathroom", DictionaryEntry.of(RoomBathroom.class));
         result.put("energyClass", DictionaryEntry.of(EnergyClass.class));
         result.put("featureGroups", featureGroups());
 
@@ -82,7 +86,12 @@ public class PropertyDictionaryController {
                 .map(entry -> new FeatureGroup(
                         entry.getKey().name(),
                         entry.getKey().label(),
-                        entry.getValue().stream().map(DictionaryEntry::from).toList()))
+                        entry.getValue().stream()
+                                .map(f -> new FeatureGroup.FeatureView(
+                                        f.name(),
+                                        f.label(),
+                                        f.types().stream().map(Enum::name).toList()))
+                                .toList()))
                 .toList();
     }
 }
