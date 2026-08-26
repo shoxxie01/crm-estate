@@ -8,7 +8,7 @@ import pl.delta.crm.property.dictionary.PlotType;
 import pl.delta.crm.property.dictionary.RoadAccess;
 
 /**
- * Parametry działki. Wypełniane dla {@code DZIALKA}, ale sensowne także przy
+ * Parametry działki. Wypełniane dla {@code PLOT}, ale sensowne także przy
  * domu z dużą działką — dlatego siedzą w tej samej tabeli, a nie w osobnej
  * tabeli podpiętej tylko pod jeden typ.
  */

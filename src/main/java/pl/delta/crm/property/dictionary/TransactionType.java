@@ -3,8 +3,8 @@ package pl.delta.crm.property.dictionary;
 /** Typ oferty (Otodom: OfferType). */
 public enum TransactionType implements Dictionary {
 
-    SPRZEDAZ("Sprzedaż"),
-    WYNAJEM("Wynajem");
+    SALE("Sprzedaż"),
+    RENT("Wynajem");
 
     private final String label;
 

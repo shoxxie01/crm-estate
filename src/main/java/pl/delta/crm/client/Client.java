@@ -76,7 +76,7 @@ public class Client {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
-    private ClientStatus status = ClientStatus.AKTYWNY;
+    private ClientStatus status = ClientStatus.ACTIVE;
 
     @JdbcTypeCode(SqlTypes.LONGVARCHAR)
     @Column(name = "notes")

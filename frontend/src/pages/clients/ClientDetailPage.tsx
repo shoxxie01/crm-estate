@@ -17,6 +17,7 @@ import { Badge } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
 import { Select } from "../../components/ui/Select";
 import { formatCurrency, formatNumber } from "../../lib/format";
+import { EventTimeline } from "../calendar/EventTimeline";
 import { ClientIntent } from "./intent";
 
 export function ClientDetailPage() {
@@ -157,8 +158,8 @@ export function ClientDetailPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Badge tone={client.status === "AKTYWNY" ? "good" : "neutral"}>
-            {client.status === "AKTYWNY" ? "Aktywny" : "Archiwalny"}
+          <Badge tone={client.status === "ACTIVE" ? "good" : "neutral"}>
+            {client.status === "ACTIVE" ? "Aktywny" : "Archiwalny"}
           </Badge>
 
           <Button
@@ -311,12 +312,12 @@ export function ClientDetailPage() {
                     <td className="px-4 py-2.5">
                       <Badge
                         tone={
-                          property.transactionType === "SPRZEDAZ"
+                          property.transactionType === "SALE"
                             ? "accent"
                             : "warning"
                         }
                       >
-                        {property.transactionType === "SPRZEDAZ"
+                        {property.transactionType === "SALE"
                           ? "Sprzedaż"
                           : "Wynajem"}
                       </Badge>
@@ -345,6 +346,19 @@ export function ClientDetailPage() {
             </table>
           </div>
         )}
+      </section>
+
+      {/* Terminy z kalendarza. Historia kontaktu z klientem trzyma się jego karty,
+          a nie pamięci agenta — po to jest powiązanie calendar_events.client_id. */}
+      <section className="card">
+        <header className="border-b border-line px-4 py-3">
+          <h2 className="text-[13px] font-semibold tracking-tight text-ink">
+            Terminy
+          </h2>
+        </header>
+        <div className="p-4">
+          <EventTimeline clientId={client.id} />
+        </div>
       </section>
     </div>
   );

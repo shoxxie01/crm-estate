@@ -7,18 +7,18 @@ package pl.delta.crm.property.dictionary;
  */
 public enum HeatingType implements Dictionary {
 
-    MIEJSKIE("Miejskie"),
-    GAZOWE("Gazowe"),
-    ELEKTRYCZNE("Elektryczne"),
-    WEGLOWE("Węglowe"),
-    OLEJOWE("Olejowe"),
-    POMPA_CIEPLA("Pompa ciepła"),
-    KOLEKTOR_SLONECZNY("Kolektor słoneczny"),
-    GEOTERMIKA("Geotermika"),
-    BIOMASA("Biomasa"),
-    KOMINKOWE("Kominkowe"),
-    PIECE_KAFLOWE("Piece kaflowe"),
-    INNE("Inne");
+    DISTRICT("Miejskie"),
+    GAS("Gazowe"),
+    ELECTRIC("Elektryczne"),
+    COAL("Węglowe"),
+    OIL("Olejowe"),
+    HEAT_PUMP("Pompa ciepła"),
+    SOLAR_COLLECTOR("Kolektor słoneczny"),
+    GEOTHERMAL("Geotermika"),
+    BIOMASS("Biomasa"),
+    FIREPLACE("Kominkowe"),
+    TILED_STOVE("Piece kaflowe"),
+    OTHER("Inne");
 
     private final String label;
 

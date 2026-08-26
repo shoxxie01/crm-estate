@@ -19,12 +19,12 @@ const statusTones: Record<
   string,
   "neutral" | "accent" | "good" | "warning" | "critical"
 > = {
-  ROBOCZA: "neutral",
-  AKTYWNA: "good",
-  ZAREZERWOWANA: "warning",
-  SPRZEDANA: "accent",
-  WYNAJETA: "accent",
-  ARCHIWALNA: "neutral",
+  DRAFT: "neutral",
+  ACTIVE: "good",
+  RESERVED: "warning",
+  SOLD: "accent",
+  RENTED: "accent",
+  ARCHIVED: "neutral",
 };
 
 export function PropertiesPage() {

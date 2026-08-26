@@ -80,7 +80,7 @@ public class PropertyService {
         property.setOccupants(request.occupants());
         property.setRoomBathroom(request.roomBathroom());
 
-        property.setStatus(orDefault(request.status(), PropertyStatus.ROBOCZA));
+        property.setStatus(orDefault(request.status(), PropertyStatus.DRAFT));
         property.setAvailableFrom(request.availableFrom());
         property.setVideoUrl(request.videoUrl());
         property.setPanoramaUrl(request.panoramaUrl());
@@ -214,7 +214,7 @@ public class PropertyService {
         }
 
         // Pokoju nie da się wystawić na sprzedaż — portale przyjmują go tylko na wynajem.
-        if (request.propertyType().rentOnly() && request.transactionType() != TransactionType.WYNAJEM) {
+        if (request.propertyType().rentOnly() && request.transactionType() != TransactionType.RENT) {
             errors.put("transactionType", "Pokój można wystawić wyłącznie na wynajem.");
         }
 
@@ -405,6 +405,6 @@ public class PropertyService {
 
     /** Pomocnicze — używane przez testy i przyszły moduł eksportu. */
     public static Set<PropertyType> typesRequiringRooms() {
-        return Set.of(PropertyType.MIESZKANIE, PropertyType.DOM);
+        return Set.of(PropertyType.APARTMENT, PropertyType.HOUSE);
     }
 }

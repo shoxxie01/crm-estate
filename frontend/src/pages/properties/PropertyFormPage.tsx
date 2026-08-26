@@ -18,10 +18,10 @@ import { Textarea } from "../../components/ui/Textarea";
 type Fields = Record<string, string>;
 
 const INITIAL: Fields = {
-  propertyType: "MIESZKANIE",
-  transactionType: "SPRZEDAZ",
-  marketType: "WTORNY",
-  status: "ROBOCZA",
+  propertyType: "APARTMENT",
+  transactionType: "SALE",
+  marketType: "SECONDARY",
+  status: "DRAFT",
   title: "",
   description: "",
   price: "",
@@ -336,14 +336,14 @@ export function PropertyFormPage() {
   };
 
   const type = fields.propertyType;
-  const isRent = fields.transactionType === "WYNAJEM";
-  const isMieszkanie = type === "MIESZKANIE";
-  const isDom = type === "DOM";
-  const isDzialka = type === "DZIALKA";
-  const isLokal = type === "LOKAL_UZYTKOWY";
-  const isHala = type === "HALA_MAGAZYN";
-  const isGaraz = type === "GARAZ";
-  const isPokoj = type === "POKOJ";
+  const isRent = fields.transactionType === "RENT";
+  const isMieszkanie = type === "APARTMENT";
+  const isDom = type === "HOUSE";
+  const isDzialka = type === "PLOT";
+  const isLokal = type === "COMMERCIAL_UNIT";
+  const isHala = type === "HALL_WAREHOUSE";
+  const isGaraz = type === "GARAGE";
+  const isPokoj = type === "ROOM";
 
   // Widoczność pól sekcji „Powierzchnia i układ" zależnie od typu obiektu.
   const showUsableArea = isMieszkanie || isDom || isLokal || isHala;

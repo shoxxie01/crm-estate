@@ -3,14 +3,14 @@ package pl.delta.crm.property.dictionary;
 /** Typ działki (Otodom TerrainDetails: Type). */
 public enum PlotType implements Dictionary {
 
-    BUDOWLANA("Budowlana"),
-    ROLNA("Rolna"),
-    ROLNO_BUDOWLANA("Rolno-budowlana"),
-    REKREACYJNA("Rekreacyjna"),
-    POD_INWESTYCJE("Pod inwestycję"),
-    SIEDLISKOWA("Siedliskowa"),
-    LESNA("Leśna"),
-    INNA("Inna");
+    BUILDING("Budowlana"),
+    AGRICULTURAL("Rolna"),
+    AGRICULTURAL_BUILDING("Rolno-budowlana"),
+    RECREATIONAL("Rekreacyjna"),
+    INVESTMENT("Pod inwestycję"),
+    HOMESTEAD("Siedliskowa"),
+    FOREST("Leśna"),
+    OTHER("Inna");
 
     private final String label;
 

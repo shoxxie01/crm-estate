@@ -17,7 +17,7 @@ export interface NavItem {
 
 export const primaryNav: NavItem[] = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/kalendarz", label: "Kalendarz", icon: CalendarDays, badge: "4" },
+  { to: "/kalendarz", label: "Kalendarz", icon: CalendarDays },
   { to: "/nieruchomosci", label: "Nieruchomości", icon: Building2 },
   { to: "/klienci", label: "Klienci", icon: Users },
   { to: "/umowy", label: "Umowy", icon: FileSignature, badge: "2" },

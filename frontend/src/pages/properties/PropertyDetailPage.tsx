@@ -9,6 +9,7 @@ import {
   type PropertyDetail,
 } from "../../api/properties";
 import { ApiError } from "../../api/client";
+import { EventTimeline } from "../calendar/EventTimeline";
 import { Badge } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
 import { formatCurrency, formatNumber } from "../../lib/format";
@@ -18,12 +19,12 @@ const statusTones: Record<
   string,
   "neutral" | "accent" | "good" | "warning" | "critical"
 > = {
-  ROBOCZA: "neutral",
-  AKTYWNA: "good",
-  ZAREZERWOWANA: "warning",
-  SPRZEDANA: "accent",
-  WYNAJETA: "accent",
-  ARCHIWALNA: "neutral",
+  DRAFT: "neutral",
+  ACTIVE: "good",
+  RESERVED: "warning",
+  SOLD: "accent",
+  RENTED: "accent",
+  ARCHIVED: "neutral",
 };
 
 export function PropertyDetailPage() {
@@ -120,13 +121,13 @@ export function PropertyDetailPage() {
 
   const p = property;
   const type = p.propertyType;
-  const isMieszkanie = type === "MIESZKANIE";
-  const isDom = type === "DOM";
-  const isDzialka = type === "DZIALKA";
-  const isLokal = type === "LOKAL_UZYTKOWY";
-  const isHala = type === "HALA_MAGAZYN";
-  const isGaraz = type === "GARAZ";
-  const isPokoj = type === "POKOJ";
+  const isMieszkanie = type === "APARTMENT";
+  const isDom = type === "HOUSE";
+  const isDzialka = type === "PLOT";
+  const isLokal = type === "COMMERCIAL_UNIT";
+  const isHala = type === "HALL_WAREHOUSE";
+  const isGaraz = type === "GARAGE";
+  const isPokoj = type === "ROOM";
 
   // Ta sama logika widoczności co w formularzu — szczegóły muszą pokazywać
   // dokładnie te pola, które dla danego typu mają sens.
@@ -415,6 +416,20 @@ export function PropertyDetailPage() {
           <Field label="Notatki wewnętrzne" value={p.privateNotes} />
         </Section>
       )}
+
+      {/* Terminy z kalendarza. Seria prezentacji z rezultatem „cena za wysoka"
+          jest argumentem w rozmowie z właścicielem — dlatego historia pokazów
+          mieszka na karcie oferty, a nie tylko w siatce kalendarza. */}
+      <section className="card">
+        <header className="border-b border-line px-4 py-3">
+          <h2 className="text-[13px] font-semibold tracking-tight text-ink">
+            Terminy
+          </h2>
+        </header>
+        <div className="p-4">
+          <EventTimeline propertyId={p.id} />
+        </div>
+      </section>
     </div>
   );
 }

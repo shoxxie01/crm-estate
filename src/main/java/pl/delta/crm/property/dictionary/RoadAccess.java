@@ -3,11 +3,11 @@ package pl.delta.crm.property.dictionary;
 /** Dojazd (Otodom: AccessMask — dla działki, domu i hali). */
 public enum RoadAccess implements Dictionary {
 
-    ASFALTOWY("Asfaltowy"),
-    UTWARDZONY("Utwardzony"),
-    BETONOWY("Utwardzony betonowy"),
-    POLNY("Polny"),
-    NIEUTWARDZONY("Nieutwardzony");
+    ASPHALT("Asfaltowy"),
+    HARDENED("Utwardzony"),
+    CONCRETE("Utwardzony betonowy"),
+    DIRT("Polny"),
+    UNPAVED("Nieutwardzony");
 
     private final String label;
 

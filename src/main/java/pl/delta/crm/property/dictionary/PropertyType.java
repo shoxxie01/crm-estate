@@ -6,13 +6,13 @@ package pl.delta.crm.property.dictionary;
  */
 public enum PropertyType implements Dictionary {
 
-    MIESZKANIE("Mieszkanie"),
-    DOM("Dom"),
-    DZIALKA("Działka"),
-    LOKAL_UZYTKOWY("Lokal użytkowy"),
-    HALA_MAGAZYN("Hala / magazyn"),
-    GARAZ("Garaż / miejsce postojowe"),
-    POKOJ("Pokój");
+    APARTMENT("Mieszkanie"),
+    HOUSE("Dom"),
+    PLOT("Działka"),
+    COMMERCIAL_UNIT("Lokal użytkowy"),
+    HALL_WAREHOUSE("Hala / magazyn"),
+    GARAGE("Garaż / miejsce postojowe"),
+    ROOM("Pokój");
 
     private final String label;
 
@@ -27,12 +27,12 @@ public enum PropertyType implements Dictionary {
 
     /** Otodom wymaga liczby pokoi dla mieszkania i domu — bez niej odrzuca ofertę. */
     public boolean requiresRoomsCount() {
-        return this == MIESZKANIE || this == DOM;
+        return this == APARTMENT || this == HOUSE;
     }
 
     /** Pokój da się wyłącznie wynająć — portale nie przyjmują go na sprzedaż. */
     public boolean rentOnly() {
-        return this == POKOJ;
+        return this == ROOM;
     }
 
     /**
@@ -41,6 +41,6 @@ public enum PropertyType implements Dictionary {
      * brak świadectwa nie może blokować eksportu.
      */
     public boolean requiresEnergyCertificate() {
-        return this != DZIALKA && this != GARAZ && this != POKOJ;
+        return this != PLOT && this != GARAGE && this != ROOM;
     }
 }

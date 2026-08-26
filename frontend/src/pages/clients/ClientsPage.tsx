@@ -180,9 +180,9 @@ export function ClientsPage() {
                     </td>
                     <td className="px-4 py-2.5">
                       <Badge
-                        tone={client.status === "AKTYWNY" ? "good" : "neutral"}
+                        tone={client.status === "ACTIVE" ? "good" : "neutral"}
                       >
-                        {client.status === "AKTYWNY" ? "Aktywny" : "Archiwalny"}
+                        {client.status === "ACTIVE" ? "Aktywny" : "Archiwalny"}
                       </Badge>
                     </td>
                   </tr>

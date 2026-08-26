@@ -6,6 +6,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import pl.delta.crm.PostgresTestcontainerConfig;
+import pl.delta.crm.calendar.dictionary.EventOutcome;
+import pl.delta.crm.calendar.dictionary.EventStatus;
+import pl.delta.crm.calendar.dictionary.EventType;
+import pl.delta.crm.client.dictionary.ClientStatus;
+import pl.delta.crm.client.dictionary.LeadSource;
 import pl.delta.crm.property.dictionary.BuildingMaterial;
 import pl.delta.crm.property.dictionary.BuildingType;
 import pl.delta.crm.property.dictionary.CommercialUse;
@@ -95,6 +100,11 @@ class EnumColumnWidthTest {
         MAPPING.put("property_media.media_type", MediaType.class);
         MAPPING.put("property_portal_publications.portal", Portal.class);
         MAPPING.put("property_portal_publications.status", PublicationStatus.class);
+        MAPPING.put("clients.source", LeadSource.class);
+        MAPPING.put("clients.status", ClientStatus.class);
+        MAPPING.put("calendar_events.type", EventType.class);
+        MAPPING.put("calendar_events.status", EventStatus.class);
+        MAPPING.put("calendar_events.outcome", EventOutcome.class);
     }
 
     @Autowired

@@ -8,6 +8,7 @@ import pl.delta.crm.client.dictionary.ClientStatus;
 import pl.delta.crm.client.dto.ClientResponse;
 import pl.delta.crm.client.dto.ClientSummary;
 import pl.delta.crm.client.dto.CreateClientRequest;
+import pl.delta.crm.contact.PhoneNumber;
 import pl.delta.crm.error.BusinessValidationException;
 import pl.delta.crm.error.ClientNotFoundException;
 import pl.delta.crm.error.PropertyNotFoundException;
@@ -51,10 +52,10 @@ public class ClientService {
                 request.firstName().trim(),
                 request.lastName().trim());
 
-        client.setPhone(trimToNull(request.phone()));
+        client.setPhone(PhoneNumber.normalize(request.phone()));
         client.setEmail(normalizeEmail(request.email()));
         client.setSource(request.source());
-        client.setStatus(orDefault(request.status(), ClientStatus.AKTYWNY));
+        client.setStatus(orDefault(request.status(), ClientStatus.ACTIVE));
         client.setNotes(trimToNull(request.notes()));
 
         Client saved = clients.save(client);
@@ -71,7 +72,7 @@ public class ClientService {
 
         client.setFirstName(request.firstName().trim());
         client.setLastName(request.lastName().trim());
-        client.setPhone(trimToNull(request.phone()));
+        client.setPhone(PhoneNumber.normalize(request.phone()));
         client.setEmail(normalizeEmail(request.email()));
         client.setSource(request.source());
         client.setStatus(orDefault(request.status(), client.getStatus()));
@@ -199,9 +200,9 @@ public class ClientService {
                 OwnerTransactionCount::getOwnerId,
                 row -> {
                     long[] counts = new long[2];
-                    if (row.getTransactionType() == TransactionType.SPRZEDAZ) {
+                    if (row.getTransactionType() == TransactionType.SALE) {
                         counts[0] = row.getCount();
-                    } else if (row.getTransactionType() == TransactionType.WYNAJEM) {
+                    } else if (row.getTransactionType() == TransactionType.RENT) {
                         counts[1] = row.getCount();
                     }
                     return counts;

@@ -6,6 +6,7 @@ import { LoginPage } from "./pages/auth/LoginPage";
 import { RegisterPage } from "./pages/auth/RegisterPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { PlaceholderPage } from "./pages/PlaceholderPage";
+import { CalendarPage } from "./pages/calendar/CalendarPage";
 import { ClientsPage } from "./pages/clients/ClientsPage";
 import { ClientFormPage } from "./pages/clients/ClientFormPage";
 import { ClientDetailPage } from "./pages/clients/ClientDetailPage";
@@ -24,7 +25,7 @@ export default function App() {
           <Route element={<ProtectedRoute />}>
             <Route element={<AppShell />}>
               <Route index element={<DashboardPage />} />
-              <Route path="/kalendarz" element={<PlaceholderPage />} />
+              <Route path="/kalendarz" element={<CalendarPage />} />
               <Route path="/nieruchomosci" element={<PropertiesPage />} />
               <Route path="/nieruchomosci/nowa" element={<PropertyFormPage />} />
               <Route

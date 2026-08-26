@@ -42,7 +42,7 @@ public class PortalPublication {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
-    private PublicationStatus status = PublicationStatus.NIEOPUBLIKOWANA;
+    private PublicationStatus status = PublicationStatus.NOT_PUBLISHED;
 
     @Column(name = "external_id", length = 64)
     private String externalId;
@@ -66,20 +66,20 @@ public class PortalPublication {
     }
 
     public void markSent() {
-        this.status = PublicationStatus.WYSLANA;
+        this.status = PublicationStatus.SENT;
         this.lastExportedAt = Instant.now();
         this.lastError = null;
     }
 
     public void markPublished(String externalId, String externalUrl) {
-        this.status = PublicationStatus.OPUBLIKOWANA;
+        this.status = PublicationStatus.PUBLISHED;
         this.externalId = externalId;
         this.externalUrl = externalUrl;
         this.lastError = null;
     }
 
     public void markFailed(String error) {
-        this.status = PublicationStatus.BLAD;
+        this.status = PublicationStatus.ERROR;
         this.lastError = error;
     }
 

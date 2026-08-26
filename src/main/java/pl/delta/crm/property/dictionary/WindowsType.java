@@ -3,10 +3,10 @@ package pl.delta.crm.property.dictionary;
 /** Okna (Otodom: WindowsType). */
 public enum WindowsType implements Dictionary {
 
-    PLASTIKOWE("Plastikowe"),
-    DREWNIANE("Drewniane"),
-    ALUMINIOWE("Aluminiowe"),
-    BRAK("Brak");
+    PVC("Plastikowe"),
+    WOODEN("Drewniane"),
+    ALUMINIUM("Aluminiowe"),
+    NONE("Brak");
 
     private final String label;
 
