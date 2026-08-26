@@ -8,8 +8,8 @@ import pl.delta.crm.property.dictionary.Dictionary;
  */
 public enum ClientStatus implements Dictionary {
 
-    AKTYWNY("Aktywny"),
-    ARCHIWALNY("Archiwalny");
+    ACTIVE("Aktywny"),
+    ARCHIVED("Archiwalny");
 
     private final String label;
 

@@ -3,11 +3,11 @@ package pl.delta.crm.property.dictionary;
 /** Rodzaj garażu lub miejsca postojowego. */
 public enum GarageType implements Dictionary {
 
-    WOLNOSTOJACY_MUROWANY("Wolnostojący murowany"),
-    BLASZANY("Blaszany"),
-    PODZIEMNY("Podziemny"),
-    MIEJSCE_W_HALI("Miejsce w hali garażowej"),
-    MIEJSCE_NAZIEMNE("Miejsce postojowe naziemne");
+    DETACHED_BRICK("Wolnostojący murowany"),
+    METAL_SHED("Blaszany"),
+    UNDERGROUND("Podziemny"),
+    SPACE_IN_GARAGE_HALL("Miejsce w hali garażowej"),
+    SURFACE_PARKING_SPACE("Miejsce postojowe naziemne");
 
     private final String label;
 

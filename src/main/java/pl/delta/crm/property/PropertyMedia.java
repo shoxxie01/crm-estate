@@ -96,7 +96,7 @@ public class PropertyMedia {
 
     /** Czy plik spełnia wymagania portali. Sprawdzane przed wysyłką paczki. */
     public boolean meetsPortalRequirements() {
-        if (mediaType != MediaType.ZDJECIE) {
+        if (mediaType != MediaType.PHOTO) {
             return true;
         }
         return sizeBytes <= MAX_SIZE_BYTES

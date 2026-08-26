@@ -3,9 +3,9 @@ package pl.delta.crm.property.dictionary;
 /** Poddasze (Otodom HouseDetails: GarretType). */
 public enum GarretType implements Dictionary {
 
-    UZYTKOWE("Użytkowe"),
-    NIEUZYTKOWE("Nieużytkowe"),
-    BRAK("Brak");
+    USABLE("Użytkowe"),
+    NON_USABLE("Nieużytkowe"),
+    NONE("Brak");
 
     private final String label;
 

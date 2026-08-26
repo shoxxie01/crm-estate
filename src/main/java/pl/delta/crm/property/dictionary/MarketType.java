@@ -6,8 +6,8 @@ package pl.delta.crm.property.dictionary;
  */
 public enum MarketType implements Dictionary {
 
-    PIERWOTNY("Pierwotny"),
-    WTORNY("Wtórny");
+    PRIMARY("Pierwotny"),
+    SECONDARY("Wtórny");
 
     private final String label;
 

@@ -79,10 +79,10 @@ class PropertyModuleTest {
     private static String flatBody() {
         return """
                 {
-                  "propertyType": "MIESZKANIE",
-                  "transactionType": "SPRZEDAZ",
-                  "marketType": "WTORNY",
-                  "status": "AKTYWNA",
+                  "propertyType": "APARTMENT",
+                  "transactionType": "SALE",
+                  "marketType": "SECONDARY",
+                  "status": "ACTIVE",
                   "title": "Dwupokojowe z balkonem, Stare Polesie",
                   "description": "Mieszkanie po remoncie, druga linia zabudowy, cicho.",
                   "pricing": { "price": 549000.00, "priceCurrency": "PLN" },
@@ -97,14 +97,14 @@ class PropertyModuleTest {
                   },
                   "building": {
                     "buildYear": 1938,
-                    "buildingType": "KAMIENICA",
-                    "buildingMaterial": "CEGLA",
-                    "constructionStatus": "DO_ZAMIESZKANIA",
-                    "ownershipForm": "PELNA_WLASNOSC"
+                    "buildingType": "TENEMENT",
+                    "buildingMaterial": "BRICK",
+                    "constructionStatus": "READY_TO_MOVE_IN",
+                    "ownershipForm": "FREEHOLD"
                   },
                   "energy": { "energyPrimary": 132.40, "energyClass": "D" },
-                  "heatingTypes": ["MIEJSKIE"],
-                  "features": ["BALKON", "PIWNICA", "DOMOFON", "INTERNET"]
+                  "heatingTypes": ["DISTRICT"],
+                  "features": ["BALCONY", "BASEMENT", "INTERCOM", "INTERNET"]
                 }
                 """;
     }
@@ -145,8 +145,8 @@ class PropertyModuleTest {
                 // Numer nadaje serwis; wzorzec zamiast konkretnej wartości,
                 // żeby test nie zaczął zależeć od bieżącego miesiąca.
                 .andExpect(jsonPath("$.referenceNumber").value(matchesPattern("\\d{4}/\\d{2}/001")))
-                .andExpect(jsonPath("$.propertyType").value("MIESZKANIE"))
-                .andExpect(jsonPath("$.marketType").value("WTORNY"))
+                .andExpect(jsonPath("$.propertyType").value("APARTMENT"))
+                .andExpect(jsonPath("$.marketType").value("SECONDARY"))
                 .andExpect(jsonPath("$.pricing.price").value(549000.00))
                 .andExpect(jsonPath("$.pricing.pricePerSquareMeter").value(11557.89))
                 .andExpect(jsonPath("$.address.city").value("Łódź"))
@@ -317,10 +317,10 @@ class PropertyModuleTest {
         mockMvc.perform(get("/api/properties/dictionaries")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.propertyType[0].value").value("MIESZKANIE"))
+                .andExpect(jsonPath("$.propertyType[0].value").value("APARTMENT"))
                 .andExpect(jsonPath("$.propertyType[0].label").value("Mieszkanie"))
                 .andExpect(jsonPath("$.voivodeship.length()").value(16))
-                .andExpect(jsonPath("$.featureGroups[0].category").value("DODATKOWE"))
+                .andExpect(jsonPath("$.featureGroups[0].category").value("ADDITIONAL"))
                 .andExpect(jsonPath("$.featureGroups[0].features").isArray());
     }
 
@@ -349,7 +349,7 @@ class PropertyModuleTest {
         String token = tokenFor("anna@delta.pl", "Delta Nieruchomości");
 
         String body = flatBody()
-                .replace("\"buildingType\": \"KAMIENICA\"", "\"buildingType\": \"WIEZOWIEC\"");
+                .replace("\"buildingType\": \"TENEMENT\"", "\"buildingType\": \"WIEZOWIEC\"");
 
         mockMvc.perform(post("/api/properties")
                         .header("Authorization", "Bearer " + token)
@@ -365,7 +365,7 @@ class PropertyModuleTest {
         String token = tokenFor("anna@delta.pl", "Delta Nieruchomości");
 
         String body = flatBody()
-                .replace("\"propertyType\": \"MIESZKANIE\"", "\"propertyType\": \"POKOJ\"");
+                .replace("\"propertyType\": \"APARTMENT\"", "\"propertyType\": \"ROOM\"");
 
         mockMvc.perform(post("/api/properties")
                         .header("Authorization", "Bearer " + token)

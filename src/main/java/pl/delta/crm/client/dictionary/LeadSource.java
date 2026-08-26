@@ -5,12 +5,12 @@ import pl.delta.crm.property.dictionary.Dictionary;
 /** Skąd trafił do biura klient — źródło pozyskania kontaktu. */
 public enum LeadSource implements Dictionary {
 
-    POLECENIE("Polecenie"),
-    PORTAL("Portal ogłoszeniowy"),
-    TELEFON("Telefon"),
-    STRONA_WWW("Strona WWW"),
-    WIZYTA("Wizyta w biurze"),
-    INNE("Inne");
+    REFERRAL("Polecenie"),
+    LISTING_PORTAL("Portal ogłoszeniowy"),
+    PHONE_CALL("Telefon"),
+    WEBSITE("Strona WWW"),
+    OFFICE_VISIT("Wizyta w biurze"),
+    OTHER("Inne");
 
     private final String label;
 

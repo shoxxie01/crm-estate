@@ -13,25 +13,25 @@ package pl.delta.crm.property.dictionary;
 public enum BuildingType implements Dictionary {
 
     // zabudowa mieszkaniowa wielorodzinna
-    BLOK("Blok"),
-    KAMIENICA("Kamienica"),
-    APARTAMENTOWIEC("Apartamentowiec"),
-    PLOMBA("Plomba"),
+    APARTMENT_BLOCK("Blok"),
+    TENEMENT("Kamienica"),
+    APARTMENT_BUILDING("Apartamentowiec"),
+    INFILL_BUILDING("Plomba"),
     LOFT("Loft"),
 
     // zabudowa jednorodzinna
-    DOM_WOLNOSTOJACY("Dom wolnostojący"),
-    BLIZNIAK("Bliźniak"),
-    SZEREGOWIEC("Szeregowiec"),
-    DWOREK_PALAC("Dworek / pałac"),
-    GOSPODARSTWO("Gospodarstwo"),
+    DETACHED_HOUSE("Dom wolnostojący"),
+    SEMI_DETACHED("Bliźniak"),
+    TERRACED("Szeregowiec"),
+    MANOR_PALACE("Dworek / pałac"),
+    FARMSTEAD("Gospodarstwo"),
 
     // umiejscowienie lokalu użytkowego
-    W_CENTRUM_HANDLOWYM("W centrum handlowym"),
-    W_BIUROWCU("W biurowcu"),
-    W_DOMU_PRYWATNYM("W domu prywatnym"),
-    W_BUDYNKU_ZABYTKOWYM("W budynku zabytkowym"),
-    OSOBNY_OBIEKT("Osobny obiekt");
+    IN_SHOPPING_CENTRE("W centrum handlowym"),
+    IN_OFFICE_BUILDING("W biurowcu"),
+    IN_PRIVATE_HOUSE("W domu prywatnym"),
+    IN_HISTORIC_BUILDING("W budynku zabytkowym"),
+    STANDALONE_BUILDING("Osobny obiekt");
 
     private final String label;
 

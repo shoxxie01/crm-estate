@@ -114,6 +114,32 @@ public class Address {
         return city;
     }
 
+    /**
+     * Adres w jednej linii — „Grzybowska 41, Warszawa". Używają go moduły, które
+     * pokazują ofertę w cudzym kontekście (kalendarz w kafelku terminu), żeby nie
+     * składać tego z pojedynczych pól w kilku miejscach i nie rozjechać formatu.
+     * Zwraca {@code null}, gdy nie ma z czego złożyć nawet miejscowości.
+     */
+    public String shortLine() {
+        StringBuilder line = new StringBuilder();
+
+        if (street != null && !street.isBlank()) {
+            line.append(street);
+            if (buildingNumber != null && !buildingNumber.isBlank()) {
+                line.append(' ').append(buildingNumber);
+            }
+        }
+
+        if (city != null && !city.isBlank()) {
+            if (!line.isEmpty()) {
+                line.append(", ");
+            }
+            line.append(city);
+        }
+
+        return line.isEmpty() ? null : line.toString();
+    }
+
     public String getDistrict() {
         return district;
     }

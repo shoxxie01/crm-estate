@@ -6,14 +6,14 @@ package pl.delta.crm.property.dictionary;
  */
 public enum CommercialUse implements Dictionary {
 
-    BIUROWY("Biurowy"),
-    HANDLOWY("Handlowy"),
-    USLUGOWY("Usługowy"),
-    GASTRONOMICZNY("Gastronomiczny"),
-    MAGAZYNOWY("Magazynowy"),
-    PRODUKCYJNY("Produkcyjny"),
-    PRZEMYSLOWY("Przemysłowy"),
-    HOTELOWY("Hotelowy");
+    OFFICE("Biurowy"),
+    RETAIL("Handlowy"),
+    SERVICE("Usługowy"),
+    RESTAURANT("Gastronomiczny"),
+    WAREHOUSE("Magazynowy"),
+    MANUFACTURING("Produkcyjny"),
+    INDUSTRIAL("Przemysłowy"),
+    HOTEL("Hotelowy");
 
     private final String label;
 

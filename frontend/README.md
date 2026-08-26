@@ -37,6 +37,7 @@ nazw semantycznych (`bg-surface`, `text-ink-muted`, `border-line`).
 | `accent` | jedyny kolor akcji (granat `#2F5FE0`) |
 | `good` `warning` `serious` `critical` | statusy — zarezerwowane, nigdy jako kolor serii |
 | `series-1` `series-2` | paleta kategorialna wykresów |
+| `event-*` / `event-*-tint` | rodzaj terminu w kalendarzu (9 kategorii) |
 | `seq-1` … `seq-5` | ramp sekwencyjny (jeden odcień, więcej = ciemniej) |
 
 ### Kolory wykresów
@@ -46,6 +47,25 @@ pasma jasności, progu chromy, rozróżnialności przy CVD (daltonizm) i kontras
 
 - kategorialna `#2a78d6` / `#eb6834` — najgorsza para: ΔE 24,7 (protan), 33,6 (norma)
 - sekwencyjna `#86b6ef → #104281` — monotoniczna, wszystkie odstępy ΔL ≥ 0,06
+
+### Kolory kalendarza
+
+Rodzaj terminu ma własną paletę (`--color-event-*`), bo dziewięciu kategorii nie
+udźwignie paleta kategorialna wykresów — ta ma zwalidowane dwa kolory. Przy
+dziewięciu odcień przestaje wystarczać: w symulacji protanopii najgorsza para
+dobrana samym odcieniem wychodziła ΔE 0,3, czyli praktycznie ten sam kolor.
+
+Dlatego paleta **rozstrzela też jasność** — L* od 29 (`event-task`) do 56
+(`event-valuation`) — i to ona rozdziela odcienie, które przy daltonizmie się
+zlewają. Wynik: najgorsza para to ΔE 11,3 (deuteranopia), 11,4 (protanopia)
+i 27,3 przy normalnym widzeniu.
+
+Warunki brzegowe: każdy kolor wiodący ma ≥ 3,5:1 kontrastu na białym (jako
+element nietekstowy — obramowanie, ikona, kropka), a tekst na kafelku zostaje
+`ink`, więc jego czytelność nie zależy od rodzaju (≥ 12,7:1 na każdej tincie).
+
+Kolor **nigdy nie jest jedynym nośnikiem rodzaju**: na kafelku stoi obok niego
+ikona, w panelu i na osi czasu także etykieta, a nad siatką jest legenda.
 
 Zasady, które trzeba utrzymać przy dokładaniu wykresów:
 
@@ -67,6 +87,8 @@ src/
     charts/    StatTile, Sparkline, StackedBarChart, RankedBarChart
   data/        dane demo dashboardu (kształt = przyszła odpowiedź API)
   pages/       Dashboard, Placeholder, auth/{Login,Register,AuthLayout}
+    calendar/  siatka miesiąc/tydzień/dzień, panel terminu, formularz,
+               oś czasu wstawiana na karty oferty i klienta
 ```
 
 ## Kontrakt z backendem
@@ -81,6 +103,10 @@ Frontend oczekuje od Spring Boota:
 | `GET /api/properties` | — | strona `PropertySummary` |
 | `POST /api/properties` | `CreatePropertyPayload` | pełna oferta |
 | `GET /api/properties/dictionaries` | — | słowniki formularza |
+| `GET /api/calendar/events?from=&to=` | — | lista terminów w zakresie |
+| `POST /api/calendar/events` | `CreateEventPayload` | pełny termin + kolizje |
+| `PUT /api/calendar/events/{id}/status` | `{ status, outcome?, outcomeNote? }` | domknięcie terminu |
+| `GET /api/properties/{id}/events`, `GET /api/clients/{id}/events` | — | terminy na kartach |
 
 `User`: `{ id, email, firstName, lastName, role: "AGENT"｜"MANAGER"｜"ADMIN", agencyName }`
 
@@ -89,6 +115,13 @@ nieruchomości, forma własności czy materiał budowy to po stronie frontu zwyk
 stringi, a listy wyboru pochodzą z `/api/properties/dictionaries` — razem
 z polskimi etykietami. Powielenie tych dwudziestu kilku enumów oznaczałoby dwa
 źródła prawdy rozjeżdżające się przy każdej zmianie w backendzie.
+
+Kalendarz wysyła i odbiera czas jako ISO-8601 w UTC; siatka dni liczona jest
+w czasie lokalnym przeglądarki. Kafelek terminu koduje dwie rzeczy naraz, więc
+mają rozdzielone kanały: **rodzaj niesie kolor** (tło, obramowanie, ikona,
+kropka w legendzie), a **status — sposób podania** (pogrubienie przy
+potwierdzonym, wyblaknięcie przy odbytym, przekreślenie przy odwołanym,
+czerwona obwódka przy nieobecności). Paleta rodzajów: patrz „Kolory kalendarza".
 
 Błędy: `ProblemDetail` (RFC 7807). Pole `detail` trafia do komunikatu ogólnego,
 opcjonalna mapa `errors: { pole: komunikat }` — pod konkretne pola formularza.

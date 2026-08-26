@@ -3,12 +3,12 @@ package pl.delta.crm.property.dictionary;
 /** Nawierzchnia parkingu przy hali lub obiekcie (Otodom HallDetails: ParkingType). */
 public enum ParkingType implements Dictionary {
 
-    ASFALTOWY("Asfaltowy"),
-    BETONOWY("Betonowy"),
-    KOSTKA_BRUKOWA("Kostka brukowa"),
-    UTWARDZONY("Utwardzony"),
-    NIEUTWARDZONY("Nieutwardzony"),
-    BRAK("Brak");
+    ASPHALT("Asfaltowy"),
+    CONCRETE("Betonowy"),
+    PAVING_STONE("Kostka brukowa"),
+    HARDENED("Utwardzony"),
+    UNPAVED("Nieutwardzony"),
+    NONE("Brak");
 
     private final String label;
 

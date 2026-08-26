@@ -3,8 +3,8 @@ package pl.delta.crm.property.dictionary;
 /** Dostęp do łazienki przy wynajmie pokoju. */
 public enum RoomBathroom implements Dictionary {
 
-    OSOBNA("Osobna"),
-    WSPOLDZIELONA("Współdzielona");
+    PRIVATE("Osobna"),
+    SHARED("Współdzielona");
 
     private final String label;
 

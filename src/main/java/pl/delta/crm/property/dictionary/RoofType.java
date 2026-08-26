@@ -3,9 +3,9 @@ package pl.delta.crm.property.dictionary;
 /** Kształt dachu (Otodom HouseDetails: RoofType). */
 public enum RoofType implements Dictionary {
 
-    PLASKI("Płaski"),
-    SKOSNY("Skośny"),
-    BRAK("Brak");
+    FLAT("Płaski"),
+    PITCHED("Skośny"),
+    NONE("Brak");
 
     private final String label;
 

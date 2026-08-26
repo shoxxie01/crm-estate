@@ -13,6 +13,7 @@ import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { Select } from "../../components/ui/Select";
 import { Textarea } from "../../components/ui/Textarea";
+import { isValidPhone } from "../../lib/phone";
 
 type Fields = Record<string, string>;
 
@@ -22,7 +23,7 @@ const INITIAL: Fields = {
   phone: "",
   email: "",
   source: "",
-  status: "AKTYWNY",
+  status: "ACTIVE",
   notes: "",
 };
 
@@ -81,14 +82,11 @@ export function ClientFormPage() {
       current.has(key) ? current : new Set(current).add(key),
     );
 
-  // Telefon: opcjonalny, ale jeśli podany — wyłącznie w formacie
-  // +000 000 000 000 (kod kraju + trzy grupy po trzy cyfry). Pole samo się
-  // formatuje przy wpisywaniu, a ta walidacja pilnuje pełnej długości.
   function validate(): Record<string, string> {
     const e: Record<string, string> = {};
     const phone = fields.phone.trim();
-    if (phone !== "" && !/^\+\d{3} \d{3} \d{3} \d{3}$/.test(phone)) {
-      e.phone = "Numer telefonu w formacie +000 000 000 000.";
+    if (phone !== "" && !isValidPhone(phone)) {
+      e.phone = "Podaj numer telefonu, np. +48 605 405 932.";
     }
     return e;
   }
@@ -206,13 +204,13 @@ export function ClientFormPage() {
             inputMode="tel"
             value={fields.phone}
             onChange={(event) =>
-              setFields((c) => ({ ...c, phone: formatPhone(event.target.value) }))
+              setFields((c) => ({ ...c, phone: event.target.value }))
             }
             onBlur={markTouched("phone")}
             error={errorFor("phone")}
-            hint="Format: +000 000 000 000. Wymagany telefon lub e-mail."
-            placeholder="+000 000 000 000"
-            maxLength={16}
+            hint="Np. +48 605 405 932. Wymagany telefon lub e-mail."
+            placeholder="+48 605 405 932"
+            maxLength={30}
           />
           <Input
             label="E-mail"
@@ -264,14 +262,3 @@ export function ClientFormPage() {
 const blank = (value: string): string | undefined =>
   value.trim() === "" ? undefined : value.trim();
 
-// Wymusza format +000 000 000 000: zostawia same cyfry (maks. 12) i składa je
-// w grupy po trzy z wiodącym plusem. Dzięki temu nie da się wpisać innego kształtu.
-function formatPhone(raw: string): string {
-  const digits = raw.replace(/\D/g, "").slice(0, 12);
-  if (digits === "") return "";
-  const groups: string[] = [];
-  for (let i = 0; i < digits.length; i += 3) {
-    groups.push(digits.slice(i, i + 3));
-  }
-  return "+" + groups.join(" ");
-}

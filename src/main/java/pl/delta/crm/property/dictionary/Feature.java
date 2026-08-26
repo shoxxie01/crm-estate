@@ -6,18 +6,18 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static pl.delta.crm.property.dictionary.FeatureCategory.DODATKOWE;
-import static pl.delta.crm.property.dictionary.FeatureCategory.MEDIA;
-import static pl.delta.crm.property.dictionary.FeatureCategory.OGRODZENIE;
-import static pl.delta.crm.property.dictionary.FeatureCategory.OKOLICA;
-import static pl.delta.crm.property.dictionary.FeatureCategory.WYPOSAZENIE;
-import static pl.delta.crm.property.dictionary.FeatureCategory.ZABEZPIECZENIA;
-import static pl.delta.crm.property.dictionary.PropertyType.DOM;
-import static pl.delta.crm.property.dictionary.PropertyType.DZIALKA;
-import static pl.delta.crm.property.dictionary.PropertyType.HALA_MAGAZYN;
-import static pl.delta.crm.property.dictionary.PropertyType.LOKAL_UZYTKOWY;
-import static pl.delta.crm.property.dictionary.PropertyType.MIESZKANIE;
-import static pl.delta.crm.property.dictionary.PropertyType.POKOJ;
+import static pl.delta.crm.property.dictionary.FeatureCategory.ADDITIONAL;
+import static pl.delta.crm.property.dictionary.FeatureCategory.UTILITIES;
+import static pl.delta.crm.property.dictionary.FeatureCategory.FENCING;
+import static pl.delta.crm.property.dictionary.FeatureCategory.NEIGHBOURHOOD;
+import static pl.delta.crm.property.dictionary.FeatureCategory.EQUIPMENT;
+import static pl.delta.crm.property.dictionary.FeatureCategory.SECURITY;
+import static pl.delta.crm.property.dictionary.PropertyType.HOUSE;
+import static pl.delta.crm.property.dictionary.PropertyType.PLOT;
+import static pl.delta.crm.property.dictionary.PropertyType.HALL_WAREHOUSE;
+import static pl.delta.crm.property.dictionary.PropertyType.COMMERCIAL_UNIT;
+import static pl.delta.crm.property.dictionary.PropertyType.APARTMENT;
+import static pl.delta.crm.property.dictionary.PropertyType.ROOM;
 
 /**
  * Cechy nieruchomości — jeden zbiór zamiast sześciu osobnych list boolean.
@@ -33,75 +33,75 @@ import static pl.delta.crm.property.dictionary.PropertyType.POKOJ;
 public enum Feature implements Dictionary {
 
     // --- informacje dodatkowe -------------------------------------------------
-    BALKON("Balkon", DODATKOWE, MIESZKANIE, DOM, POKOJ),
-    TARAS("Taras", DODATKOWE, MIESZKANIE, DOM, LOKAL_UZYTKOWY),
-    LOGGIA("Loggia", DODATKOWE, MIESZKANIE, POKOJ),
-    OGRODEK("Ogródek", DODATKOWE, MIESZKANIE, DOM),
-    PIWNICA("Piwnica", DODATKOWE, MIESZKANIE, DOM, LOKAL_UZYTKOWY),
-    STRYCH("Strych", DODATKOWE, MIESZKANIE, DOM),
-    GARAZ("Garaż", DODATKOWE, MIESZKANIE, DOM),
-    MIEJSCE_POSTOJOWE("Miejsce postojowe", DODATKOWE, MIESZKANIE, DOM, LOKAL_UZYTKOWY, HALA_MAGAZYN),
-    KOMORKA_LOKATORSKA("Komórka lokatorska", DODATKOWE, MIESZKANIE),
-    POMIESZCZENIE_UZYTKOWE("Pomieszczenie użytkowe", DODATKOWE, MIESZKANIE, DOM, LOKAL_UZYTKOWY),
-    WINDA("Winda", DODATKOWE, MIESZKANIE, LOKAL_UZYTKOWY, POKOJ),
-    KLIMATYZACJA("Klimatyzacja", DODATKOWE, MIESZKANIE, DOM, LOKAL_UZYTKOWY, HALA_MAGAZYN, POKOJ),
-    DWUPOZIOMOWE("Dwupoziomowe", DODATKOWE, MIESZKANIE),
-    ODDZIELNA_KUCHNIA("Oddzielna kuchnia", DODATKOWE, MIESZKANIE, DOM, POKOJ),
-    BASEN("Basen", DODATKOWE, DOM),
-    WITRYNA("Witryna", DODATKOWE, LOKAL_UZYTKOWY),
-    PODJAZD_DLA_NIEPELNOSPRAWNYCH("Dostęp dla niepełnosprawnych", DODATKOWE,
-            MIESZKANIE, DOM, LOKAL_UZYTKOWY, HALA_MAGAZYN, POKOJ),
-    TYLKO_DLA_NIEPALACYCH("Tylko dla niepalących", DODATKOWE, MIESZKANIE, POKOJ),
-    ZWIERZETA_DOZWOLONE("Zwierzęta dozwolone", DODATKOWE, MIESZKANIE, DOM, POKOJ),
+    BALCONY("Balkon", ADDITIONAL, APARTMENT, HOUSE, ROOM),
+    TERRACE("Taras", ADDITIONAL, APARTMENT, HOUSE, COMMERCIAL_UNIT),
+    LOGGIA("Loggia", ADDITIONAL, APARTMENT, ROOM),
+    GARDEN("Ogródek", ADDITIONAL, APARTMENT, HOUSE),
+    BASEMENT("Piwnica", ADDITIONAL, APARTMENT, HOUSE, COMMERCIAL_UNIT),
+    ATTIC("Strych", ADDITIONAL, APARTMENT, HOUSE),
+    GARAGE("Garaż", ADDITIONAL, APARTMENT, HOUSE),
+    PARKING_SPACE("Miejsce postojowe", ADDITIONAL, APARTMENT, HOUSE, COMMERCIAL_UNIT, HALL_WAREHOUSE),
+    STORAGE_ROOM("Komórka lokatorska", ADDITIONAL, APARTMENT),
+    UTILITY_ROOM("Pomieszczenie użytkowe", ADDITIONAL, APARTMENT, HOUSE, COMMERCIAL_UNIT),
+    ELEVATOR("Winda", ADDITIONAL, APARTMENT, COMMERCIAL_UNIT, ROOM),
+    AIR_CONDITIONING("Klimatyzacja", ADDITIONAL, APARTMENT, HOUSE, COMMERCIAL_UNIT, HALL_WAREHOUSE, ROOM),
+    TWO_LEVEL("Dwupoziomowe", ADDITIONAL, APARTMENT),
+    SEPARATE_KITCHEN("Oddzielna kuchnia", ADDITIONAL, APARTMENT, HOUSE, ROOM),
+    SWIMMING_POOL("Basen", ADDITIONAL, HOUSE),
+    SHOP_WINDOW("Witryna", ADDITIONAL, COMMERCIAL_UNIT),
+    WHEELCHAIR_ACCESS("Dostęp dla niepełnosprawnych", ADDITIONAL,
+            APARTMENT, HOUSE, COMMERCIAL_UNIT, HALL_WAREHOUSE, ROOM),
+    NON_SMOKERS_ONLY("Tylko dla niepalących", ADDITIONAL, APARTMENT, ROOM),
+    PETS_ALLOWED("Zwierzęta dozwolone", ADDITIONAL, APARTMENT, HOUSE, ROOM),
 
     // --- zabezpieczenia -------------------------------------------------------
-    DOMOFON("Domofon / wideofon", ZABEZPIECZENIA, MIESZKANIE, DOM, LOKAL_UZYTKOWY, POKOJ),
-    MONITORING("Monitoring / ochrona", ZABEZPIECZENIA,
-            MIESZKANIE, DOM, DZIALKA, LOKAL_UZYTKOWY, HALA_MAGAZYN, PropertyType.GARAZ, POKOJ),
-    SYSTEM_ALARMOWY("System alarmowy", ZABEZPIECZENIA,
-            MIESZKANIE, DOM, LOKAL_UZYTKOWY, HALA_MAGAZYN, PropertyType.GARAZ),
-    DRZWI_ANTYWLAMANIOWE("Drzwi / okna antywłamaniowe", ZABEZPIECZENIA,
-            MIESZKANIE, DOM, LOKAL_UZYTKOWY),
-    ROLETY_ANTYWLAMANIOWE("Rolety antywłamaniowe", ZABEZPIECZENIA, MIESZKANIE, DOM, LOKAL_UZYTKOWY),
-    TEREN_ZAMKNIETY("Teren zamknięty", ZABEZPIECZENIA,
-            MIESZKANIE, DOM, DZIALKA, LOKAL_UZYTKOWY, HALA_MAGAZYN, PropertyType.GARAZ),
+    INTERCOM("Domofon / wideofon", SECURITY, APARTMENT, HOUSE, COMMERCIAL_UNIT, ROOM),
+    CCTV_SECURITY("Monitoring / ochrona", SECURITY,
+            APARTMENT, HOUSE, PLOT, COMMERCIAL_UNIT, HALL_WAREHOUSE, PropertyType.GARAGE, ROOM),
+    ALARM_SYSTEM("System alarmowy", SECURITY,
+            APARTMENT, HOUSE, COMMERCIAL_UNIT, HALL_WAREHOUSE, PropertyType.GARAGE),
+    ANTI_BURGLARY_DOORS("Drzwi / okna antywłamaniowe", SECURITY,
+            APARTMENT, HOUSE, COMMERCIAL_UNIT),
+    ANTI_BURGLARY_SHUTTERS("Rolety antywłamaniowe", SECURITY, APARTMENT, HOUSE, COMMERCIAL_UNIT),
+    GATED_AREA("Teren zamknięty", SECURITY,
+            APARTMENT, HOUSE, PLOT, COMMERCIAL_UNIT, HALL_WAREHOUSE, PropertyType.GARAGE),
 
     // --- media ----------------------------------------------------------------
-    PRAD("Prąd", MEDIA, DOM, DZIALKA, LOKAL_UZYTKOWY, HALA_MAGAZYN, PropertyType.GARAZ),
-    PRAD_SILA("Prąd — siła (3-fazowy)", MEDIA, DOM, DZIALKA, LOKAL_UZYTKOWY, HALA_MAGAZYN),
-    WODA_MIEJSKA("Woda miejska", MEDIA, DOM, DZIALKA, LOKAL_UZYTKOWY, HALA_MAGAZYN),
-    STUDNIA("Studnia", MEDIA, DOM, DZIALKA),
-    GAZ("Gaz", MEDIA, DOM, DZIALKA, LOKAL_UZYTKOWY, HALA_MAGAZYN),
-    KANALIZACJA("Kanalizacja", MEDIA, DOM, DZIALKA, LOKAL_UZYTKOWY, HALA_MAGAZYN),
-    SZAMBO("Szambo", MEDIA, DOM, DZIALKA),
-    OCZYSZCZALNIA("Oczyszczalnia", MEDIA, DOM, DZIALKA),
-    INTERNET("Internet", MEDIA, MIESZKANIE, DOM, LOKAL_UZYTKOWY, HALA_MAGAZYN, POKOJ),
-    TELEWIZJA_KABLOWA("Telewizja kablowa", MEDIA, MIESZKANIE, DOM, POKOJ),
-    TELEFON("Telefon", MEDIA, MIESZKANIE, DOM, LOKAL_UZYTKOWY),
+    ELECTRICITY("Prąd", UTILITIES, HOUSE, PLOT, COMMERCIAL_UNIT, HALL_WAREHOUSE, PropertyType.GARAGE),
+    THREE_PHASE_POWER("Prąd — siła (3-fazowy)", UTILITIES, HOUSE, PLOT, COMMERCIAL_UNIT, HALL_WAREHOUSE),
+    MUNICIPAL_WATER("Woda miejska", UTILITIES, HOUSE, PLOT, COMMERCIAL_UNIT, HALL_WAREHOUSE),
+    WELL("Studnia", UTILITIES, HOUSE, PLOT),
+    GAS("Gaz", UTILITIES, HOUSE, PLOT, COMMERCIAL_UNIT, HALL_WAREHOUSE),
+    SEWERAGE("Kanalizacja", UTILITIES, HOUSE, PLOT, COMMERCIAL_UNIT, HALL_WAREHOUSE),
+    SEPTIC_TANK("Szambo", UTILITIES, HOUSE, PLOT),
+    SEWAGE_TREATMENT("Oczyszczalnia", UTILITIES, HOUSE, PLOT),
+    INTERNET("Internet", UTILITIES, APARTMENT, HOUSE, COMMERCIAL_UNIT, HALL_WAREHOUSE, ROOM),
+    CABLE_TV("Telewizja kablowa", UTILITIES, APARTMENT, HOUSE, ROOM),
+    PHONE_LINE("Telefon", UTILITIES, APARTMENT, HOUSE, COMMERCIAL_UNIT),
 
     // --- wyposażenie ----------------------------------------------------------
-    PRALKA("Pralka", WYPOSAZENIE, MIESZKANIE, DOM, POKOJ),
-    ZMYWARKA("Zmywarka", WYPOSAZENIE, MIESZKANIE, DOM),
-    LODOWKA("Lodówka", WYPOSAZENIE, MIESZKANIE, DOM, POKOJ),
-    KUCHENKA("Kuchenka", WYPOSAZENIE, MIESZKANIE, DOM, POKOJ),
-    PIEKARNIK("Piekarnik", WYPOSAZENIE, MIESZKANIE, DOM),
-    TELEWIZOR("Telewizor", WYPOSAZENIE, MIESZKANIE, DOM, POKOJ),
-    MEBLE("Meble", WYPOSAZENIE, MIESZKANIE, DOM, LOKAL_UZYTKOWY, POKOJ),
+    WASHING_MACHINE("Pralka", EQUIPMENT, APARTMENT, HOUSE, ROOM),
+    DISHWASHER("Zmywarka", EQUIPMENT, APARTMENT, HOUSE),
+    FRIDGE("Lodówka", EQUIPMENT, APARTMENT, HOUSE, ROOM),
+    STOVE("Kuchenka", EQUIPMENT, APARTMENT, HOUSE, ROOM),
+    OVEN("Piekarnik", EQUIPMENT, APARTMENT, HOUSE),
+    TV_SET("Telewizor", EQUIPMENT, APARTMENT, HOUSE, ROOM),
+    FURNITURE("Meble", EQUIPMENT, APARTMENT, HOUSE, COMMERCIAL_UNIT, ROOM),
 
     // --- okolica --------------------------------------------------------------
-    LAS("Las", OKOLICA, MIESZKANIE, DOM, DZIALKA, POKOJ),
-    JEZIORO("Jezioro", OKOLICA, MIESZKANIE, DOM, DZIALKA, POKOJ),
-    MORZE("Morze", OKOLICA, MIESZKANIE, DOM, DZIALKA, POKOJ),
-    GORY("Góry", OKOLICA, MIESZKANIE, DOM, DZIALKA, POKOJ),
-    OTWARTY_TEREN("Otwarty teren", OKOLICA, DOM, DZIALKA),
+    FOREST("Las", NEIGHBOURHOOD, APARTMENT, HOUSE, PLOT, ROOM),
+    LAKE("Jezioro", NEIGHBOURHOOD, APARTMENT, HOUSE, PLOT, ROOM),
+    SEA("Morze", NEIGHBOURHOOD, APARTMENT, HOUSE, PLOT, ROOM),
+    MOUNTAINS("Góry", NEIGHBOURHOOD, APARTMENT, HOUSE, PLOT, ROOM),
+    OPEN_AREA("Otwarty teren", NEIGHBOURHOOD, HOUSE, PLOT),
 
     // --- ogrodzenie -----------------------------------------------------------
-    OGRODZENIE_MUROWANE("Murowane", OGRODZENIE, DOM, DZIALKA, HALA_MAGAZYN),
-    OGRODZENIE_METALOWE("Metalowe", OGRODZENIE, DOM, DZIALKA, HALA_MAGAZYN),
-    OGRODZENIE_SIATKA("Siatka", OGRODZENIE, DOM, DZIALKA, HALA_MAGAZYN),
-    OGRODZENIE_DREWNIANE("Drewniane", OGRODZENIE, DOM, DZIALKA),
-    OGRODZENIE_BETONOWE("Betonowe", OGRODZENIE, DOM, DZIALKA, HALA_MAGAZYN),
-    OGRODZENIE_ZYWOPLOT("Żywopłot", OGRODZENIE, DOM, DZIALKA);
+    FENCE_BRICK("Murowane", FENCING, HOUSE, PLOT, HALL_WAREHOUSE),
+    FENCE_METAL("Metalowe", FENCING, HOUSE, PLOT, HALL_WAREHOUSE),
+    FENCE_MESH("Siatka", FENCING, HOUSE, PLOT, HALL_WAREHOUSE),
+    FENCE_WOOD("Drewniane", FENCING, HOUSE, PLOT),
+    FENCE_CONCRETE("Betonowe", FENCING, HOUSE, PLOT, HALL_WAREHOUSE),
+    FENCE_HEDGE("Żywopłot", FENCING, HOUSE, PLOT);
 
     private final String label;
     private final FeatureCategory category;

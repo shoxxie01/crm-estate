@@ -30,6 +30,29 @@
   --color-delta-up: #006300; /* zieleń o kontraście tekstowym */
   --color-delta-down: #d03b3b;
 
+  /* Kalendarz — rodzaj terminu. Dziewięć kategorii to więcej, niż niesie
+     paleta wykresów, więc te kolory różnią się nie tylko odcieniem, ale
+     i jasnością (L* od 29 do 56): przy protanopii i deuteranopii część
+     odcieni się zlewa i tylko jasność je rozdziela. Liczby w frontend/README. */
+  --color-event-presentation: #2073b6;
+  --color-event-presentation-tint: #dbe6f8;
+  --color-event-meeting: #765999;
+  --color-event-meeting-tint: #eae0f3;
+  --color-event-valuation: #009897;
+  --color-event-valuation-tint: #d1eeed;
+  --color-event-contract: #487f45;
+  --color-event-contract-tint: #dcead9;
+  --color-event-open-house: #873216;
+  --color-event-open-house-tint: #f4dbd3;
+  --color-event-photo: #af2c7e;
+  --color-event-photo-tint: #f4dee9;
+  --color-event-phone: #9e8428;
+  --color-event-phone-tint: #f1e8d5;
+  --color-event-task: #2c4758;
+  --color-event-task-tint: #d8e0e6;
+  --color-event-other: #807779;
+  --color-event-other-tint: #e9e6e7;
+
   /* Wykresy — paleta kategorialna (zwalidowana na tle #ffffff) */
   --color-series-1: #2a78d6; /* blue   */
   --color-series-2: #eb6834; /* orange */

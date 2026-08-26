@@ -99,7 +99,7 @@ public class Property {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
-    private PropertyStatus status = PropertyStatus.ROBOCZA;
+    private PropertyStatus status = PropertyStatus.DRAFT;
 
     /** Otodom obcina tytuł do 50 znaków — pilnujemy limitu u siebie. */
     @Column(name = "title", nullable = false, length = 50)
@@ -153,16 +153,16 @@ public class Property {
     @Embedded
     private CommercialDetails commercial = new CommercialDetails();
 
-    /** Rodzaj garażu / miejsca postojowego — tylko dla typu GARAZ. */
+    /** Rodzaj garażu / miejsca postojowego — tylko dla typu GARAGE. */
     @Enumerated(EnumType.STRING)
     @Column(name = "garage_type", length = 30)
     private GarageType garageType;
 
-    /** Dla ilu osób przeznaczony pokój — tylko dla typu POKOJ. */
+    /** Dla ilu osób przeznaczony pokój — tylko dla typu ROOM. */
     @Column(name = "occupants")
     private Short occupants;
 
-    /** Dostęp do łazienki przy wynajmie pokoju — tylko dla typu POKOJ. */
+    /** Dostęp do łazienki przy wynajmie pokoju — tylko dla typu ROOM. */
     @Enumerated(EnumType.STRING)
     @Column(name = "room_bathroom", length = 20)
     private RoomBathroom roomBathroom;

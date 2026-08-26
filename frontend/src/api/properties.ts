@@ -15,7 +15,7 @@ export interface DictionaryEntry {
 }
 
 export interface FeatureEntry extends DictionaryEntry {
-  /** Typy obiektu, dla których cecha ma sens (np. ["MIESZKANIE","DOM"]). */
+  /** Typy obiektu, dla których cecha ma sens (np. ["APARTMENT","HOUSE"]). */
   types: string[];
 }
 

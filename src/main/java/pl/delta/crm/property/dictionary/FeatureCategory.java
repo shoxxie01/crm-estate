@@ -8,12 +8,12 @@ package pl.delta.crm.property.dictionary;
  */
 public enum FeatureCategory implements Dictionary {
 
-    DODATKOWE("Informacje dodatkowe"),
-    ZABEZPIECZENIA("Zabezpieczenia"),
-    MEDIA("Media"),
-    WYPOSAZENIE("Wyposażenie"),
-    OKOLICA("Okolica"),
-    OGRODZENIE("Ogrodzenie");
+    ADDITIONAL("Informacje dodatkowe"),
+    SECURITY("Zabezpieczenia"),
+    UTILITIES("Media"),
+    EQUIPMENT("Wyposażenie"),
+    NEIGHBOURHOOD("Okolica"),
+    FENCING("Ogrodzenie");
 
     private final String label;
 

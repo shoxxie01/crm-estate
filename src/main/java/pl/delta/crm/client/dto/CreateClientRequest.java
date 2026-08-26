@@ -24,11 +24,9 @@ public record CreateClientRequest(
         @Size(max = 80, message = "Nazwisko jest zbyt długie.")
         String lastName,
 
-        // Wyłącznie format +000 000 000 000 (kod kraju + trzy grupy po trzy cyfry).
-        // Puste pole jest dozwolone — regułę „telefon albo e-mail" pilnuje serwis.
         @Pattern(
-                regexp = "^\\+\\d{3} \\d{3} \\d{3} \\d{3}$",
-                message = "Numer telefonu w formacie +000 000 000 000.")
+                regexp = "^\\+?\\d(?:[ -]?\\d){8,14}$",
+                message = "Podaj numer telefonu, np. +48 605 405 932.")
         @Size(max = 30, message = "Numer telefonu jest zbyt długi.")
         String phone,
 

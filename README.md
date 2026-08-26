@@ -218,6 +218,71 @@ Usunięcie klienta **odłącza** jego oferty (ustawia właściciela na `null`), 
 kasuje ich. Zakres, jak wszędzie, bierze się z tokenu — nie ma metody
 repozytorium zwracającej klienta bez podania biura.
 
+## Kalendarz
+
+Termin jest w tym CRM-ie **łącznikiem, a nie osobnym terminarzem**: wiąże agenta
+z ofertą (`calendar_events.property_id`) i z właścicielem (`client_id`). Oba
+wiązania są opcjonalne, bo połowa terminów powstaje, zanim będzie co wiązać —
+wycena poprzedza ofertę, a spotkanie akwizycyjne poprzedza klienta.
+
+| Endpoint | Body | Odpowiedź |
+|---|---|---|
+| `POST /api/calendar/events` | `CreateEventRequest` | `201` + `EventResponse` |
+| `GET /api/calendar/events?from=&to=` | — | `200` + lista `EventSummary` |
+| `GET /api/calendar/events/{id}` | — | `200` + `EventResponse` |
+| `PUT /api/calendar/events/{id}` | `CreateEventRequest` | `200` + zaktualizowany termin |
+| `PUT /api/calendar/events/{id}/status` | `UpdateEventStatusRequest` | `200` — domknięcie terminu |
+| `DELETE /api/calendar/events/{id}` | — | `204` |
+| `GET /api/calendar/dictionaries` | — | `200` + słowniki formularza |
+| `GET /api/properties/{id}/events` | — | `200` — terminy oferty |
+| `GET /api/clients/{id}/events` | — | `200` — terminy klienta |
+
+Filtry listy: `?agentId=`, `?type=`, `?status=`, `?mine=true`. **Zakres dat jest
+obowiązkowy i nie ma stronicowania** — kalendarz z natury pyta o zamknięty
+przedział („ten tydzień"), a nie o pierwsze 25 wpisów. Szerokość okna serwer
+ogranicza do pół roku.
+
+### Kupujący, których nie ma w modelu
+
+Najczęstszy termin — prezentacja — odbywa się z **kupującym lub najemcą**,
+a `clients` to w tej wersji CRM-u wyłącznie strona podaży (właściciel
+powierzający ofertę). Zamiast dopisywać kupujących do tabeli klientów, co
+zepsułoby regułę „rola klienta wynika z typu transakcji jego ofert", termin ma
+własne pola `counterparty_name` / `counterparty_phone`. Gdy powstanie moduł
+poszukujących, zamienią się one na klucz obcy bez ruszania reszty tabeli.
+
+### Reguły, które warto znać
+
+- **Tytuł jest opcjonalny.** Pusty serwer składa z rodzaju i adresu oferty —
+  „Prezentacja — Grzybowska 41". Ręczne przepisywanie tego przy każdym terminie
+  to praca, której komputer może nie zlecać człowiekowi.
+- **Kolizje ostrzegają, ale nie blokują zapisu.** Nakładające się terminy tego
+  samego agenta wracają w polu `conflicts`; agent bywa w dwóch miejscach naraz
+  świadomie, a twarde `409` nauczyłoby go prowadzić terminarz obok systemu.
+  Zdarzenia całodniowe są z liczenia kolizji wyłączone.
+- **Rezultat (`outcome`) wolno podać wyłącznie przy statusie `COMPLETED`** —
+  pilnuje tego serwis i `CHECK` w migracji `V10`. To pole niesie całą wartość
+  analityczną modułu: trzy prezentacje zamknięte jako „cena za wysoka" to
+  argument w rozmowie z właścicielem, a nie wpis w terminarzu.
+- **Kalendarz jest wspólny dla biura.** Zawężenie do siebie (`mine=true`) to
+  filtr, nie uprawnienie — inaczej nie dałoby się umówić zastępstwa ani
+  sprawdzić, czy ktoś już nie jedzie pod ten adres.
+- **Czas w `TIMESTAMPTZ`**, nie w czasie lokalnym: inaczej przejście na czas
+  letni przesuwałoby terminy zapisane wcześniej.
+- **Rodzaj niesie kolor, status — sposób podania.** Każdy z dziewięciu rodzajów
+  ma własny kolor kafelka (legenda nad siatką), a status modyfikuje ten kafelek:
+  pogrubienie, wyblaknięcie, przekreślenie, czerwona obwódka przy nieobecności.
+  Paleta rozstrzela odcień i jasność naraz, bo samym odcieniem dziewięciu
+  kategorii nie da się rozdzielić przy daltonizmie — liczby w
+  [README frontendu](frontend/README.md#kolory-kalendarza).
+- Karty oferty i klienta dociągają swoje terminy **osobnym żądaniem** —
+  `PropertyResponse` i `ClientResponse` nie zostały o nie rozszerzone, żeby nie
+  obciążać każdego odczytu oferty (również z listy i z eksportu).
+
+Poza zakresem tej wersji: przypomnienia i powiadomienia (bez mechanizmu wysyłki
+pole byłoby martwe), wielu uczestników jednego terminu, terminy prywatne,
+cykliczne i synchronizacja z Google/Outlook.
+
 ## Baza danych
 
 PostgreSQL 17 — ten sam silnik na dev i w testach, żeby nie było klasy błędów
@@ -250,6 +315,10 @@ mvn test     # wymaga działającego Dockera
 Testy podnoszą własny kontener Postgresa (Testcontainers) i przepuszczają przez
 niego migracje Flyway — weryfikują więc także sam schemat, nie tylko kod.
 `docker compose` nie musi przy tym działać; to osobny, jednorazowy kontener.
+
+`CalendarModuleTest` sprawdza powiązanie terminu z ofertą i klientem, zapytanie
+o zakres dat (przecięcie, nie zawieranie), ostrzeżenie o kolizji, regułę
+rezultatu oraz izolację między biurami.
 
 `AuthFlowTest` pokrywa pełną ścieżkę: rejestracja → hash hasła → logowanie
 (w tym niewrażliwość na wielkość liter) → `/me` z tokenem i bez → odrzucenie

@@ -3,14 +3,14 @@ package pl.delta.crm.property.dictionary;
 /** Pokrycie dachu (Otodom HouseDetails: Roofing) — inny wymiar niż {@link RoofType}. */
 public enum Roofing implements Dictionary {
 
-    DACHOWKA("Dachówka"),
-    BLACHA("Blacha"),
-    PAPA("Papa"),
-    GONT("Gont"),
-    LUPEK("Łupek"),
-    ETERNIT("Eternit"),
-    STRZECHA("Strzecha"),
-    INNE("Inne");
+    ROOF_TILE("Dachówka"),
+    SHEET_METAL("Blacha"),
+    BITUMEN_FELT("Papa"),
+    SHINGLE("Gont"),
+    SLATE("Łupek"),
+    ASBESTOS_CEMENT("Eternit"),
+    THATCH("Strzecha"),
+    OTHER("Inne");
 
     private final String label;
 

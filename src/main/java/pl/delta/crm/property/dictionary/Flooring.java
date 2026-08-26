@@ -3,9 +3,9 @@ package pl.delta.crm.property.dictionary;
 /** Posadzka w hali (Otodom HallDetails: Flooring). */
 public enum Flooring implements Dictionary {
 
-    NIEPYLNA("Niepylna"),
-    PYLNA("Pylna"),
-    BRAK("Brak");
+    DUST_FREE("Niepylna"),
+    DUSTY("Pylna"),
+    NONE("Brak");
 
     private final String label;
 

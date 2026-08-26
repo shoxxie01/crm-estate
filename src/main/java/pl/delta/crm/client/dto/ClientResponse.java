@@ -36,10 +36,10 @@ public record ClientResponse(
 
     public static ClientResponse from(Client client, List<Property> ownedProperties) {
         long sell = ownedProperties.stream()
-                .filter(p -> p.getTransactionType() == TransactionType.SPRZEDAZ)
+                .filter(p -> p.getTransactionType() == TransactionType.SALE)
                 .count();
         long rent = ownedProperties.stream()
-                .filter(p -> p.getTransactionType() == TransactionType.WYNAJEM)
+                .filter(p -> p.getTransactionType() == TransactionType.RENT)
                 .count();
 
         return new ClientResponse(
