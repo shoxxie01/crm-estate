@@ -71,7 +71,28 @@ export interface PropertySummary {
   district: string | null;
   agentName: string;
   readyForExport: boolean;
+  /** Miniatura zdjęcia głównego; null, gdy oferta nie ma jeszcze zdjęć. */
+  coverThumbnailUrl: string | null;
   createdAt: string;
+}
+
+/**
+ * Materiał przypięty do oferty. `url` i `thumbnailUrl` są podpisane i wygasają
+ * (domyślnie po 15 minutach) — nie wolno ich zapisywać ani cache'ować dłużej
+ * niż trwa widok; po odświeżeniu oferty przychodzą nowe.
+ */
+export interface PropertyMedia {
+  id: string;
+  mediaType: string;
+  fileName: string;
+  position: number;
+  caption: string | null;
+  widthPx: number | null;
+  heightPx: number | null;
+  sizeBytes: number;
+  meetsPortalRequirements: boolean;
+  url: string;
+  thumbnailUrl: string;
 }
 
 export interface PageResponse<T> {
@@ -239,6 +260,7 @@ export interface PropertyDetail {
   privateNotes: string | null;
   keysInfo: string | null;
   exportable: boolean;
+  media: PropertyMedia[];
 }
 
 export function fetchDictionaries() {
@@ -281,4 +303,65 @@ export function updateProperty(id: string, payload: CreatePropertyPayload) {
 
 export function deleteProperty(id: string) {
   return apiFetch<void>(`/properties/${id}`, { method: "DELETE" });
+}
+
+/* --- galeria oferty ------------------------------------------------------ */
+
+export function fetchPropertyMedia(propertyId: string) {
+  return apiFetch<PropertyMedia[]>(`/properties/${propertyId}/media`);
+}
+
+/**
+ * Wgranie całej paczki jednym żądaniem. Agent zaznacza kilkadziesiąt zdjęć
+ * naraz, a żądanie na plik oznaczałoby tyle samo okazji, żeby część przepadła
+ * bez śladu w interfejsie.
+ */
+export function uploadPropertyMedia(propertyId: string, files: File[]) {
+  const form = new FormData();
+  files.forEach((file) => form.append("files", file));
+
+  return apiFetch<PropertyMedia[]>(`/properties/${propertyId}/media`, {
+    method: "POST",
+    body: form,
+  });
+}
+
+/** Podmiana pliku pod istniejącym zdjęciem — pozycja i podpis zostają. */
+export function replacePropertyMediaFile(
+  propertyId: string,
+  mediaId: string,
+  file: File,
+) {
+  const form = new FormData();
+  form.append("file", file);
+
+  return apiFetch<PropertyMedia>(
+    `/properties/${propertyId}/media/${mediaId}/file`,
+    { method: "PUT", body: form },
+  );
+}
+
+export function deletePropertyMedia(propertyId: string, mediaId: string) {
+  return apiFetch<void>(`/properties/${propertyId}/media/${mediaId}`, {
+    method: "DELETE",
+  });
+}
+
+/** Komplet identyfikatorów w docelowej kolejności — pierwszy jest zdjęciem głównym. */
+export function reorderPropertyMedia(propertyId: string, mediaIds: string[]) {
+  return apiFetch<PropertyMedia[]>(`/properties/${propertyId}/media/order`, {
+    method: "PUT",
+    body: JSON.stringify({ mediaIds }),
+  });
+}
+
+export function updatePropertyMediaCaption(
+  propertyId: string,
+  mediaId: string,
+  caption: string,
+) {
+  return apiFetch<PropertyMedia>(`/properties/${propertyId}/media/${mediaId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ caption }),
+  });
 }

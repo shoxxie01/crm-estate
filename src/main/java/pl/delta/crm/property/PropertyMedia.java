@@ -27,6 +27,9 @@ import java.util.UUID;
 @Table(name = "property_media")
 public class PropertyMedia {
 
+    /** Ile materiałów wolno przypiąć do jednej oferty. */
+    public static final int MAX_PER_PROPERTY = 50;
+
     /** Minimalna szerokość akceptowana przez Otodom. */
     public static final int MIN_WIDTH_PX = 400;
 
@@ -92,6 +95,46 @@ public class PropertyMedia {
     void attachTo(Property property, short position) {
         this.property = property;
         this.position = position;
+    }
+
+    /**
+     * Klucz obiektu w storage. Biuro siedzi w ścieżce, więc podział na agencje
+     * obowiązuje także w warstwie plików — po kluczu widać, czyj jest plik,
+     * a skasowanie całego biura to skasowanie jednego prefiksu.
+     *
+     * <p>Nazwa pliku jest losowa i nie pochodzi od nazwy wgranej przez użytkownika:
+     * ta bywa niepowtarzalna tylko w obrębie jednego folderu na pulpicie agenta,
+     * a bywa i taka, której nie da się bezpiecznie wstawić do ścieżki.
+     */
+    public static String buildStorageKey(UUID agencyId, UUID propertyId) {
+        return "agencies/%s/properties/%s/%s%s".formatted(
+                agencyId, propertyId, UUID.randomUUID(), ImageProcessor.OUTPUT_EXTENSION);
+    }
+
+    /**
+     * Klucz miniatury wyprowadzony z klucza pliku — bez osobnej kolumny. Migracja
+     * V3 i tak wymaga, żeby nazwa pliku dała się wyprowadzić z {@code storage_key}
+     * (paczka dla Otodom pakuje pliki płasko do ZIP-a).
+     */
+    public String thumbnailKey() {
+        int dot = storageKey.lastIndexOf('.');
+        return dot < 0
+                ? storageKey + "_thumb"
+                : storageKey.substring(0, dot) + "_thumb" + storageKey.substring(dot);
+    }
+
+    /**
+     * Podmiana samego pliku — pozycja w galerii, podpis i identyfikator zostają.
+     * Agent poprawiający prześwietlone zdjęcie nie powinien tracić kolejności
+     * ani opisu, które już ustawił.
+     */
+    public void replaceFile(String fileName, String contentType, long sizeBytes,
+                            Integer widthPx, Integer heightPx) {
+        this.fileName = fileName;
+        this.contentType = contentType;
+        this.sizeBytes = sizeBytes;
+        this.widthPx = widthPx;
+        this.heightPx = heightPx;
     }
 
     /** Czy plik spełnia wymagania portali. Sprawdzane przed wysyłką paczki. */

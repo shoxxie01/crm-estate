@@ -4,6 +4,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import pl.delta.crm.calendar.CalendarEventRepository;
 import pl.delta.crm.client.dictionary.ClientStatus;
 import pl.delta.crm.client.dto.ClientResponse;
 import pl.delta.crm.client.dto.ClientSummary;
@@ -32,11 +33,14 @@ public class ClientService {
     private final ClientRepository clients;
     private final UserRepository users;
     private final PropertyRepository properties;
+    private final CalendarEventRepository events;
 
-    public ClientService(ClientRepository clients, UserRepository users, PropertyRepository properties) {
+    public ClientService(ClientRepository clients, UserRepository users,
+                         PropertyRepository properties, CalendarEventRepository events) {
         this.clients = clients;
         this.users = users;
         this.properties = properties;
+        this.events = events;
     }
 
     @Transactional
@@ -97,6 +101,10 @@ public class ClientService {
         for (Property property : properties.findByOwnerId(client.getId())) {
             property.setOwner(null);
         }
+
+        // To samo z terminami: historia kontaktu zostaje, znika tylko powiązanie.
+        // Bez tego klienta, z którym cokolwiek umówiono, nie dało się usunąć.
+        events.detachClient(id);
 
         clients.delete(client);
     }

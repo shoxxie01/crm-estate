@@ -11,7 +11,13 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
-/** Wiersz listy ofert. Tylko to, co widać w tabeli — bez ładowania kolekcji. */
+/**
+ * Wiersz listy ofert. Tylko to, co widać w tabeli — bez ładowania kolekcji.
+ *
+ * <p>Miniatura zdjęcia głównego przychodzi z zewnątrz, a nie z {@code property
+ * .getMedia()}: sięgnięcie po kolekcję rozwinęłoby ją dla każdego wiersza z
+ * osobna. Serwis pobiera zdjęcia z pozycji 0 dla całej strony jednym zapytaniem.
+ */
 public record PropertySummary(
         UUID id,
         String referenceNumber,
@@ -29,10 +35,21 @@ public record PropertySummary(
         String district,
         String agentName,
         boolean readyForExport,
+        /** Miniatura zdjęcia głównego; null, gdy oferta nie ma jeszcze zdjęć. */
+        String coverThumbnailUrl,
         Instant createdAt
 ) {
 
-    public static PropertySummary from(Property property) {
+    /**
+     * Wariant dla list, które pokazują oferty tekstowo — jak sekcja „Powierzone
+     * oferty" na karcie klienta. Nazwany wprost, żeby brak miniatury był decyzją
+     * widoczną w miejscu wywołania, a nie przeoczonym {@code null}-em.
+     */
+    public static PropertySummary withoutCover(Property property) {
+        return from(property, null);
+    }
+
+    public static PropertySummary from(Property property, String coverThumbnailUrl) {
         return new PropertySummary(
                 property.getId(),
                 property.getReferenceNumber(),
@@ -50,6 +67,7 @@ public record PropertySummary(
                 property.getAddress().getDistrict(),
                 property.getAgent().getFirstName() + " " + property.getAgent().getLastName(),
                 property.readyForExport(),
+                coverThumbnailUrl,
                 property.getCreatedAt()
         );
     }

@@ -1,6 +1,7 @@
 package pl.delta.crm.calendar;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import pl.delta.crm.calendar.dictionary.EventStatus;
@@ -73,6 +74,28 @@ public interface CalendarEventRepository extends JpaRepository<CalendarEvent, UU
             """)
     List<CalendarEvent> findByClient(@Param("agencyId") UUID agencyId,
                                      @Param("clientId") UUID clientId);
+
+    /**
+     * Odpina terminy od kasowanej oferty.
+     *
+     * <p>Bez tego oferty z choćby jednym terminem w ogóle nie dało się usunąć —
+     * klucz obcy {@code fk_calendar_events_property} nie ma klauzuli
+     * {@code ON DELETE}, więc baza odrzucała kasowanie. Terminy zostają, bo
+     * historia pokazów jest wartościowa również wtedy, gdy oferta znika
+     * z kartoteki; tytuł ma wpisany adres, więc nadal wiadomo, czego dotyczyły.
+     *
+     * <p>{@code flushAutomatically}, żeby zmiany czekające w kontekście trafiły
+     * do bazy przed tym zapytaniem. Bez {@code clearAutomatically}: wyczyszczenie
+     * kontekstu odpięłoby encję oferty, którą zaraz potem kasujemy.
+     */
+    @Modifying(flushAutomatically = true)
+    @Query("update CalendarEvent e set e.property = null where e.property.id = :propertyId")
+    int detachProperty(@Param("propertyId") UUID propertyId);
+
+    /** To samo dla kasowanego klienta — patrz {@link #detachProperty}. */
+    @Modifying(flushAutomatically = true)
+    @Query("update CalendarEvent e set e.client = null where e.client.id = :clientId")
+    int detachClient(@Param("clientId") UUID clientId);
 
     /**
      * Terminy tego samego agenta zachodzące na podany przedział — podstawa

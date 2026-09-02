@@ -55,7 +55,7 @@ public record ClientResponse(
                 client.getAgent().getFirstName() + " " + client.getAgent().getLastName(),
                 sell,
                 rent,
-                ownedProperties.stream().map(PropertySummary::from).toList(),
+                ownedProperties.stream().map(PropertySummary::withoutCover).toList(),
                 client.getCreatedAt(),
                 client.getUpdatedAt()
         );

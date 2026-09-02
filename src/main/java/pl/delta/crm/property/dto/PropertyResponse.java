@@ -8,13 +8,11 @@ import pl.delta.crm.property.LandDetails;
 import pl.delta.crm.property.PortalPublication;
 import pl.delta.crm.property.Pricing;
 import pl.delta.crm.property.Property;
-import pl.delta.crm.property.PropertyMedia;
 import pl.delta.crm.property.dictionary.CommercialUse;
 import pl.delta.crm.property.dictionary.Currency;
 import pl.delta.crm.property.dictionary.Feature;
 import pl.delta.crm.property.dictionary.HeatingType;
 import pl.delta.crm.property.dictionary.MarketType;
-import pl.delta.crm.property.dictionary.MediaType;
 import pl.delta.crm.property.dictionary.Portal;
 import pl.delta.crm.property.dictionary.PropertyStatus;
 import pl.delta.crm.property.dictionary.PropertyType;
@@ -27,6 +25,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.UnaryOperator;
 
 /** Pełny widok oferty. */
 public record PropertyResponse(
@@ -52,7 +51,7 @@ public record PropertyResponse(
         Set<Feature> features,
         Set<HeatingType> heatingTypes,
         Set<CommercialUse> commercialUses,
-        List<MediaView> media,
+        List<MediaResponse> media,
         List<PublicationView> publications,
         String videoUrl,
         String panoramaUrl,
@@ -104,11 +103,6 @@ public record PropertyResponse(
                                  Short loadingDocksCount) {
     }
 
-    public record MediaView(UUID id, MediaType mediaType, String fileName, String storageKey,
-                            short position, String caption, Integer widthPx, Integer heightPx,
-                            long sizeBytes, boolean meetsPortalRequirements) {
-    }
-
     public record PublicationView(Portal portal, PublicationStatus status, String externalId,
                                   String externalUrl, Instant lastExportedAt, String lastError) {
     }
@@ -116,7 +110,12 @@ public record PropertyResponse(
     public record AgentView(UUID id, String name, String email) {
     }
 
-    public static PropertyResponse from(Property p) {
+    /**
+     * @param signer zamienia klucz obiektu w storage na czasowy link do odczytu.
+     *               Podpisywanie siedzi poza tym rekordem, bo DTO nie ma powodu
+     *               wiedzieć, gdzie leżą pliki ani jak długo link ma żyć.
+     */
+    public static PropertyResponse from(Property p, UnaryOperator<String> signer) {
         Pricing pricing = p.getPricing();
         Address address = p.getAddress();
         BuildingDetails building = p.getBuilding();
@@ -178,7 +177,7 @@ public record PropertyResponse(
                 Set.copyOf(p.getFeatures()),
                 Set.copyOf(p.getHeatingTypes()),
                 Set.copyOf(p.getCommercialUses()),
-                p.getMedia().stream().map(PropertyResponse::mediaView).toList(),
+                p.getMedia().stream().map(media -> MediaResponse.from(media, signer)).toList(),
                 p.getPublications().stream().map(PropertyResponse::publicationView).toList(),
                 p.getVideoUrl(),
                 p.getPanoramaUrl(),
@@ -192,12 +191,6 @@ public record PropertyResponse(
                 p.getCreatedAt(),
                 p.getUpdatedAt()
         );
-    }
-
-    private static MediaView mediaView(PropertyMedia m) {
-        return new MediaView(m.getId(), m.getMediaType(), m.getFileName(), m.getStorageKey(),
-                m.getPosition(), m.getCaption(), m.getWidthPx(), m.getHeightPx(),
-                m.getSizeBytes(), m.meetsPortalRequirements());
     }
 
     private static PublicationView publicationView(PortalPublication pub) {

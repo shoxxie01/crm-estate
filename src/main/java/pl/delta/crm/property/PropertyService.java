@@ -4,6 +4,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import pl.delta.crm.calendar.CalendarEventRepository;
 import pl.delta.crm.error.BusinessValidationException;
 import pl.delta.crm.error.PropertyNotFoundException;
 import pl.delta.crm.property.dictionary.Currency;
@@ -19,12 +20,14 @@ import pl.delta.crm.property.dto.EnergyRequest;
 import pl.delta.crm.property.dto.LandRequest;
 import pl.delta.crm.property.dto.PropertyResponse;
 import pl.delta.crm.property.dto.PropertySummary;
+import pl.delta.crm.storage.MediaStorage;
 import pl.delta.crm.user.User;
 import pl.delta.crm.user.UserRepository;
 
 import java.math.BigDecimal;
 import java.time.YearMonth;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -34,11 +37,21 @@ import java.util.UUID;
 public class PropertyService {
 
     private final PropertyRepository properties;
+    private final PropertyMediaRepository media;
+    private final PropertyMediaService mediaService;
+    private final CalendarEventRepository events;
     private final UserRepository users;
+    private final MediaStorage storage;
 
-    public PropertyService(PropertyRepository properties, UserRepository users) {
+    public PropertyService(PropertyRepository properties, PropertyMediaRepository media,
+                           PropertyMediaService mediaService, CalendarEventRepository events,
+                           UserRepository users, MediaStorage storage) {
         this.properties = properties;
+        this.media = media;
+        this.mediaService = mediaService;
+        this.events = events;
         this.users = users;
+        this.storage = storage;
     }
 
     @Transactional
@@ -98,7 +111,7 @@ public class PropertyService {
             property.setCommercialUses(request.commercialUses());
         }
 
-        return PropertyResponse.from(properties.save(property));
+        return PropertyResponse.from(properties.save(property), storage::url);
     }
 
     /**
@@ -162,15 +175,22 @@ public class PropertyService {
             property.setCommercialUses(request.commercialUses());
         }
 
-        return PropertyResponse.from(properties.save(property));
+        return PropertyResponse.from(properties.save(property), storage::url);
     }
 
     @Transactional
     public void delete(UUID id, User actor) {
         Property property = properties.findByIdAndAgencyId(id, actor.getAgency().getId())
                 .orElseThrow(PropertyNotFoundException::new);
+        // Terminy nie znikają razem z ofertą — tracą tylko powiązanie. Historia
+        // pokazów zostaje, a bez tego oferta z choćby jednym terminem w ogóle
+        // nie dałaby się usunąć (klucz obcy w calendar_events bez ON DELETE).
+        events.detachProperty(id);
+
         // Zdjęcia, publikacje i kolekcje cech znikają kaskadowo (cascade/orphan
-        // po stronie JPA oraz ON DELETE CASCADE w migracji V3).
+        // po stronie JPA oraz ON DELETE CASCADE w migracji V3). Kaskada obejmuje
+        // jednak wyłącznie bazę — pliki trzeba skasować osobno, po commicie.
+        mediaService.purgeStorageFor(property);
         properties.delete(property);
     }
 
@@ -190,14 +210,32 @@ public class PropertyService {
             page = properties.findByAgencyId(agencyId, pageable);
         }
 
-        return page.map(PropertySummary::from);
+        Map<UUID, String> covers = coverThumbnailsFor(page.getContent());
+        return page.map(property -> PropertySummary.from(property, covers.get(property.getId())));
     }
 
     @Transactional(readOnly = true)
     public PropertyResponse get(UUID id, User viewer) {
         return properties.findByIdAndAgencyId(id, viewer.getAgency().getId())
-                .map(PropertyResponse::from)
+                .map(property -> PropertyResponse.from(property, storage::url))
                 .orElseThrow(PropertyNotFoundException::new);
+    }
+
+    /**
+     * Miniatury zdjęć głównych dla całej strony listy — jednym zapytaniem po
+     * pozycji 0, zamiast rozwijania kolekcji zdjęć w każdym wierszu z osobna.
+     */
+    private Map<UUID, String> coverThumbnailsFor(List<Property> page) {
+        if (page.isEmpty()) {
+            return Map.of();
+        }
+        List<UUID> ids = page.stream().map(Property::getId).toList();
+
+        Map<UUID, String> covers = new LinkedHashMap<>();
+        for (PropertyMedia cover : media.findByPropertyIdInAndPosition(ids, (short) 0)) {
+            covers.put(cover.getProperty().getId(), storage.url(cover.thumbnailKey()));
+        }
+        return covers;
     }
 
     /**

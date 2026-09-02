@@ -23,9 +23,16 @@ ogłoszeniowe.
 docker compose up -d
 ```
 
-PostgreSQL 17 na **porcie 5434** (5432 i 5433 bywają zajęte przez inne
-instancje — patrz komentarz w `compose.yaml`). Dane w wolumenie
-`crm_postgres-data`, więc przeżywają `docker compose down`.
+Podnosi dwie usługi:
+
+- **PostgreSQL 17** na porcie **5434** (5432 i 5433 bywają zajęte przez inne
+  instancje — patrz komentarz w `compose.yaml`),
+- **MinIO** — storage zdjęć: API S3 na **9000**, konsola na **9001**
+  (`delta` / `delta12345`).
+
+Dane w wolumenach `crm_postgres-data` i `crm_minio-data`, więc przeżywają
+`docker compose down`. Bucket `delta-crm-media` zakłada sama aplikacja przy
+starcie. Bez MinIO backend nadal wstaje — nie działa tylko galeria.
 
 ### 2. Backend
 
@@ -77,6 +84,12 @@ Każdy inny endpoint pod `/api/**` wymaga tokenu.
 | `PUT /api/properties/{id}` | `CreatePropertyRequest` | `200` + zaktualizowana oferta |
 | `DELETE /api/properties/{id}` | — | `204` |
 | `GET /api/properties/dictionaries` | — | `200` + wszystkie słowniki formularza |
+| `GET /api/properties/{id}/media` | — | `200` + galeria oferty |
+| `POST /api/properties/{id}/media` | multipart `files` | `201` + dodane materiały |
+| `PUT /api/properties/{id}/media/{mediaId}/file` | multipart `file` | `200` — podmiana pliku |
+| `PUT /api/properties/{id}/media/order` | `{ mediaIds }` | `200` — kolejność galerii |
+| `PATCH /api/properties/{id}/media/{mediaId}` | `{ caption }` | `200` — podpis zdjęcia |
+| `DELETE /api/properties/{id}/media/{mediaId}` | — | `204` |
 
 Filtry listy: `?status=`, `?type=`, `?transaction=`, plus standardowe `page`,
 `size`, `sort` (domyślnie `createdAt,desc`).
@@ -106,6 +119,57 @@ parametrem żądania i nie da się go podmienić — repozytorium nie ma ani jed
 metody potrafiącej zwrócić ofertę bez podania agencji, łącznie z `findById`.
 Oferta obcego biura daje `404`, nie `403`, żeby po kodzie odpowiedzi nie dało
 się sprawdzać, co ma konkurencja.
+
+### Zdjęcia
+
+Pliki leżą w storage'u obiektowym (**MinIO** w dev, API S3), a nie na dysku
+aplikacji ani w bazie. Baza trzyma wyłącznie `storage_key` — klucz obiektu.
+
+Wybór padł na S3 API, a nie na Ceph, bo skala tego nie uzasadnia: 50 zdjęć na
+ofertę po ~1,5 MB przy 500 aktywnych ofertach to ok. 35 GB, czyli jeden dysk,
+a nie klaster z MON-ami i OSD-ami. Ceph i tak wystawiłby to samo API przez
+RadosGW, więc kod byłby identyczny — różnica jest wyłącznie w nakładzie
+utrzymania. Ta sama implementacja (`S3MediaStorage`) działa na MinIO w dev i na
+prawdziwym S3 na produkcji; zmienia się endpoint w konfiguracji, nie kod.
+
+**Przeglądarka pobiera zdjęcia bezpośrednio ze storage'u** po podpisany link
+(15 min, `delta.storage.url-ttl`) — bajty nie przechodzą przez Springa.
+To nie jest optymalizacja, tylko warunek działania: token leci w nagłówku
+`Authorization`, a `<img src>` nagłówka nie wyśle. Klucz obiektu nie wychodzi
+przez API, żeby po jego układzie nie dało się zgadywać cudzych ofert.
+
+Przy wgrywaniu każde zdjęcie jest normalizowane: skala do 1920 px, przekodowanie
+na JPEG, miniatura 400 px i **usunięcie EXIF-u**. To ostatnie ma znaczenie
+niezależnie od rozmiaru pliku — zdjęcie z telefonu niesie współrzędne GPS, więc
+bez tego oferta z włączonym ukrywaniem adresu i tak zdradzałaby położenie.
+Format rozpoznajemy po sygnaturze pliku, nie po nagłówku `Content-Type`.
+
+- limit **50 materiałów na ofertę** (Otodom bierze pierwsze 20 wg pozycji),
+- pozycja 0 to zdjęcie główne; kasowanie przenumerowuje resztę do ciągu 0..n-1,
+- **zamiana pliku** zachowuje pozycję, podpis i identyfikator wpisu — nowy plik
+  ląduje pod tym samym kluczem, więc stara wersja znika bezpowrotnie,
+- HEIC jest odrzucany z instrukcją, jak przełączyć iPhone'a na JPG — ImageIO go
+  nie czyta, a to domyślny format zdjęć z iPhone'a,
+- skasowanie **całej oferty** zabiera też jej pliki: wiersze znikają kaskadą
+  (`ON DELETE CASCADE` w `V3`), ale kaskada bazy nie wie nic o buckecie,
+  więc `PropertyService.delete` czyści go jawnie,
+- **zdjęcia można wybrać już przy zakładaniu oferty.** Zdjęcie trzyma klucz obcy
+  do oferty, więc przed jej zapisem nie ma czego nim obwiesić — front trzyma
+  pliki w pamięci i wysyła je zaraz po tym, jak serwer nada ofercie numer.
+  Gdyby ten drugi krok padł, oferta i tak zostaje zapisana, a formularz otwiera
+  się ponownie z komunikatem, zamiast gubić jedno i drugie,
+- kolejność zapisu jest asymetryczna: przy dodawaniu najpierw plik, potem wiersz;
+  przy kasowaniu najpierw wiersz, plik po commicie. Awaria w połowie zostawia
+  najwyżej plik bez wiersza (zajęte miejsce), nigdy wiersza bez pliku (dziura
+  w galerii i eksport bez czego złożyć paczki).
+
+**Galerią zarządza się wyłącznie z formularza oferty.** Karta oferty pokazuje
+zdjęcia w trybie tylko do odczytu — otwiera się ją, żeby ofertę obejrzeć,
+a przypadkowego skasowania zdjęcia przy przeglądaniu nie da się cofnąć.
+
+Unikat `(property_id, position)` jest **odroczony do commitu** (migracja `V12`) —
+zmiana kolejności przepisuje pozycje wielu wierszom naraz i po drodze przechodzi
+przez stan z duplikatem, mimo że stan końcowy jest poprawny.
 
 ### Skąd wziął się zestaw pól
 
@@ -214,8 +278,8 @@ Filtry listy: `?status=`, `?search=` (imię, nazwisko, telefon, e-mail) plus
 standardowe `page`, `size`, `sort`.
 
 Wymagany jest **telefon albo e-mail** — kontakt bez żadnego z nich nie ma sensu.
-Usunięcie klienta **odłącza** jego oferty (ustawia właściciela na `null`), a nie
-kasuje ich. Zakres, jak wszędzie, bierze się z tokenu — nie ma metody
+Usunięcie klienta **odłącza** jego oferty (ustawia właściciela na `null`) oraz
+jego terminy, a nie kasuje ich. Zakres, jak wszędzie, bierze się z tokenu — nie ma metody
 repozytorium zwracającej klienta bez podania biura.
 
 ## Kalendarz
@@ -240,7 +304,7 @@ wycena poprzedza ofertę, a spotkanie akwizycyjne poprzedza klienta.
 Filtry listy: `?agentId=`, `?type=`, `?status=`, `?mine=true`. **Zakres dat jest
 obowiązkowy i nie ma stronicowania** — kalendarz z natury pyta o zamknięty
 przedział („ten tydzień"), a nie o pierwsze 25 wpisów. Szerokość okna serwer
-ogranicza do pół roku.
+ogranicza do około pół roku (200 dni).
 
 ### Kupujący, których nie ma w modelu
 
@@ -264,6 +328,11 @@ poszukujących, zamienią się one na klucz obcy bez ruszania reszty tabeli.
   pilnuje tego serwis i `CHECK` w migracji `V10`. To pole niesie całą wartość
   analityczną modułu: trzy prezentacje zamknięte jako „cena za wysoka" to
   argument w rozmowie z właścicielem, a nie wpis w terminarzu.
+- **Skasowanie oferty albo klienta odpina termin, nie kasuje go.** Klucze obce
+  `calendar_events.property_id` i `client_id` nie mają `ON DELETE`, więc bez
+  jawnego odpięcia oferta z choćby jednym terminem w ogóle nie dałaby się
+  usunąć. Historia pokazów zostaje — tytuł ma w sobie adres, więc nadal
+  wiadomo, czego dotyczyła.
 - **Kalendarz jest wspólny dla biura.** Zawężenie do siebie (`mine=true`) to
   filtr, nie uprawnienie — inaczej nie dałoby się umówić zastępstwa ani
   sprawdzić, czy ktoś już nie jedzie pod ten adres.
@@ -304,6 +373,10 @@ już zaaplikowanej migracji.
 | `delta.jwt.ttl` | `12h` | czas życia tokenu |
 | `delta.jwt.issuer` | `delta-crm` | claim `iss`, weryfikowany przy odczycie |
 | `delta.cors.allowed-origins` | `http://localhost:5173` | dozwolone originy dla `/api/**` |
+| `DELTA_S3_ENDPOINT` | `http://localhost:9000` | API S3; musi być osiągalne także z przeglądarki |
+| `DELTA_S3_BUCKET` | `delta-crm-media` | bucket na zdjęcia |
+| `DELTA_S3_ACCESS_KEY` / `DELTA_S3_SECRET_KEY` | `delta` / `delta12345` | dane dostępu do storage'u |
+| `delta.storage.url-ttl` | `15m` | ważność podpisanego linku do pliku |
 | `server.port` | `8080` | port HTTP |
 
 ## Testy
@@ -318,7 +391,9 @@ niego migracje Flyway — weryfikują więc także sam schemat, nie tylko kod.
 
 `CalendarModuleTest` sprawdza powiązanie terminu z ofertą i klientem, zapytanie
 o zakres dat (przecięcie, nie zawieranie), ostrzeżenie o kolizji, regułę
-rezultatu oraz izolację między biurami.
+rezultatu, izolację między biurami oraz odpięcie terminów przy kasowaniu oferty
+i klienta — ta ostatnia para to test regresyjny na błąd, przez który oferty
+z choćby jednym terminem w ogóle nie dało się usunąć.
 
 `AuthFlowTest` pokrywa pełną ścieżkę: rejestracja → hash hasła → logowanie
 (w tym niewrażliwość na wielkość liter) → `/me` z tokenem i bez → odrzucenie
@@ -326,11 +401,23 @@ podrobionego tokenu → duplikat e-maila → walidacja pól. `PropertyModuleTest
 sprawdza zapis i odczyt oferty (w tym wyliczaną cenę za m²) oraz izolację
 między biurami.
 
+`PropertyMediaTest` podnosi obok Postgresa **własny kontener MinIO** — atrapa
+storage'u nie sprawdziłaby ani tego, że plik faktycznie ląduje w buckecie, ani
+że kasowanie go stamtąd usuwa. Pokrywa skalowanie przy wgrywaniu, odrzucenie
+pliku, który nie jest obrazem mimo poprawnego `Content-Type`, zachowanie pozycji
+i podpisu przy zamianie pliku, przenumerowanie po skasowaniu, zmianę kolejności,
+limit 50, sprzątanie plików przy kasowaniu całej oferty oraz izolację między
+biurami.
+
+Pierwsze `mvn test` po sklonowaniu repozytorium pobiera obrazy Postgresa
+**i MinIO**, więc trwa dłużej niż kolejne.
+
 ## Przed produkcją
 
-- [ ] upload zdjęć oferty (model `PropertyMedia` gotowy; planowany zapis na dysku
-      serwera + ścieżka w bazie) — bez zdjęcia `readyForExport()` nie przepuści oferty
 - [ ] refresh tokeny albo krótszy TTL z odświeżaniem
 - [ ] rate limiting na `/api/auth/login`
 - [ ] `delta.cors.allowed-origins` na prawdziwą domenę
-- [ ] hasło do bazy z sekretów, nie z domyślnej wartości `delta`
+- [ ] hasło do bazy oraz `DELTA_S3_*` z sekretów, nie z wartości domyślnych
+- [ ] przypiąć konkretny `RELEASE` obrazu MinIO zamiast `latest`
+- [ ] sprzątanie osieroconych obiektów w storage (kompensacja jest best-effort:
+      przy padzie procesu między zapisem pliku a commitem zostaje sam plik)
