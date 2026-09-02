@@ -1,13 +1,17 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Info } from "lucide-react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 import {
   createProperty,
   fetchDictionaries,
   fetchProperty,
   updateProperty,
+  uploadPropertyMedia,
   type Dictionaries,
+  type PropertyMedia,
 } from "../../api/properties";
+import { PropertyGallery } from "./PropertyGallery";
+import { PropertyGalleryDraft } from "./PropertyGalleryDraft";
 import { ApiError } from "../../api/client";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
@@ -80,6 +84,7 @@ const INITIAL: Fields = {
 
 export function PropertyFormPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { id } = useParams<{ id: string }>();
   const isEdit = Boolean(id);
   const [dict, setDict] = useState<Dictionaries | null>(null);
@@ -111,6 +116,16 @@ export function PropertyFormPage() {
   // „ppm2" = cena za m² wpisana ręcznie (liczymy cenę). Zmiana powierzchni
   // przelicza to drugie zgodnie z ostatnim wyborem użytkownika.
   const [priceDriver, setPriceDriver] = useState<"price" | "ppm2">("price");
+  // Przy edycji galeria żyje obok formularza — jej operacje idą osobnymi
+  // żądaniami i nie czekają na „Zapisz".
+  const [media, setMedia] = useState<PropertyMedia[]>([]);
+  // Przy nowej ofercie nie ma jeszcze do czego przypiąć zdjęć, więc czekają
+  // w pamięci i lecą zaraz po tym, jak serwer nada ofercie identyfikator.
+  const [draftFiles, setDraftFiles] = useState<File[]>([]);
+  // Oferta zapisana, ale zdjęcia nie przeszły — wchodzimy tu z jej edycji
+  // z komunikatem, żeby nie wyglądało to na udany zapis kompletu.
+  const mediaError = (location.state as { mediaError?: string } | null)
+    ?.mediaError;
   const [formError, setFormError] = useState<string | null>(null);
   const [dictError, setDictError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -222,6 +237,7 @@ export function PropertyFormPage() {
           energyExempt: p.energy.exempt,
           exportable: p.exportable,
         });
+        setMedia(p.media);
       })
       .catch(() => setFormError("Nie udało się wczytać oferty do edycji."));
   }, [id]);
@@ -735,6 +751,28 @@ export function PropertyFormPage() {
           ? await updateProperty(id, payload)
           : await createProperty(payload);
 
+      // Zdjęcia wybrane przed zapisem czekały w pamięci, bo nie miały do czego
+      // się przypiąć. Teraz oferta ma identyfikator, więc lecą jednym żądaniem.
+      if (!isEdit && draftFiles.length > 0) {
+        try {
+          await uploadPropertyMedia(saved.id, draftFiles);
+        } catch (cause) {
+          // Oferta jest już zapisana i nie wolno jej zgubić przez zdjęcia.
+          // Zamiast wracać do listy, zostajemy przy niej w edycji — pliki są
+          // wciąż wybrane w oknie wyboru, a agent widzi, czego brakuje.
+          setDraftFiles([]);
+          navigate(`/nieruchomosci/${saved.id}/edytuj`, {
+            state: {
+              mediaError:
+                cause instanceof ApiError
+                  ? cause.message
+                  : "Oferta została zapisana, ale nie udało się wgrać zdjęć.",
+            },
+          });
+          return;
+        }
+      }
+
       navigate("/nieruchomosci", { state: { saved: saved.id } });
     } catch (cause) {
       if (cause instanceof ApiError) {
@@ -774,6 +812,13 @@ export function PropertyFormPage() {
       {formError && (
         <p className="rounded-md border border-critical/30 bg-critical/8 px-3 py-2 text-[13px] text-critical">
           {formError}
+        </p>
+      )}
+
+      {mediaError && (
+        <p className="rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-[13px] text-ink">
+          Oferta została zapisana, ale zdjęcia się nie wgrały: {mediaError}{" "}
+          Spróbuj dodać je poniżej.
         </p>
       )}
 
@@ -1511,11 +1556,32 @@ export function PropertyFormPage() {
         </div>
       </Section>
 
-      <p className="flex items-start gap-2 text-[12px] text-ink-muted">
-        <Info className="mt-px size-3.5 shrink-0" strokeWidth={2} />
-        Zdjęcia dodaje się po zapisaniu oferty. Bez co najmniej jednego zdjęcia
-        oferta nie zostanie uznana za gotową do eksportu.
-      </p>
+      {isEdit && id ? (
+        <Section
+          title="Zdjęcia"
+          description="Galeria zapisuje się od razu, niezależnie od przycisku „Zapisz ofertę”."
+        >
+          <div className="md:col-span-3">
+            <PropertyGallery
+              propertyId={id}
+              media={media}
+              onChange={setMedia}
+            />
+          </div>
+        </Section>
+      ) : (
+        <Section
+          title="Zdjęcia"
+          description="Wgrają się razem z ofertą. Bez co najmniej jednego zdjęcia oferta nie będzie gotowa do eksportu."
+        >
+          <div className="md:col-span-3">
+            <PropertyGalleryDraft
+              files={draftFiles}
+              onChange={setDraftFiles}
+            />
+          </div>
+        </Section>
+      )}
 
       <div className="flex justify-end gap-2">
         <Button

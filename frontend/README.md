@@ -89,6 +89,10 @@ src/
   pages/       Dashboard, Placeholder, auth/{Login,Register,AuthLayout}
     calendar/  siatka miesiąc/tydzień/dzień, panel terminu, formularz,
                oś czasu wstawiana na karty oferty i klienta
+    properties/ lista, formularz, karta oferty oraz dwie galerie:
+               PropertyGallery (istniejąca oferta — upload, zamiana pliku,
+               kolejność, podpisy; tryb readOnly na karcie) i
+               PropertyGalleryDraft (nowa oferta — pliki czekają w pamięci)
 ```
 
 ## Kontrakt z backendem
@@ -103,6 +107,11 @@ Frontend oczekuje od Spring Boota:
 | `GET /api/properties` | — | strona `PropertySummary` |
 | `POST /api/properties` | `CreatePropertyPayload` | pełna oferta |
 | `GET /api/properties/dictionaries` | — | słowniki formularza |
+| `POST /api/properties/{id}/media` | multipart `files` | dodane zdjęcia + podpisane linki |
+| `PUT /api/properties/{id}/media/{mediaId}/file` | multipart `file` | podmiana pliku |
+| `PUT /api/properties/{id}/media/order` | `{ mediaIds }` | kolejność galerii |
+| `PATCH /api/properties/{id}/media/{mediaId}` | `{ caption }` | podpis zdjęcia |
+| `DELETE /api/properties/{id}/media/{mediaId}` | — | `204` |
 | `GET /api/calendar/events?from=&to=` | — | lista terminów w zakresie |
 | `POST /api/calendar/events` | `CreateEventPayload` | pełny termin + kolizje |
 | `PUT /api/calendar/events/{id}/status` | `{ status, outcome?, outcomeNote? }` | domknięcie terminu |
@@ -115,6 +124,33 @@ nieruchomości, forma własności czy materiał budowy to po stronie frontu zwyk
 stringi, a listy wyboru pochodzą z `/api/properties/dictionaries` — razem
 z polskimi etykietami. Powielenie tych dwudziestu kilku enumów oznaczałoby dwa
 źródła prawdy rozjeżdżające się przy każdej zmianie w backendzie.
+
+**Zdjęcia nie przechodzą przez backend.** `url` i `thumbnailUrl` są podpisanymi
+linkami prosto do storage'u i wygasają po 15 minutach — nie wolno ich zapisywać
+ani cache'ować dłużej niż trwa widok. Dlatego też żądania galerii idą jako
+`FormData`, a klient HTTP **nie ustawia wtedy `Content-Type`**: nagłówek z
+granicą multiparta dokłada przeglądarka i wpisanie go ręcznie psuje żądanie.
+
+**Zarządzanie galerią jest wyłącznie w formularzu oferty.** Karta oferty pokazuje
+zdjęcia w trybie tylko do odczytu (`PropertyGallery` z `readOnly`) — kartę
+otwiera się, żeby ofertę obejrzeć, a przypadkowego skasowania zdjęcia przy
+przeglądaniu nie da się cofnąć.
+
+Galerie są dwie, bo mają różne dane:
+
+- **`PropertyGallery`** — oferta już istnieje. Każda operacja to osobne żądanie
+  i działa od razu, niezależnie od przycisku „Zapisz ofertę".
+- **`PropertyGalleryDraft`** — oferta dopiero powstaje. Zdjęcie trzyma klucz obcy
+  do oferty, więc przed jej zapisem nie ma czego nim obwiesić: pliki czekają
+  w pamięci (podgląd przez `URL.createObjectURL`, adresy zwalniane przy zmianie),
+  a lecą na serwer zaraz po tym, jak zapis nada ofercie identyfikator. Jeśli
+  wysyłka zdjęć padnie, oferta zostaje zapisana, a użytkownik ląduje w jej
+  edycji z komunikatem — zamiast stracić jedno i drugie.
+
+Lista ofert pokazuje miniaturę zdjęcia głównego (`PropertySummary.coverThumbnailUrl`,
+`null` przy ofercie bez zdjęć — wtedy leci placeholder tego samego rozmiaru, żeby
+wiersze się nie rozjeżdżały). Miniatury dla całej strony listy backend podpisuje
+jednym zapytaniem, więc wiersz nie dociąga kolekcji zdjęć swojej oferty.
 
 Kalendarz wysyła i odbiera czas jako ISO-8601 w UTC; siatka dni liczona jest
 w czasie lokalnym przeglądarki. Kafelek terminu koduje dwie rzeczy naraz, więc

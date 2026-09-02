@@ -22,5 +22,27 @@ services:
       timeout: 3s
       retries: 10
 
+  # Storage zdjęć ofert. Gadamy z nim przez API S3, więc ten sam kod działa
+  # później na prawdziwym S3 — MinIO jest tu implementacją, nie zależnością.
+  minio:
+    # Celowo bez pinowania wersji, w odróżnieniu od Postgresa: MinIO wydaje obrazy
+    # znacznikiem RELEASE.<data>, a nie numerem, więc przypięcie postarza się
+    # z każdym miesiącem. Przed produkcją: przypiąć konkretny RELEASE.
+    image: minio/minio:latest
+    container_name: delta-crm-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: delta
+      # Minimum 8 znaków — MinIO odmawia startu przy krótszym.
+      MINIO_ROOT_PASSWORD: delta12345
+    ports:
+      # 9000 — API S3 (tu chodzi backend i przeglądarka po podpisany URL),
+      # 9001 — konsola webowa do podejrzenia bucketa.
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+
 volumes:
   postgres-data:
+  minio-data:

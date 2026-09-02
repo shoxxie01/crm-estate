@@ -10,6 +10,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -66,6 +67,41 @@ public class GlobalExceptionHandler {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(
                 HttpStatus.NOT_FOUND, exception.getMessage());
         problem.setTitle("Nie znaleziono");
+        return problem;
+    }
+
+    @ExceptionHandler(MediaNotFoundException.class)
+    public ProblemDetail handleMediaNotFound(MediaNotFoundException exception) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.NOT_FOUND, exception.getMessage());
+        problem.setTitle("Nie znaleziono");
+        return problem;
+    }
+
+    /**
+     * Storage nie odpowiedział. Osobno od błędów walidacji, bo użytkownik nie ma
+     * tu czego poprawić — ma spróbować ponownie. Treść wyjątku nie idzie na
+     * zewnątrz, poszłyby w niej adresy i nazwy bucketów.
+     */
+    @ExceptionHandler(MediaStorageException.class)
+    public ProblemDetail handleStorageFailure(MediaStorageException exception) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.SERVICE_UNAVAILABLE,
+                "Magazyn plików jest chwilowo niedostępny. Spróbuj wgrać zdjęcie ponownie za chwilę.");
+        problem.setTitle("Storage niedostępny");
+        return problem;
+    }
+
+    /**
+     * Plik większy niż limit multiparta. Bez tej obsługi wracał surowy błąd
+     * kontenera, a formularz nie miał czego pokazać przy polu.
+     */
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ProblemDetail handleUploadTooLarge(MaxUploadSizeExceededException exception) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.PAYLOAD_TOO_LARGE, "Plik jest za duży. Maksymalny rozmiar zdjęcia to 15 MB.");
+        problem.setTitle("Za duży plik");
+        problem.setProperty("errors", Map.of("files", "Plik jest za duży. Maksymalny rozmiar zdjęcia to 15 MB."));
         return problem;
     }
 

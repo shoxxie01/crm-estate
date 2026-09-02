@@ -35,7 +35,12 @@ export async function apiFetch<T>(
 ): Promise<T> {
   const headers = new Headers(init.headers);
   headers.set("Accept", "application/json");
-  if (init.body) headers.set("Content-Type", "application/json");
+  // Przy FormData nagłówka NIE ustawiamy: przeglądarka dokłada do niego
+  // granicę multiparta, a wpisany ręcznie „application/json" albo
+  // „multipart/form-data" bez boundary sprawia, że serwer nie rozpozna części.
+  if (init.body && !(init.body instanceof FormData)) {
+    headers.set("Content-Type", "application/json");
+  }
   if (authToken) headers.set("Authorization", `Bearer ${authToken}`);
 
   let response: Response;

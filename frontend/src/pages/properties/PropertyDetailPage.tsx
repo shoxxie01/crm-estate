@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
 import {
   deleteProperty,
@@ -10,6 +10,7 @@ import {
 } from "../../api/properties";
 import { ApiError } from "../../api/client";
 import { EventTimeline } from "../calendar/EventTimeline";
+import { PropertyGallery } from "./PropertyGallery";
 import { Badge } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
 import { formatCurrency, formatNumber } from "../../lib/format";
@@ -396,6 +397,25 @@ export function PropertyDetailPage() {
           </div>
         </section>
       )}
+
+      {/* Sam podgląd. Zmiany w galerii — wgrywanie, zamiana, kolejność —
+          należą do formularza oferty, tak samo jak każde inne jej pole. */}
+      <section className="card">
+        <header className="flex items-center justify-between gap-4 border-b border-line px-4 py-3">
+          <h2 className="text-[13px] font-semibold tracking-tight text-ink">
+            Zdjęcia
+          </h2>
+          <Link
+            to={`/nieruchomosci/${p.id}/edytuj`}
+            className="text-[12px] text-accent hover:underline"
+          >
+            Zarządzaj zdjęciami
+          </Link>
+        </header>
+        <div className="p-4">
+          <PropertyGallery propertyId={p.id} media={p.media} readOnly />
+        </div>
+      </section>
 
       <section className="card">
         <header className="border-b border-line px-4 py-3">

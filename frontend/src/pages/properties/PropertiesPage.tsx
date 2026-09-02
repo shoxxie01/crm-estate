@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { AlertTriangle, Building2, CheckCircle2, Plus } from "lucide-react";
+import {
+  AlertTriangle,
+  Building2,
+  CheckCircle2,
+  ImageOff,
+  Plus,
+} from "lucide-react";
 import {
   fetchDictionaries,
   fetchProperties,
@@ -176,10 +182,34 @@ export function PropertiesPage() {
                       {property.referenceNumber}
                     </td>
                     <td className="px-4 py-2.5">
-                      <div className="font-medium text-ink">{property.title}</div>
-                      <div className="text-[12px] text-ink-muted">
-                        {property.city}
-                        {property.district && `, ${property.district}`}
+                      <div className="flex items-center gap-2.5">
+                        {/* Miniatura zdjęcia głównego. Pusty kafelek zamiast
+                            braku kolumny — inaczej wiersze bez zdjęcia
+                            rozjeżdżałyby wyrównanie tytułów. */}
+                        {property.coverThumbnailUrl ? (
+                          <img
+                            src={property.coverThumbnailUrl}
+                            alt=""
+                            loading="lazy"
+                            className="h-20 w-28 shrink-0 rounded-sm border border-line object-cover"
+                          />
+                        ) : (
+                          <span className="flex h-20 w-28 shrink-0 items-center justify-center rounded-sm border border-line bg-subtle">
+                            <ImageOff
+                              className="size-5 text-ink-muted"
+                              strokeWidth={1.5}
+                            />
+                          </span>
+                        )}
+                        <div className="min-w-0">
+                          <div className="font-medium text-ink">
+                            {property.title}
+                          </div>
+                          <div className="text-[12px] text-ink-muted">
+                            {property.city}
+                            {property.district && `, ${property.district}`}
+                          </div>
+                        </div>
                       </div>
                     </td>
                     <td className="px-4 py-2.5 text-ink-secondary">

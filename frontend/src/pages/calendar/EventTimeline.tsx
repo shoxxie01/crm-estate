@@ -112,8 +112,12 @@ function Section({
           const Icon = eventIcon(event.type);
           const starts = new Date(event.startsAt);
 
+          // items-center, nie items-start: data, ikona i odznaka to etykiety
+          // całego wiersza, więc mają stać na jego środku. Przy wpisie
+          // z rezultatem opis rośnie do trzech linijek i przyklejone do góry
+          // wyglądały jak urwane.
           return (
-            <li key={event.id} className="flex items-start gap-3 px-3 py-2">
+            <li key={event.id} className="flex items-center gap-3 px-3 py-2">
               <span className="w-16 shrink-0 text-[12px] tabular-nums text-ink-secondary">
                 {formatDayMonth(starts)}
                 <span className="block text-ink-muted">
@@ -122,7 +126,7 @@ function Section({
               </span>
 
               <Icon
-                className={cn("mt-0.5 size-4 shrink-0", typeInk(event.type))}
+                className={cn("size-4 shrink-0", typeInk(event.type))}
                 strokeWidth={2}
               />
 

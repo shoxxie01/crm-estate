@@ -25,6 +25,14 @@ spring:
   jackson:
     default-property-inclusion: non_null
 
+  servlet:
+    multipart:
+      # Limit na plik wchodzący, nie na zapisany. Zdjęcie z telefonu bywa
+      # 12-megapikselowe i waży kilkanaście MB — po normalizacji do 1920 px
+      # zostaje z tego kilkaset kB, a dopiero ten rozmiar liczy się dla portalu.
+      max-file-size: 15MB
+      max-request-size: 120MB
+
 server:
   port: 8080
   error:
@@ -38,6 +46,18 @@ delta:
     issuer: delta-crm
   cors:
     allowed-origins: http://localhost:5173
+  storage:
+    # MinIO z compose.yaml. Adres musi być osiągalny także z przeglądarki —
+    # podpis URL-a obejmuje host, więc backend i front muszą widzieć ten sam.
+    endpoint: ${DELTA_S3_ENDPOINT:http://localhost:9000}
+    # MinIO nie ma regionów, ale podpis SigV4 wymaga jakiegoś w kanonicznym żądaniu.
+    region: ${DELTA_S3_REGION:us-east-1}
+    bucket: ${DELTA_S3_BUCKET:delta-crm-media}
+    access-key: ${DELTA_S3_ACCESS_KEY:delta}
+    secret-key: ${DELTA_S3_SECRET_KEY:delta12345}
+    # Ważność podpisanego linku do zdjęcia. Krótko, bo link działa bez tokenu —
+    # kto go dostanie, ten widzi zdjęcie. Tyle wystarczy na obejrzenie galerii.
+    url-ttl: 15m
 
 logging:
   level:

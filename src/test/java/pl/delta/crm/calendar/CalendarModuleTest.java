@@ -16,6 +16,7 @@ import pl.delta.crm.property.PropertyRepository;
 import pl.delta.crm.user.UserRepository;
 import tools.jackson.databind.ObjectMapper;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -404,5 +405,63 @@ class CalendarModuleTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1));
+    }
+
+    @Test
+    @DisplayName("skasowanie oferty odpina jej terminy zamiast blokować usunięcie")
+    void deletingPropertyDetachesItsEvents() throws Exception {
+        String token = tokenFor("anna@delta.pl", "Delta Nieruchomości");
+        String propertyId = createProperty(token);
+
+        String eventId = createEvent(token, """
+                {
+                  "type": "PRESENTATION",
+                  "title": "Prezentacja — Gdańska 41",
+                  "startsAt": "2026-09-10T10:00:00Z",
+                  "endsAt": "2026-09-10T11:00:00Z",
+                  "propertyId": "%s"
+                }
+                """.formatted(propertyId));
+
+        // Klucz obcy calendar_events.property_id nie ma ON DELETE, więc bez
+        // jawnego odpięcia baza odrzucała kasowanie — a termin do oferty umawia
+        // się przy każdej normalnej ofercie.
+        mockMvc.perform(delete("/api/properties/" + propertyId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isNoContent());
+
+        // Historia zostaje: sam termin dalej istnieje, traci tylko powiązanie.
+        mockMvc.perform(get("/api/calendar/events/" + eventId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.summary.propertyId").doesNotExist())
+                .andExpect(jsonPath("$.summary.title").value("Prezentacja — Gdańska 41"));
+    }
+
+    @Test
+    @DisplayName("skasowanie klienta odpina jego terminy zamiast blokować usunięcie")
+    void deletingClientDetachesItsEvents() throws Exception {
+        String token = tokenFor("anna@delta.pl", "Delta Nieruchomości");
+        String clientId = createClient(token);
+
+        String eventId = createEvent(token, """
+                {
+                  "type": "MEETING",
+                  "title": "Spotkanie z właścicielem",
+                  "startsAt": "2026-09-11T10:00:00Z",
+                  "endsAt": "2026-09-11T11:00:00Z",
+                  "clientId": "%s"
+                }
+                """.formatted(clientId));
+
+        mockMvc.perform(delete("/api/clients/" + clientId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/calendar/events/" + eventId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.summary.clientId").doesNotExist())
+                .andExpect(jsonPath("$.summary.title").value("Spotkanie z właścicielem"));
     }
 }
