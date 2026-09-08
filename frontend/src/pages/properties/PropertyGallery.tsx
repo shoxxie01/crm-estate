@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   AlertTriangle,
   GripVertical,
@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import {
   deletePropertyMedia,
+  fetchPropertyMedia,
   reorderPropertyMedia,
   replacePropertyMediaFile,
   updatePropertyMediaCaption,
@@ -17,6 +18,7 @@ import {
 } from "../../api/properties";
 import { ApiError } from "../../api/client";
 import { Button } from "../../components/ui/Button";
+import { PropertyLightbox } from "./PropertyLightbox";
 
 /** Tyle materiałów przyjmuje jedna oferta — limit pilnuje też backend. */
 const MAX_MEDIA = 50;
@@ -52,12 +54,37 @@ export function PropertyGallery({
   const [dragOver, setDragOver] = useState(false);
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  // Świeże linki pobrane po wygaśnięciu podpisów (tylko podgląd). Trzymamy je
+  // tutaj, żeby karta oferty nie musiała nic wiedzieć o czasie życia URL-i.
+  const [refreshed, setRefreshed] = useState<PropertyMedia[] | null>(null);
 
   const addInput = useRef<HTMLInputElement>(null);
   const replaceInput = useRef<HTMLInputElement>(null);
   const replacingId = useRef<string | null>(null);
 
   const remaining = MAX_MEDIA - media.length;
+
+  // W podglądzie renderujemy odświeżony komplet, jeśli po drodze go pobraliśmy.
+  // W edycji zawsze `media` — tam stan galerii prowadzi formularz.
+  const items = readOnly ? (refreshed ?? media) : media;
+
+  // Nowy komplet z zewnątrz unieważnia to, co dociągnęliśmy sami.
+  useEffect(() => setRefreshed(null), [media]);
+
+  /**
+   * Podpisy linków żyją ~15 minut, a kartę oferty da się trzymać otwartą dłużej.
+   * Gdy zdjęcie przestaje się ładować, pobieramy galerię jeszcze raz — dostajemy
+   * te same materiały ze świeżymi URL-ami.
+   */
+  async function refreshMedia() {
+    try {
+      setRefreshed(await fetchPropertyMedia(propertyId));
+    } catch {
+      // Zostaje to, co było. Komunikat o błędzie przeszkadzałby w oglądaniu
+      // oferty bardziej niż jedno zdjęcie, które się nie wczytało.
+    }
+  }
 
   async function run(action: () => Promise<void>) {
     setBusy(true);
@@ -162,56 +189,97 @@ export function PropertyGallery({
     });
   }
 
-  // Podgląd na karcie oferty: te same kafelki, zero sterowania. Rozdzielenie
-  // jest celowe — kartę otwiera się, żeby ofertę obejrzeć, a przypadkowe
-  // skasowanie zdjęcia przy przeglądaniu nie ma jak się cofnąć.
+  // Podgląd na karcie oferty: zdjęcie główne, pod nim reszta, zero sterowania.
+  // Rozdzielenie jest celowe — kartę otwiera się, żeby ofertę obejrzeć,
+  // a przypadkowego skasowania zdjęcia przy przeglądaniu nie da się cofnąć.
+  // Kliknięcie kafelka otwiera pełny ekran; w trybie edycji kafelek jest
+  // uchwytem do przeciągania, więc podglądu tam nie ma.
   if (readOnly) {
+    const cover = items[0];
+
     return (
       <div className="flex flex-col gap-3">
         <p className="text-[12px] text-ink-muted">
-          {media.length === 0
+          {items.length === 0
             ? "Brak zdjęć — dodasz je w edycji oferty. Bez co najmniej jednego oferta nie pójdzie na portal."
-            : `${media.length} ${media.length === 1 ? "zdjęcie" : "zdjęć"}. Pierwsze jest zdjęciem głównym.`}
+            : `${items.length} ${items.length === 1 ? "zdjęcie" : "zdjęć"}. Kliknij, aby otworzyć na pełnym ekranie.`}
         </p>
 
-        {media.length > 0 && (
-          <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            {media.map((item, index) => (
-              <li
-                key={item.id}
-                className="flex flex-col overflow-hidden rounded-md border border-line bg-surface"
+        {cover && (
+          <>
+            <figure className="flex flex-col gap-1.5">
+              <button
+                type="button"
+                onClick={() => setLightboxIndex(0)}
+                aria-label="Otwórz zdjęcie główne na pełnym ekranie"
+                className="relative block aspect-4/3 w-full overflow-hidden rounded-md border border-line bg-subtle"
               >
-                <div className="relative aspect-4/3 bg-subtle">
-                  <img
-                    src={item.thumbnailUrl}
-                    alt={item.caption ?? item.fileName}
-                    loading="lazy"
-                    className="h-full w-full object-cover"
-                  />
-                  {index === 0 && (
-                    <span className="absolute left-1.5 top-1.5 inline-flex items-center gap-1 rounded-sm bg-ink/80 px-1.5 py-0.5 text-[10px] font-medium text-white">
-                      <Star size={10} />
-                      Główne
-                    </span>
-                  )}
-                  {!item.meetsPortalRequirements && (
-                    <span
-                      title="Portal odrzuci to zdjęcie — sprawdź rozmiar i wymiary."
-                      className="absolute right-1.5 top-1.5 inline-flex items-center gap-1 rounded-sm bg-warning/90 px-1.5 py-0.5 text-[10px] font-medium text-ink"
-                    >
-                      <AlertTriangle size={10} />
-                      Portal
-                    </span>
-                  )}
-                </div>
-                {item.caption && (
-                  <p className="px-2 py-1.5 text-[11px] text-ink-secondary">
-                    {item.caption}
-                  </p>
+                <img
+                  src={cover.thumbnailUrl}
+                  alt={cover.caption ?? cover.fileName}
+                  className="h-full w-full object-cover"
+                />
+                <span className="absolute top-1.5 left-1.5 inline-flex items-center gap-1 rounded-sm bg-ink/80 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                  <Star size={10} />
+                  Główne
+                </span>
+                {!cover.meetsPortalRequirements && (
+                  <span
+                    title="Portal odrzuci to zdjęcie — sprawdź rozmiar i wymiary."
+                    className="absolute top-1.5 right-1.5 inline-flex items-center gap-1 rounded-sm bg-warning/90 px-1.5 py-0.5 text-[10px] font-medium text-ink"
+                  >
+                    <AlertTriangle size={10} />
+                    Portal
+                  </span>
                 )}
-              </li>
-            ))}
-          </ul>
+              </button>
+              {cover.caption && (
+                <figcaption className="text-[11px] text-ink-secondary">
+                  {cover.caption}
+                </figcaption>
+              )}
+            </figure>
+
+            {items.length > 1 && (
+              <ul className="grid grid-cols-3 gap-2">
+                {items.slice(1).map((item, index) => (
+                  <li key={item.id}>
+                    <button
+                      type="button"
+                      onClick={() => setLightboxIndex(index + 1)}
+                      aria-label={`Otwórz zdjęcie ${index + 2} na pełnym ekranie`}
+                      className="relative block aspect-4/3 w-full overflow-hidden rounded-md border border-line bg-subtle"
+                    >
+                      <img
+                        src={item.thumbnailUrl}
+                        alt={item.caption ?? item.fileName}
+                        loading="lazy"
+                        className="h-full w-full object-cover"
+                      />
+                      {!item.meetsPortalRequirements && (
+                        <span
+                          title="Portal odrzuci to zdjęcie — sprawdź rozmiar i wymiary."
+                          className="absolute top-1 right-1 inline-flex items-center rounded-sm bg-warning/90 px-1 py-0.5 text-ink"
+                        >
+                          <AlertTriangle size={10} />
+                        </span>
+                      )}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
+        )}
+
+        {lightboxIndex !== null && (
+          <PropertyLightbox
+            media={items}
+            index={lightboxIndex}
+            onClose={() => setLightboxIndex(null)}
+            onIndexChange={setLightboxIndex}
+            onExpired={refreshMedia}
+          />
         )}
       </div>
     );

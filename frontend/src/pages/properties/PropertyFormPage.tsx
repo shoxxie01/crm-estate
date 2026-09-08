@@ -1,4 +1,10 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type ChangeEvent,
+  type ReactNode,
+} from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import {
@@ -17,6 +23,7 @@ import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { Select } from "../../components/ui/Select";
 import { Textarea } from "../../components/ui/Textarea";
+import { maskPostalCode } from "../../lib/postalCode";
 
 /** Wszystkie pola tekstowe trzymamy jako stringi — konwersja dopiero przy wysyłce. */
 type Fields = Record<string, string>;
@@ -258,6 +265,22 @@ export function PropertyFormPage() {
         [name]: (negative ? "-" : "") + digits,
       }));
     };
+
+  // Kod pocztowy — myślnik dopisuje maska. Wartość i karetkę ustawiamy na
+  // elemencie od razu, przed setState: gdy DOM ma już to, co React zaraz
+  // wyrenderuje, React nie tknie pola i karetka nie ucieka na koniec przy
+  // poprawianiu cyfry w środku.
+  const setPostalCode = (event: ChangeEvent<HTMLInputElement>) => {
+    const input = event.target;
+    const { value, caret } = maskPostalCode(
+      input.value,
+      input.selectionStart ?? input.value.length,
+      fields.postalCode,
+    );
+    input.value = value;
+    input.setSelectionRange(caret, caret);
+    setFields((current) => ({ ...current, postalCode: value }));
+  };
 
   // --- cena ↔ cena za m² -----------------------------------------------------
   // Liczba z pola (przecinek → kropka); null gdy puste/niepoprawne.
@@ -1168,7 +1191,7 @@ export function PropertyFormPage() {
         <Input
           label="Kod pocztowy"
           value={fields.postalCode}
-          onChange={set("postalCode")}
+          onChange={setPostalCode}
           onBlur={markTouched("address.postalCode")}
           error={errorFor("address.postalCode")}
           placeholder="00-000"
