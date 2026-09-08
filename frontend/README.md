@@ -82,7 +82,7 @@ src/
   api/         klient HTTP + warstwa auth (mock ↔ Spring Boot)
   auth/        AuthContext, ProtectedRoute
   components/
-    ui/        Button, Input, Card, Badge, Logo
+    ui/        Button, Input, Card, Badge, Logo, ConfirmDialog
     layout/    AppShell, Sidebar, Topbar, definicja nawigacji
     charts/    StatTile, Sparkline, StackedBarChart, RankedBarChart
   data/        dane demo dashboardu (kształt = przyszła odpowiedź API)
@@ -92,7 +92,8 @@ src/
     properties/ lista, formularz, karta oferty oraz dwie galerie:
                PropertyGallery (istniejąca oferta — upload, zamiana pliku,
                kolejność, podpisy; tryb readOnly na karcie) i
-               PropertyGalleryDraft (nowa oferta — pliki czekają w pamięci)
+               PropertyGalleryDraft (nowa oferta — pliki czekają w pamięci);
+               PropertyLightbox — podgląd zdjęcia na całym ekranie
 ```
 
 ## Kontrakt z backendem
@@ -135,6 +136,15 @@ granicą multiparta dokłada przeglądarka i wpisanie go ręcznie psuje żądani
 zdjęcia w trybie tylko do odczytu (`PropertyGallery` z `readOnly`) — kartę
 otwiera się, żeby ofertę obejrzeć, a przypadkowego skasowania zdjęcia przy
 przeglądaniu nie da się cofnąć.
+
+W tym trybie galeria stoi w przyklejonej prawej kolumnie karty, a kliknięcie
+kafelka otwiera **`PropertyLightbox`** — pełny ekran ze strzałkami, zoomem
+i paskiem miniatur, renderowany portalem do `body` (`fixed` wewnątrz `sticky`
+przykleiłby się do kolumny, nie do okna). Podglądu nie ma w trybie edycji:
+kafelek jest tam uchwytem do przeciągania i kliknięcie gryzłoby się z zmianą
+kolejności. Wygasłe linki (15 min) lightbox rozpoznaje po błędzie ładowania
+i prosi galerię o świeży komplet — jedna próba na zdjęcie, żeby plik trwale
+uszkodzony nie zapętlił odświeżania.
 
 Galerie są dwie, bo mają różne dane:
 

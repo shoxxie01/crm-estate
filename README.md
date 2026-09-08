@@ -94,6 +94,19 @@ Każdy inny endpoint pod `/api/**` wymaga tokenu.
 Filtry listy: `?status=`, `?type=`, `?transaction=`, plus standardowe `page`,
 `size`, `sort` (domyślnie `createdAt,desc`).
 
+Ofertę **kasuje się też z listy**, nie tylko z jej karty — pomyłkę przy
+zakładaniu prostuje się wtedy bez wchodzenia w szczegóły. Kosz w wierszu otwiera
+**okno potwierdzenia** („Czy na pewno chcesz usunąć tę ofertę?" wraz z numerem
+i tytułem), a nie dwa przyciski w komórce: wiersze są niskie i gęsto obok siebie,
+więc potwierdzenie w miejscu wypadałoby dokładnie tam, gdzie przed chwilą był
+kursor. Wiersz otwiera kartę oferty, więc kliknięcie kosza zatrzymuje się na
+swojej komórce. Kasowanie jest **nieodwracalne** i zabiera też zdjęcia — oferty
+wycofanej z rynku nie kasuje się, tylko ustawia jej status na `ARCHIVED`.
+
+Pozostałe potwierdzenia (karta oferty, klient, termin, zdjęcie w galerii) są
+nadal dwustopniowe i w miejscu — tam operacja dotyczy tego, co użytkownik ma
+otwarte przed sobą, a nie jednego z wielu wierszy.
+
 **Numer oferty nadaje serwer** w formacie `RRRR/MM/NNN`, osobno dla każdego
 biura — nie ma go w `CreatePropertyRequest`. Portal rozpoznaje po nim ogłoszenie
 przy kolejnych wysyłkach, więc musi być stabilny, ale nie ma powodu, by wpisywał
@@ -167,6 +180,17 @@ Format rozpoznajemy po sygnaturze pliku, nie po nagłówku `Content-Type`.
 zdjęcia w trybie tylko do odczytu — otwiera się ją, żeby ofertę obejrzeć,
 a przypadkowego skasowania zdjęcia przy przeglądaniu nie da się cofnąć.
 
+Na karcie galeria stoi w **prawej kolumnie, przyklejona przy przewijaniu** —
+zdjęcie zostaje w polu widzenia przy czytaniu parametrów, bo to właśnie z nimi
+się je zestawia. Poniżej `lg` układ wraca do jednej kolumny. Kliknięcie zdjęcia
+otwiera **podgląd na całym ekranie**: przewijanie strzałkami (na ekranie i na
+klawiaturze), zoom kółkiem lub przyciskami z przesuwaniem powiększonego kadru,
+pasek miniatur, licznik i podpis. Podgląd renderuje się przez portal do `body`,
+bo `position: fixed` wewnątrz przyklejonej kolumny przykleiłby się do niej
+zamiast do okna. Wygaśnięcie podpisanego linku (15 min) galeria poznaje po
+nieudanym załadowaniu i dociąga świeży komplet adresów — bez tego karta
+otwarta dłużej niż kwadrans pokazywałaby puste kadry.
+
 Unikat `(property_id, position)` jest **odroczony do commitu** (migracja `V12`) —
 zmiana kolejności przepisuje pozycje wielu wierszom naraz i po drodze przechodzi
 przez stan z duplikatem, mimo że stan końcowy jest poprawny.
@@ -227,7 +251,11 @@ reguły w formularzu, żeby błąd był widoczny od razu, zanim żądanie poleci
 
 - pola liczbowe przyjmują tylko cyfry; kwoty i powierzchnie maks. 2 miejsca po
   przecinku; realne zakresy (piętro do 160, rok budowy do bieżącego + 10),
-- kod pocztowy w formacie `00-000`, telefon wyłącznie `+000 000 000 000`,
+- kod pocztowy w formacie `00-000` — myślnik dopisuje się sam w trakcie pisania,
+  więc wbija się pięć cyfr (`lib/postalCode.ts`); telefon wyłącznie
+  `+000 000 000 000`, ale ten formatuje się dopiero na blur — wstawianych znaków
+  jest kilka i karetka przy poprawianiu środka numeru nie ma jak wrócić na swoje
+  miejsce, przy jednym myślniku odtwarza się dokładnie,
 - nazwy własne (miejscowość, ulica, numer budynku…) są automatycznie kapitalizowane,
 - pola wymagane mają gwiazdkę `*`, a po nieudanym zapisie strona przewija się do
   pierwszego błędnego pola i ustawia na nim kursor.

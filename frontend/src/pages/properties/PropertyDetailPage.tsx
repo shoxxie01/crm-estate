@@ -164,7 +164,7 @@ export function PropertyDetailPage() {
   const showEnergy = isMieszkanie || isDom || isLokal || isHala;
 
   return (
-    <div className="flex max-w-4xl flex-col gap-4 pb-10">
+    <div className="flex max-w-6xl flex-col gap-4 pb-10">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Button
@@ -241,6 +241,33 @@ export function PropertyDetailPage() {
           {error}
         </p>
       )}
+
+      {/* Szczegóły po lewej, galeria po prawej — zdjęcie zostaje w polu widzenia
+          przy czytaniu parametrów, bo to je się z nimi zestawia. Poniżej lg
+          układ wraca do jednej kolumny, a galeria ląduje pod nagłówkiem.
+          Zmiany w galerii — wgrywanie, zamiana, kolejność — należą do formularza
+          oferty, tak samo jak każde inne jej pole. */}
+      <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:gap-5">
+        <aside className="lg:sticky lg:top-4 lg:col-start-2 lg:row-start-1">
+          <section className="card">
+            <header className="flex items-center justify-between gap-4 border-b border-line px-4 py-3">
+              <h2 className="text-[13px] font-semibold tracking-tight text-ink">
+                Zdjęcia
+              </h2>
+              <Link
+                to={`/nieruchomosci/${p.id}/edytuj`}
+                className="text-[12px] text-accent hover:underline"
+              >
+                Zarządzaj zdjęciami
+              </Link>
+            </header>
+            <div className="p-4">
+              <PropertyGallery propertyId={p.id} media={p.media} readOnly />
+            </div>
+          </section>
+        </aside>
+
+        <div className="flex flex-col gap-4 lg:col-start-1 lg:row-start-1">
 
       <Section title="Klasyfikacja i cena">
         <Field label="Rodzaj" value={L(p.propertyType)} />
@@ -398,25 +425,6 @@ export function PropertyDetailPage() {
         </section>
       )}
 
-      {/* Sam podgląd. Zmiany w galerii — wgrywanie, zamiana, kolejność —
-          należą do formularza oferty, tak samo jak każde inne jej pole. */}
-      <section className="card">
-        <header className="flex items-center justify-between gap-4 border-b border-line px-4 py-3">
-          <h2 className="text-[13px] font-semibold tracking-tight text-ink">
-            Zdjęcia
-          </h2>
-          <Link
-            to={`/nieruchomosci/${p.id}/edytuj`}
-            className="text-[12px] text-accent hover:underline"
-          >
-            Zarządzaj zdjęciami
-          </Link>
-        </header>
-        <div className="p-4">
-          <PropertyGallery propertyId={p.id} media={p.media} readOnly />
-        </div>
-      </section>
-
       <section className="card">
         <header className="border-b border-line px-4 py-3">
           <h2 className="text-[13px] font-semibold tracking-tight text-ink">
@@ -450,6 +458,9 @@ export function PropertyDetailPage() {
           <EventTimeline propertyId={p.id} />
         </div>
       </section>
+
+        </div>
+      </div>
     </div>
   );
 }

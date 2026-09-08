@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   AlertTriangle,
@@ -6,8 +6,10 @@ import {
   CheckCircle2,
   ImageOff,
   Plus,
+  Trash2,
 } from "lucide-react";
 import {
+  deleteProperty,
   fetchDictionaries,
   fetchProperties,
   type Dictionaries,
@@ -17,6 +19,7 @@ import {
 import { ApiError } from "../../api/client";
 import { Badge } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
+import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { Select } from "../../components/ui/Select";
 import { formatCurrency, formatNumber } from "../../lib/format";
 
@@ -42,6 +45,8 @@ export function PropertiesPage() {
   const [error, setError] = useState<string | null>(null);
   const [dictError, setDictError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchDictionaries()
@@ -53,9 +58,14 @@ export function PropertiesPage() {
       );
   }, []);
 
-  useEffect(() => {
+  // Wydzielone z efektu, bo po skasowaniu oferty trzeba pobrać listę jeszcze
+  // raz — inaczej rozjechałby się licznik „N ofert" w nagłówku.
+  const load = useCallback(() => {
     setLoading(true);
-    fetchProperties({ status: status || undefined, type: type || undefined })
+    return fetchProperties({
+      status: status || undefined,
+      type: type || undefined,
+    })
       .then((result) => {
         setPage(result);
         setError(null);
@@ -69,6 +79,26 @@ export function PropertiesPage() {
       )
       .finally(() => setLoading(false));
   }, [status, type]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  async function remove(id: string) {
+    setDeletingId(id);
+    setError(null);
+    try {
+      await deleteProperty(id);
+      setConfirmId(null);
+      await load();
+    } catch (cause) {
+      setError(
+        cause instanceof ApiError ? cause.message : "Nie udało się usunąć oferty.",
+      );
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   // Słowniki przychodzą jako listy {value,label} — mapa daje szybki podgląd etykiety.
   const labels = useMemo(() => {
@@ -86,6 +116,11 @@ export function PropertiesPage() {
   }, [dictionaries]);
 
   const label = (value: string) => labels.get(value) ?? value;
+
+  // Oferta wskazana koszem — okno potwierdzenia nazywa ją wprost, żeby przy
+  // sześciu podobnych wierszach było widać, którą się kasuje.
+  const pendingDelete =
+    page?.content.find((property) => property.id === confirmId) ?? null;
 
   return (
     <div className="flex flex-col gap-4">
@@ -146,12 +181,15 @@ export function PropertiesPage() {
                 <th className="px-4 py-2.5 text-right font-medium">zł/m²</th>
                 <th className="px-4 py-2.5 font-medium">Status</th>
                 <th className="px-4 py-2.5 font-medium">Eksport</th>
+                <th className="w-px px-4 py-2.5 font-medium">
+                  <span className="sr-only">Akcje</span>
+                </th>
               </tr>
             </thead>
             <tbody>
               {loading && (
                 <tr>
-                  <td colSpan={8} className="px-4 py-10 text-center text-ink-muted">
+                  <td colSpan={9} className="px-4 py-10 text-center text-ink-muted">
                     Wczytywanie…
                   </td>
                 </tr>
@@ -159,7 +197,7 @@ export function PropertiesPage() {
 
               {!loading && page?.content.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center">
+                  <td colSpan={9} className="px-4 py-12 text-center">
                     <Building2
                       className="mx-auto mb-2 size-6 text-ink-muted"
                       strokeWidth={1.5}
@@ -252,12 +290,50 @@ export function PropertiesPage() {
                         </Badge>
                       )}
                     </td>
+
+                    {/* Cały wiersz otwiera kartę oferty, więc kliknięcie kosza
+                        musi się tu zatrzymać — inaczej najpierw przeniosłoby
+                        na kartę. Samo potwierdzenie jest w oknie modalnym,
+                        żeby wiersz nie rozjeżdżał się przyciskami. */}
+                    <td
+                      className="px-4 py-2.5"
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setConfirmId(property.id)}
+                        className="text-critical hover:bg-critical/8"
+                        aria-label={`Usuń ofertę ${property.referenceNumber}`}
+                        title="Usuń ofertę"
+                      >
+                        <Trash2 className="size-4" strokeWidth={2} />
+                      </Button>
+                    </td>
                   </tr>
                 ))}
             </tbody>
           </table>
         </div>
       </div>
+
+      {pendingDelete && (
+        <ConfirmDialog
+          title="Czy na pewno chcesz usunąć tę ofertę?"
+          description={
+            <>
+              <span className="font-medium text-ink">
+                {pendingDelete.referenceNumber} — {pendingDelete.title}
+              </span>
+              <br />
+              Operacji nie da się cofnąć — razem z ofertą znikną jej zdjęcia.
+            </>
+          }
+          busy={deletingId === pendingDelete.id}
+          onConfirm={() => remove(pendingDelete.id)}
+          onCancel={() => setConfirmId(null)}
+        />
+      )}
     </div>
   );
 }
