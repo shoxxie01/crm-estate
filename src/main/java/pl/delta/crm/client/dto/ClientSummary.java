@@ -9,9 +9,9 @@ import java.util.UUID;
 
 /**
  * Wiersz listy klientów. {@code sellCount} i {@code rentCount} to liczba
- * powierzonych ofert na sprzedaż i na wynajem — front wyprowadza z nich etykietę
- * „sprzedający / wynajmujący / oba / brak zlecenia". Rozróżnienie nie jest polem
- * klienta, tylko pochodną jego ofert.
+ * powierzonych ofert na sprzedaż i na wynajem, {@code buyerCount} i
+ * {@code tenantCount} — liczba aktywnych poszukiwań kupna i najmu. Front
+ * wyprowadza z nich etykiety ról; żadna z ról nie jest polem klienta.
  */
 public record ClientSummary(
         UUID id,
@@ -24,10 +24,12 @@ public record ClientSummary(
         String agentName,
         long sellCount,
         long rentCount,
+        long buyerCount,
+        long tenantCount,
         Instant createdAt
 ) {
 
-    public static ClientSummary from(Client client, long sellCount, long rentCount) {
+    public static ClientSummary from(Client client, long[] offerCounts, long[] requirementCounts) {
         return new ClientSummary(
                 client.getId(),
                 client.getFirstName(),
@@ -37,8 +39,10 @@ public record ClientSummary(
                 client.getSource(),
                 client.getStatus(),
                 client.getAgent().getFirstName() + " " + client.getAgent().getLastName(),
-                sellCount,
-                rentCount,
+                offerCounts[0],
+                offerCounts[1],
+                requirementCounts[0],
+                requirementCounts[1],
                 client.getCreatedAt()
         );
     }

@@ -2,6 +2,7 @@ import {
   Building2,
   CalendarDays,
   FileSignature,
+  Inbox,
   LayoutDashboard,
   Share2,
   Users,
@@ -20,6 +21,8 @@ export const primaryNav: NavItem[] = [
   { to: "/kalendarz", label: "Kalendarz", icon: CalendarDays },
   { to: "/nieruchomosci", label: "Nieruchomości", icon: Building2 },
   { to: "/klienci", label: "Klienci", icon: Users },
+  // Licznik nowych zgłoszeń dokłada Sidebar — jest żywy, a nie stały.
+  { to: "/zgloszenia", label: "Zgłoszenia", icon: Inbox },
   { to: "/umowy", label: "Umowy", icon: FileSignature, badge: "2" },
   { to: "/eksport", label: "Eksport na portale", icon: Share2 },
 ];

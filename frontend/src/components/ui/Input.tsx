@@ -5,6 +5,8 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label: string;
   error?: string;
   hint?: string;
+  /** Stały, nieedytowalny przedrostek wewnątrz pola (np. kierunkowy +48). */
+  leading?: string;
   trailing?: ReactNode;
 }
 
@@ -12,6 +14,7 @@ export function Input({
   label,
   error,
   hint,
+  leading,
   trailing,
   className,
   id,
@@ -34,6 +37,14 @@ export function Input({
       </label>
 
       <div className="relative">
+        {leading && (
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-sm tabular-nums text-ink-muted"
+          >
+            {leading}
+          </span>
+        )}
         <input
           id={inputId}
           required={required}
@@ -46,6 +57,7 @@ export function Input({
             error
               ? "border-critical focus:border-critical focus:ring-2 focus:ring-critical/20"
               : "border-line hover:border-line-strong focus:border-accent focus:ring-2 focus:ring-accent-ring/50",
+            leading && "pl-12",
             trailing && "pr-10",
             className,
           )}

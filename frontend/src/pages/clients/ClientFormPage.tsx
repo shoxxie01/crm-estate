@@ -11,9 +11,10 @@ import {
 import { ApiError } from "../../api/client";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
+import { PhoneInput } from "../../components/ui/PhoneInput";
 import { Select } from "../../components/ui/Select";
 import { Textarea } from "../../components/ui/Textarea";
-import { isValidPhone } from "../../lib/phone";
+import { phoneError, phoneToField, phoneToPayload } from "../../lib/phone";
 
 type Fields = Record<string, string>;
 
@@ -63,7 +64,7 @@ export function ClientFormPage() {
         setFields({
           firstName: c.firstName,
           lastName: c.lastName,
-          phone: c.phone ?? "",
+          phone: phoneToField(c.phone),
           email: c.email ?? "",
           source: c.source ?? "",
           status: c.status,
@@ -84,10 +85,8 @@ export function ClientFormPage() {
 
   function validate(): Record<string, string> {
     const e: Record<string, string> = {};
-    const phone = fields.phone.trim();
-    if (phone !== "" && !isValidPhone(phone)) {
-      e.phone = "Podaj numer telefonu, np. +48 605 405 932.";
-    }
+    const phone = phoneError(fields.phone);
+    if (phone) e.phone = phone;
     return e;
   }
 
@@ -119,7 +118,7 @@ export function ClientFormPage() {
       const payload = {
         firstName: fields.firstName,
         lastName: fields.lastName,
-        phone: blank(fields.phone),
+        phone: phoneToPayload(fields.phone),
         email: blank(fields.email),
         source: blank(fields.source),
         status: fields.status,
@@ -179,8 +178,9 @@ export function ClientFormPage() {
             Dane klienta
           </h2>
           <p className="mt-0.5 text-[12px] text-ink-muted">
-            Rola sprzedający / wynajmujący wynika z ofert powierzonych przez
-            klienta — przypiszesz je po zapisaniu, na karcie klienta.
+            Rolę klienta wyznaczają powierzone oferty (sprzedający,
+            wynajmujący) i poszukiwania (kupujący, najemca) — dodasz je po
+            zapisaniu, na karcie klienta.
           </p>
         </header>
         <div className="grid gap-4 p-4 md:grid-cols-2">
@@ -198,19 +198,13 @@ export function ClientFormPage() {
             error={errors.lastName}
             required
           />
-          <Input
+          <PhoneInput
             label="Telefon"
-            type="tel"
-            inputMode="tel"
             value={fields.phone}
-            onChange={(event) =>
-              setFields((c) => ({ ...c, phone: event.target.value }))
-            }
+            onChange={(phone) => setFields((c) => ({ ...c, phone }))}
             onBlur={markTouched("phone")}
             error={errorFor("phone")}
-            hint="Np. +48 605 405 932. Wymagany telefon lub e-mail."
-            placeholder="+48 605 405 932"
-            maxLength={30}
+            hint="Wymagany telefon lub e-mail. Numer zagraniczny zacznij od +."
           />
           <Input
             label="E-mail"

@@ -11,6 +11,7 @@ import {
 import { ApiError } from "../../api/client";
 import { EventTimeline } from "../calendar/EventTimeline";
 import { PropertyGallery } from "./PropertyGallery";
+import { PropertyMatches } from "./PropertyMatches";
 import { Badge } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
 import { formatCurrency, formatNumber } from "../../lib/format";
@@ -268,6 +269,10 @@ export function PropertyDetailPage() {
         </aside>
 
         <div className="flex flex-col gap-4 lg:col-start-1 lg:row-start-1">
+
+      {/* Na samej górze, bo to odpowiedź na pierwsze pytanie po dodaniu
+          oferty: do kogo z nią zadzwonić. */}
+      <PropertyMatches propertyId={p.id} status={p.status} label={L} />
 
       <Section title="Klasyfikacja i cena">
         <Field label="Rodzaj" value={L(p.propertyType)} />

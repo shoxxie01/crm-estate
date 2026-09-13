@@ -9,6 +9,8 @@ interface ConfirmDialogProps {
   description?: React.ReactNode;
   confirmLabel?: string;
   cancelLabel?: string;
+  /** Napis na przycisku w trakcie operacji — domyślnie „Usuwanie…". */
+  busyLabel?: string;
   /** Trwa operacja — oba przyciski blokujemy, żeby nie poszła dwa razy. */
   busy?: boolean;
   onConfirm: () => void;
@@ -30,6 +32,7 @@ export function ConfirmDialog({
   description,
   confirmLabel = "Usuń",
   cancelLabel = "Anuluj",
+  busyLabel = "Usuwanie…",
   busy = false,
   onConfirm,
   onCancel,
@@ -104,7 +107,7 @@ export function ConfirmDialog({
             disabled={busy}
             className="border-critical/40 text-critical hover:bg-critical/8"
           >
-            {busy ? "Usuwanie…" : confirmLabel}
+            {busy ? busyLabel : confirmLabel}
           </Button>
         </div>
       </div>

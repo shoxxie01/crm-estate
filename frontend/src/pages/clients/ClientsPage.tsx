@@ -173,6 +173,8 @@ export function ClientsPage() {
                       <ClientIntent
                         sellCount={client.sellCount}
                         rentCount={client.rentCount}
+                        buyerCount={client.buyerCount}
+                        tenantCount={client.tenantCount}
                       />
                     </td>
                     <td className="px-4 py-2.5 text-ink-secondary">

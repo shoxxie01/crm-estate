@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import pl.delta.crm.client.dictionary.ClientStatus;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -23,6 +24,15 @@ public interface ClientRepository extends JpaRepository<Client, UUID> {
     Page<Client> findByAgencyId(UUID agencyId, Pageable pageable);
 
     Page<Client> findByAgencyIdAndStatus(UUID agencyId, ClientStatus status, Pageable pageable);
+
+    /**
+     * Kandydaci na duplikat zgłoszenia z formularza. Telefon i e-mail są
+     * w bazie znormalizowane ({@code PhoneNumber}, małe litery), więc wołający
+     * podaje je w tej samej postaci i wystarcza równość.
+     */
+    List<Client> findByAgencyIdAndPhone(UUID agencyId, String phone);
+
+    List<Client> findByAgencyIdAndEmail(UUID agencyId, String email);
 
     /**
      * Wyszukiwanie po imieniu, nazwisku, telefonie lub e-mailu. {@code q} jest

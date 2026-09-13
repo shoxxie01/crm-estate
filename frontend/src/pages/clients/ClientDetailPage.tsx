@@ -19,6 +19,7 @@ import { Select } from "../../components/ui/Select";
 import { formatCurrency, formatNumber } from "../../lib/format";
 import { EventTimeline } from "../calendar/EventTimeline";
 import { ClientIntent } from "./intent";
+import { RequirementsSection } from "./RequirementsSection";
 
 export function ClientDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -154,6 +155,8 @@ export function ClientDetailPage() {
           <ClientIntent
             sellCount={client.sellCount}
             rentCount={client.rentCount}
+            buyerCount={client.buyerCount}
+            tenantCount={client.tenantCount}
           />
         </div>
 
@@ -234,6 +237,12 @@ export function ClientDetailPage() {
           <Field label="Notatki" value={client.notes} />
         </dl>
       </section>
+
+      <RequirementsSection
+        clientId={client.id}
+        requirements={client.requirements}
+        onChanged={async () => setClient(await fetchClient(client.id))}
+      />
 
       <section className="card overflow-hidden">
         <header className="flex flex-wrap items-end justify-between gap-3 border-b border-line px-4 py-3">

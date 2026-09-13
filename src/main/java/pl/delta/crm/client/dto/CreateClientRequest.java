@@ -26,7 +26,7 @@ public record CreateClientRequest(
 
         @Pattern(
                 regexp = "^\\+?\\d(?:[ -]?\\d){8,14}$",
-                message = "Podaj numer telefonu, np. +48 605 405 932.")
+                message = "Podaj numer telefonu, np. 605 405 932.")
         @Size(max = 30, message = "Numer telefonu jest zbyt długi.")
         String phone,
 

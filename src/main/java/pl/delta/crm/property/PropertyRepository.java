@@ -51,6 +51,19 @@ public interface PropertyRepository extends JpaRepository<Property, UUID> {
             """)
     List<OwnerTransactionCount> countByTransactionForOwners(@Param("ownerIds") Collection<UUID> ownerIds);
 
+    /** Kandydaci do dopasowania z poszukiwaniem — kryteria szczegółowe ocenia {@code RequirementMatcher}. */
+    @Query("""
+            select p from Property p
+            where p.agency.id = :agencyId
+              and p.transactionType = :transactionType
+              and p.propertyType in :propertyTypes
+              and p.status in :statuses
+            """)
+    List<Property> findMatchCandidates(@Param("agencyId") UUID agencyId,
+                                       @Param("transactionType") TransactionType transactionType,
+                                       @Param("propertyTypes") Collection<PropertyType> propertyTypes,
+                                       @Param("statuses") Collection<PropertyStatus> statuses);
+
     /** Ile ofert biura ma już numer z danego miesiąca — podstawa kolejnego numeru. */
     long countByAgencyIdAndReferenceNumberStartingWith(UUID agencyId, String prefix);
 
