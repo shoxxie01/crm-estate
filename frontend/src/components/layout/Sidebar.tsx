@@ -1,4 +1,6 @@
-import { NavLink } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { NavLink, useLocation } from "react-router-dom";
+import { INQUIRIES_CHANGED, fetchNewInquiryCount } from "../../api/inquiries";
 import { LifeBuoy, Settings, X } from "lucide-react";
 import { Logo } from "../ui/Logo";
 import { primaryNav } from "./navigation";
@@ -7,10 +9,44 @@ import { cn } from "../../lib/cn";
 const linkBase =
   "group flex items-center gap-2.5 rounded-md px-2.5 py-[7px] text-[13px] transition-colors";
 
+/**
+ * Liczba nowych zgłoszeń z formularza. Odświeżana przy zmianie strony, po
+ * zmianie w skrzynce i co minutę — zgłoszenia przychodzą z zewnątrz, więc
+ * inaczej agent nie zobaczyłby nowego, dopóki sam nie wejdzie do skrzynki.
+ */
+function useNewInquiryCount() {
+  const { pathname } = useLocation();
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    const refresh = () =>
+      fetchNewInquiryCount()
+        .then((r) => !cancelled && setCount(r.new))
+        .catch(() => undefined);
+
+    refresh();
+    const timer = setInterval(refresh, 60_000);
+    window.addEventListener(INQUIRIES_CHANGED, refresh);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+      window.removeEventListener(INQUIRIES_CHANGED, refresh);
+    };
+  }, [pathname]);
+
+  return count;
+}
+
 function NavItems({ onNavigate }: { onNavigate?: () => void }) {
+  const newInquiries = useNewInquiryCount();
+
   return (
     <nav className="flex flex-col gap-0.5">
-      {primaryNav.map(({ to, label, icon: Icon, badge }) => (
+      {primaryNav.map(({ to, label, icon: Icon, badge: staticBadge }) => {
+        const badge =
+          to === "/zgloszenia" ? (newInquiries > 0 ? String(newInquiries) : undefined) : staticBadge;
+        return (
         <NavLink
           key={to}
           to={to}
@@ -36,14 +72,22 @@ function NavItems({ onNavigate }: { onNavigate?: () => void }) {
               />
               <span className="truncate">{label}</span>
               {badge && (
-                <span className="ml-auto rounded bg-surface px-1.5 py-px text-[11px] font-medium text-ink-secondary ring-1 ring-line">
+                <span
+                  className={cn(
+                    "ml-auto rounded px-1.5 py-px text-[11px] font-medium tabular-nums ring-1",
+                    to === "/zgloszenia"
+                      ? "bg-accent text-white ring-accent"
+                      : "bg-surface text-ink-secondary ring-line",
+                  )}
+                >
                   {badge}
                 </span>
               )}
             </>
           )}
         </NavLink>
-      ))}
+        );
+      })}
     </nav>
   );
 }

@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -67,6 +68,39 @@ public class GlobalExceptionHandler {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(
                 HttpStatus.NOT_FOUND, exception.getMessage());
         problem.setTitle("Nie znaleziono");
+        return problem;
+    }
+
+    @ExceptionHandler(RequirementNotFoundException.class)
+    public ProblemDetail handleRequirementNotFound(RequirementNotFoundException exception) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.NOT_FOUND, exception.getMessage());
+        problem.setTitle("Nie znaleziono");
+        return problem;
+    }
+
+    @ExceptionHandler({InquiryNotFoundException.class, IntakeNotFoundException.class})
+    public ProblemDetail handleInquiryNotFound(RuntimeException exception) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.NOT_FOUND, exception.getMessage());
+        problem.setTitle("Nie znaleziono");
+        return problem;
+    }
+
+    @ExceptionHandler(TooManySubmissionsException.class)
+    public ProblemDetail handleTooManySubmissions(TooManySubmissionsException exception) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.TOO_MANY_REQUESTS, exception.getMessage());
+        problem.setTitle("Za dużo zgłoszeń");
+        return problem;
+    }
+
+    /** Operacja zastrzeżona dla roli — np. wymiana linku formularza tylko przez administratora. */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ProblemDetail handleAccessDenied(AccessDeniedException exception) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.FORBIDDEN, exception.getMessage());
+        problem.setTitle("Brak uprawnień");
         return problem;
     }
 

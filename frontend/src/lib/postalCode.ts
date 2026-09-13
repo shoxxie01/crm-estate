@@ -2,25 +2,16 @@
 // pięć cyfr i nie sięga po klawisz, którego na klawiaturze numerycznej telefonu
 // zwykle nie ma pod ręką.
 //
-// W przeciwieństwie do telefonu (lib/phone.ts) formatujemy w trakcie pisania:
-// wstawiany znak jest zawsze jeden i zawsze w tym samym miejscu, więc karetkę
-// da się odtworzyć dokładnie — liczymy cyfry przed nią, a nie znaki.
+// Formatujemy w trakcie pisania: separator stoi zawsze w tym samym miejscu,
+// więc karetkę da się odtworzyć dokładnie — liczymy cyfry przed nią, a nie znaki.
+
+import { caretAfterDigit } from "./caret";
 
 /** Same cyfry, maks. 5, myślnik po drugiej. Bez efektów ubocznych — używalne też do testów. */
 export function formatPostalCode(raw: string): string {
   const digits = raw.replace(/\D/g, "").slice(0, 5);
   if (digits.length <= 2) return digits;
   return `${digits.slice(0, 2)}-${digits.slice(2)}`;
-}
-
-/** Pozycja karetki tuż za `n`-tą cyfrą wartości. */
-function caretAfterDigit(value: string, n: number): number {
-  if (n <= 0) return 0;
-  let seen = 0;
-  for (let i = 0; i < value.length; i++) {
-    if (value[i] >= "0" && value[i] <= "9" && ++seen === n) return i + 1;
-  }
-  return value.length;
 }
 
 /**

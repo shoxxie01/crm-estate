@@ -6,7 +6,9 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
+import java.security.SecureRandom;
 import java.time.Instant;
+import java.util.Base64;
 import java.util.UUID;
 
 /**
@@ -34,6 +36,14 @@ public class Agency {
     @Column(length = 50)
     private String licenseNumber;
 
+    /**
+     * Klucz w adresie publicznego formularza zgłoszeniowego. Losowy, żeby nie
+     * dało się zgadywać formularzy innych biur, i wymienialny — patrz
+     * {@link #regenerateIntakeToken()}.
+     */
+    @Column(name = "intake_token", nullable = false, unique = true, length = 40)
+    private String intakeToken = newIntakeToken();
+
     @Column(nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
@@ -44,6 +54,23 @@ public class Agency {
     public Agency(String name, String contactEmail) {
         this.name = name;
         this.contactEmail = contactEmail;
+    }
+
+    /** Stary link przestaje działać od razu — na wypadek, gdy wyciekł do spamerów. */
+    public void regenerateIntakeToken() {
+        this.intakeToken = newIntakeToken();
+    }
+
+    private static String newIntakeToken() {
+        byte[] bytes = new byte[18];
+        RANDOM.nextBytes(bytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+    }
+
+    private static final SecureRandom RANDOM = new SecureRandom();
+
+    public String getIntakeToken() {
+        return intakeToken;
     }
 
     public UUID getId() {

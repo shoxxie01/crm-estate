@@ -13,6 +13,8 @@ import { ClientDetailPage } from "./pages/clients/ClientDetailPage";
 import { PropertiesPage } from "./pages/properties/PropertiesPage";
 import { PropertyFormPage } from "./pages/properties/PropertyFormPage";
 import { PropertyDetailPage } from "./pages/properties/PropertyDetailPage";
+import { InquiriesPage } from "./pages/inquiries/InquiriesPage";
+import { IntakePage } from "./pages/public/IntakePage";
 
 export default function App() {
   return (
@@ -21,6 +23,8 @@ export default function App() {
         <Routes>
           <Route path="/logowanie" element={<LoginPage />} />
           <Route path="/rejestracja" element={<RegisterPage />} />
+          {/* Publiczny formularz dla klientów — poza logowaniem i poza powłoką CRM. */}
+          <Route path="/zgloszenie/:token" element={<IntakePage />} />
 
           <Route element={<ProtectedRoute />}>
             <Route element={<AppShell />}>
@@ -40,6 +44,7 @@ export default function App() {
               <Route path="/klienci/nowy" element={<ClientFormPage />} />
               <Route path="/klienci/:id" element={<ClientDetailPage />} />
               <Route path="/klienci/:id/edytuj" element={<ClientFormPage />} />
+              <Route path="/zgloszenia" element={<InquiriesPage />} />
               <Route path="/umowy" element={<PlaceholderPage />} />
               <Route path="/eksport" element={<PlaceholderPage />} />
             </Route>

@@ -252,10 +252,13 @@ reguły w formularzu, żeby błąd był widoczny od razu, zanim żądanie poleci
 - pola liczbowe przyjmują tylko cyfry; kwoty i powierzchnie maks. 2 miejsca po
   przecinku; realne zakresy (piętro do 160, rok budowy do bieżącego + 10),
 - kod pocztowy w formacie `00-000` — myślnik dopisuje się sam w trakcie pisania,
-  więc wbija się pięć cyfr (`lib/postalCode.ts`); telefon wyłącznie
-  `+000 000 000 000`, ale ten formatuje się dopiero na blur — wstawianych znaków
-  jest kilka i karetka przy poprawianiu środka numeru nie ma jak wrócić na swoje
-  miejsce, przy jednym myślniku odtwarza się dokładnie,
+  więc wbija się pięć cyfr (`lib/postalCode.ts`),
+- telefon: kierunkowy `+48` stoi na stałe przy polu, wpisuje się dziewięć cyfr
+  (`000 000 000`, spacje dopisuje maska). Numer zagraniczny zaczyna się od `+`
+  albo `00` — wtedy prefiks znika, a pole przyjmuje numer z kierunkowym bez
+  maski. Wklejony `+48 …` / `0048 …` sam wraca do trybu krajowego
+  (`lib/phone.ts`, `PhoneInput`). Na serwer zawsze idzie numer z kierunkowym,
+  a `PhoneNumber` i tak dopisuje `48` do gołych dziewięciu cyfr,
 - nazwy własne (miejscowość, ulica, numer budynku…) są automatycznie kapitalizowane,
 - pola wymagane mają gwiazdkę `*`, a po nieudanym zapisie strona przewija się do
   pierwszego błędnego pola i ustawia na nim kursor.
@@ -286,11 +289,12 @@ opcjonalna mapa `errors` mapuje nazwę pola na komunikat:
 
 ## Klienci
 
-Klient to **właściciel powierzający ofertę** — na tym etapie wyłącznie osoba
-fizyczna. Rozróżnienie sprzedający / wynajmujący **nie jest polem klienta**:
-wynika z typu transakcji ofert do niego przypisanych (`properties.owner_client_id`,
-migracja `V7`). Ten sam właściciel może jednocześnie coś sprzedawać i coś
-wynajmować, więc rola na sztywno przy kliencie byłaby fałszem.
+Klient to **osoba fizyczna po stronie podaży, popytu albo obu naraz**. Role
+**nie są polem klienta**: sprzedający / wynajmujący wynika z typu transakcji
+ofert do niego przypisanych (`properties.owner_client_id`, migracja `V7`),
+a kupujący / najemca — z jego aktywnych poszukiwań (`client_requirements`,
+migracja `V13`). Ta sama osoba potrafi sprzedawać kawalerkę i szukać większego
+mieszkania, więc rola na sztywno przy kliencie byłaby fałszem.
 
 | Endpoint | Body | Odpowiedź |
 |---|---|---|
@@ -307,8 +311,135 @@ standardowe `page`, `size`, `sort`.
 
 Wymagany jest **telefon albo e-mail** — kontakt bez żadnego z nich nie ma sensu.
 Usunięcie klienta **odłącza** jego oferty (ustawia właściciela na `null`) oraz
-jego terminy, a nie kasuje ich. Zakres, jak wszędzie, bierze się z tokenu — nie ma metody
-repozytorium zwracającej klienta bez podania biura.
+jego terminy, a nie kasuje ich — za to jego poszukiwania znikają razem z nim.
+Zakres, jak wszędzie, bierze się z tokenu — nie ma metody repozytorium
+zwracającej klienta bez podania biura.
+
+### Poszukiwania
+
+Czego klient szuka jako kupujący albo najemca. Osobna encja, a nie pola
+klienta: jedna osoba może szukać kilku rzeczy naraz, a każde poszukiwanie ma
+własny stan — **aktywne, wstrzymane, zrealizowane, nieaktualne**. Do roli
+liczą się tylko aktywne; pozostałe zostają na karcie jako historia.
+
+| Endpoint | Body | Odpowiedź |
+|---|---|---|
+| `GET /api/clients/{clientId}/requirements` | — | `200` + lista `RequirementResponse` |
+| `POST /api/clients/{clientId}/requirements` | `RequirementRequest` | `201` + poszukiwanie |
+| `PUT /api/clients/{clientId}/requirements/{id}` | `RequirementRequest` | `200` |
+| `PUT /api/clients/{clientId}/requirements/{id}/status` | `{ "status": … }` | `200` — szybka zmiana stanu |
+| `DELETE /api/clients/{clientId}/requirements/{id}` | — | `204` |
+
+Karta klienta (`GET /api/clients/{id}`) niesie poszukiwania od razu, a lista
+klientów — `buyerCount` / `tenantCount` obok `sellCount` / `rentCount`.
+
+Kryteria:
+
+- **wymagane są tylko transakcja i rodzaj nieruchomości** (jeden lub kilka) —
+  reszta to tyle, ile klient zdążył powiedzieć przez telefon,
+- lokalizacje jako lista miejscowość + opcjonalna dzielnica, w kolejności
+  ważności; duplikaty wypadają przy zapisie,
+- zakresy budżetu (przy najmie: czynsz miesięczny), metrażu, pokoi i piętra —
+  każda granica z osobna opcjonalna, „od” nie większe niż „do”,
+- rynek (pusty = obojętny), „bez ostatniego piętra”, termin zakupu / wprowadzenia,
+- finansowanie (gotówka, kredyt, kredyt z decyzją…) **tylko przy kupnie** —
+  przy najmie serwis je czyści,
+- cechy ze słownika ofert z podziałem na **konieczne i mile widziane**; cecha
+  podana w obu zbiorach zostaje konieczna (pilnuje tego też klucz główny tabeli),
+- pokój da się wyłącznie najmować — poszukiwanie kupna pokoju jest odrzucane.
+
+Kryteria są zwykłymi kolumnami, a nie JSON-em, bo następny krok — dopasowanie
+ofert do poszukiwań — musi dać się napisać w SQL i zaindeksować
+(`ix_client_requirements_matching`).
+
+Formularz (`RequirementForm`) jest pod rozmowę telefoniczną: na górze
+transakcja, rodzaj, lokalizacja, budżet, metraż i pokoje; rynek, piętro,
+finansowanie, cechy i notatka są zwinięte. Pola pokoi i piętra pokazują się
+tylko dla rodzajów, dla których mają sens, a cechy — przefiltrowane pod
+wybrane rodzaje. Kwoty grupują się spacjami w trakcie pisania (`lib/amount.ts`).
+
+### Zgłoszenia z formularza
+
+Klient zgłasza się sam na publicznej stronie `/zgloszenie/<klucz-biura>` — bez
+logowania. Link (do skopiowania w **Zgłoszenia**) biuro wysyła klientom, wstawia
+na stronę www albo do ogłoszeń.
+
+Formularz ma **dokładnie dwie ścieżki: „Chcę kupić” i „Chcę sprzedać”** — najem
+obsługuje agent przy rozmowie (API odrzuca kryteria najmu z formularza):
+
+- **kupno** — kryteria jak w poszukiwaniu (bez rynku, piętra i cech, o które
+  klient i tak by nie umiał odpowiedzieć),
+- **sprzedaż** — rodzaj, miejscowość, dzielnica, powierzchnia, pokoje i oczekiwana
+  cena (migracja `V15`). Zgłoszenia sprzedaży **nie zamieniamy na ofertę**:
+  ogłoszenie wymaga adresu, opisu i zdjęć, których formularz nie zbiera, więc po
+  przyjęciu opis nieruchomości trafia do notatki klienta, a ofertę agent zakłada
+  po rozmowie lub oględzinach.
+
+Zgłoszenie **nie trafia od razu do klientów**, tylko do skrzynki
+(`client_inquiries`, migracja `V14`). Agent:
+
+- **przyjmuje** je — powstaje klient ze źródłem „Strona WWW”; przy kupnie
+  z aktywnym poszukiwaniem (wiadomość klienta w jego notatce), przy sprzedaży
+  z opisem nieruchomości w notatce klienta,
+- **dopina** do istniejącego klienta — skrzynka sama podpowiada osoby z tym
+  samym telefonem lub e-mailem; u istniejącego klienta uzupełniamy tylko brakujące
+  dane kontaktowe, niczego nie nadpisujemy,
+- **odrzuca** — zgłoszenie jest usuwane razem z danymi osobowymi.
+
+Przy zgłoszeniu kupna jeszcze przed przyjęciem widać pasujące oferty (to samo
+dopasowanie co niżej, policzone dla niezapisanego poszukiwania).
+
+| Endpoint | Dostęp | Opis |
+|---|---|---|
+| `GET /api/public/intake/{token}` | publiczny | nazwa biura, treść zgód, słowniki formularza |
+| `POST /api/public/intake/{token}` | publiczny | wysłanie zgłoszenia → `204` |
+| `GET /api/inquiries?status=NEW\|CONVERTED` | zalogowany | skrzynka z podpowiedzią duplikatów |
+| `GET /api/inquiries/count` | zalogowany | licznik nowych do menu bocznego |
+| `GET /api/inquiries/{id}/matches` | zalogowany | pasujące oferty przed przyjęciem |
+| `POST /api/inquiries/{id}/convert` | zalogowany | `{ "clientId": null }` = nowy klient |
+| `DELETE /api/inquiries/{id}` | zalogowany | odrzucenie (usunięcie) |
+| `GET /api/inquiries/intake-link` | zalogowany | klucz formularza biura |
+| `POST /api/inquiries/intake-link/regenerate` | administrator | nowy klucz, stary od razu przestaje działać |
+
+**RODO:** zgoda na przetwarzanie danych jest obowiązkowa, marketingowa —
+opcjonalna. Przy zgłoszeniu zapisujemy moment zgody i **pełną treść klauzuli**,
+którą klient widział (a nie numer wersji), więc dowód przetrwa zmianę tekstu.
+Treść klauzul jest w jednym miejscu (`IntakeConsent`) i to ją serwer wysyła do
+formularza — front nie ma własnej kopii. Po przyjęciu na karcie klienta ląduje
+notatka z datą zgłoszenia i informacją o zgodzie marketingowej. Usunięcie klienta
+usuwa też jego zgłoszenie.
+
+**Ochrona przed spamem:** ukryte pole-pułapka (wypełnione → udajemy sukces
+i nic nie zapisujemy) oraz limit 5 zgłoszeń na 10 minut z jednego adresu IP.
+
+
+### Dopasowanie ofert do poszukiwań
+
+W obie strony, liczone na żądanie (nic nie jest zapisywane — kryteria i oferty
+zmieniają się ciągle, a zapisane dopasowania trzeba by unieważniać):
+
+| Endpoint | Odpowiedź |
+|---|---|
+| `GET /api/properties/{propertyId}/matches` | klienci z pasującym poszukiwaniem — sekcja „Pasujący klienci” na karcie oferty |
+| `GET /api/clients/{clientId}/requirements/{id}/matches` | pasujące oferty — pod każdym aktywnym poszukiwaniem na karcie klienta |
+
+Kandydaci: to samo biuro, ta sama transakcja, rodzaj oferty w rodzajach
+poszukiwania, poszukiwanie **aktywne**, oferta **robocza, aktywna albo
+zarezerwowana** (robocza też — agent chce wiedzieć, do kogo dzwonić, zanim
+oferta trafi na portale). Oferta własna klienta nie pasuje do jego poszukiwania.
+
+Resztę kryteriów ocenia `RequirementMatcher`, każde osobno, z werdyktem:
+
+- **spełnione**,
+- **prawie** — cena lub metraż do 10% poza zakresem, mile widziane cechy nie
+  wszystkie, oferta dostępna później niż termin klienta,
+- **brak danych** — oferta nie ma piętra, liczby pokoi, dzielnicy albo ma cenę
+  w innej walucie niż PLN,
+- **niespełnione** — wyklucza ofertę.
+
+Pasuje to, co nie ma żadnego „niespełnione”; na liście najpierw dopasowania bez
+ostrzeżeń, potem z większą liczbą mile widzianych cech. Miasto i dzielnica
+porównują się bez wielkości liter i polskich znaków („lodz” = „Łódź”).
 
 ## Kalendarz
 
@@ -336,12 +467,12 @@ ogranicza do około pół roku (200 dni).
 
 ### Kupujący, których nie ma w modelu
 
-Najczęstszy termin — prezentacja — odbywa się z **kupującym lub najemcą**,
-a `clients` to w tej wersji CRM-u wyłącznie strona podaży (właściciel
-powierzający ofertę). Zamiast dopisywać kupujących do tabeli klientów, co
-zepsułoby regułę „rola klienta wynika z typu transakcji jego ofert", termin ma
-własne pola `counterparty_name` / `counterparty_phone`. Gdy powstanie moduł
-poszukujących, zamienią się one na klucz obcy bez ruszania reszty tabeli.
+Najczęstszy termin — prezentacja — odbywa się z **kupującym lub najemcą**.
+Kalendarz powstał, zanim kupujący trafili do bazy klientów, dlatego termin ma
+własne pola `counterparty_name` / `counterparty_phone`. Od `V13` kupujący może
+być klientem z poszukiwaniem, ale termin wiąże się na razie z jednym klientem
+(`client_id`) — druga strona zostaje tekstem. Zamiana `counterparty_*` na klucz
+obcy przyjdzie razem z dopasowaniem ofert do poszukiwań.
 
 ### Reguły, które warto znać
 
@@ -423,6 +554,26 @@ rezultatu, izolację między biurami oraz odpięcie terminów przy kasowaniu ofe
 i klienta — ta ostatnia para to test regresyjny na błąd, przez który oferty
 z choćby jednym terminem w ogóle nie dało się usunąć.
 
+`ClientRequirementTest` sprawdza zapis poszukiwania razem z kolekcjami
+(rodzaje, lokalizacje z usuwaniem duplikatów, cechy konieczne i mile widziane),
+wyliczanie roli kupującego / najemcy wyłącznie z aktywnych poszukiwań — na
+karcie i na liście — podmianę kolekcji przy edycji, reguły między polami,
+izolację między biurami i znikanie poszukiwań razem z klientem.
+
+`MatchingTest` ustawia wokół jednej oferty poszukiwania sprawdzające po jednej
+regule: pełne dopasowanie (także bez polskich znaków w nazwie miasta), cenę
+„prawie” w budżecie, wykluczenia (inne miasto, za drogo, brak cechy koniecznej,
+inna transakcja, wstrzymane poszukiwanie), brak danych jako ostrzeżenie zamiast
+wykluczenia, pomijanie sprzedanych ofert i izolację między biurami.
+
+`InquiryTest` przechodzi całą ścieżkę zgłoszenia: formularz bez logowania
+i 404 dla nieznanego klucza, zapis do skrzynki (a nie do klientów) z treścią
+zgody, odrzucenie bez zgody / bez kontaktu / z błędnymi kryteriami, pole-pułapkę,
+limit na adres IP, tylko kupno albo sprzedaż (bez najmu), zgłoszenie sprzedaży
+zamieniane na klienta z notatką i bez poszukiwania, przyjęcie jako nowy klient z poszukiwaniem, podpowiedź
+duplikatu i dopięcie do istniejącego klienta, odrzucenie z usunięciem,
+izolację między biurami i unieważnienie starego linku.
+
 `AuthFlowTest` pokrywa pełną ścieżkę: rejestracja → hash hasła → logowanie
 (w tym niewrażliwość na wielkość liter) → `/me` z tokenem i bez → odrzucenie
 podrobionego tokenu → duplikat e-maila → walidacja pól. `PropertyModuleTest`
@@ -444,6 +595,10 @@ Pierwsze `mvn test` po sklonowaniu repozytorium pobiera obrazy Postgresa
 
 - [ ] refresh tokeny albo krótszy TTL z odświeżaniem
 - [ ] rate limiting na `/api/auth/login`
+- [ ] za reverse proxy: `server.forward-headers-strategy`, żeby limit zgłoszeń
+      z formularza liczył się po adresie klienta, a nie proxy; przy kilku
+      instancjach — limit we współdzielonym magazynie zamiast w pamięci
+- [ ] treść klauzul RODO w `IntakeConsent` do zatwierdzenia przez prawnika biura
 - [ ] `delta.cors.allowed-origins` na prawdziwą domenę
 - [ ] hasło do bazy oraz `DELTA_S3_*` z sekretów, nie z wartości domyślnych
 - [ ] przypiąć konkretny `RELEASE` obrazu MinIO zamiast `latest`

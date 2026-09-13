@@ -81,6 +81,10 @@ public class SecurityConfig {
                         // i wylogowuje użytkownika zamiast pokazać, co się naprawdę stało.
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/register").permitAll()
+                        // Publiczny formularz zgłoszeniowy. Biuro wskazuje losowy klucz
+                        // w adresie; ochrona przed nadużyciem: pułapka na boty + limit na IP.
+                        .requestMatchers(HttpMethod.GET, "/api/public/intake/*").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/public/intake/*").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(handling -> handling.authenticationEntryPoint(entryPoint))

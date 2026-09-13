@@ -4,7 +4,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import pl.delta.crm.client.dictionary.ClientStatus;
+import pl.delta.crm.client.dictionary.Financing;
 import pl.delta.crm.client.dictionary.LeadSource;
+import pl.delta.crm.client.dictionary.RequirementStatus;
 import pl.delta.crm.property.dto.DictionaryEntry;
 
 import java.util.LinkedHashMap;
@@ -23,6 +25,8 @@ public class ClientDictionaryController {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("source", DictionaryEntry.of(LeadSource.class));
         result.put("status", DictionaryEntry.of(ClientStatus.class));
+        result.put("requirementStatus", DictionaryEntry.of(RequirementStatus.class));
+        result.put("financing", DictionaryEntry.of(Financing.class));
         return result;
     }
 }

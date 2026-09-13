@@ -22,14 +22,14 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * Klient biura — właściciel zlecający obsługę swojej nieruchomości.
+ * Klient biura — osoba prywatna po stronie podaży, popytu albo obu naraz.
  *
- * <p>W tej wersji CRM-u klient jest zawsze osobą prywatną po stronie podaży
- * (nie ma poszukujących). Rozróżnienie „sprzedający" / „wynajmujący" celowo
- * <b>nie jest polem</b> tej encji — wynika z {@code TransactionType} ofert,
- * które klient powierzył biuru (patrz {@code Property.owner}). Jeden właściciel
- * może jedną nieruchomość sprzedawać, a inną wynajmować, więc trzymanie tej
- * cechy na osobie byłoby zwyczajnie nieprawdziwe.
+ * <p>Rola celowo <b>nie jest polem</b> tej encji. „Sprzedający" / „wynajmujący"
+ * wynika z {@code TransactionType} ofert, które klient powierzył biuru (patrz
+ * {@code Property.owner}), a „kupujący" / „najemca" — z jego aktywnych
+ * poszukiwań ({@code ClientRequirement}). Ta sama osoba potrafi sprzedawać
+ * kawalerkę i jednocześnie szukać większego mieszkania, więc rola zapisana
+ * na osobie byłaby zwyczajnie nieprawdziwa.
  */
 @Entity
 @Table(name = "clients")

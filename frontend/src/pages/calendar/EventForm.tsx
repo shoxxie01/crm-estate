@@ -14,7 +14,8 @@ import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { Select } from "../../components/ui/Select";
 import { Textarea } from "../../components/ui/Textarea";
-import { isValidPhone } from "../../lib/phone";
+import { phoneError, phoneToField, phoneToPayload } from "../../lib/phone";
+import { PhoneInput } from "../../components/ui/PhoneInput";
 import { addDays, fromInputs, toDateInput, toTimeInput } from "./dates";
 
 interface EventFormProps {
@@ -60,7 +61,7 @@ export function EventForm({
     initial?.summary.counterpartyName ?? "",
   );
   const [counterpartyPhone, setCounterpartyPhone] = useState(
-    initial?.summary.counterpartyPhone ?? "",
+    phoneToField(initial?.summary.counterpartyPhone),
   );
   const [location, setLocation] = useState(
     // Przy powiązanej ofercie miejsce jest wyliczone z jej adresu — nie wpisujemy
@@ -85,9 +86,8 @@ export function EventForm({
     if (startsAt && endsAt && endsAt <= startsAt) {
       found.endTime = "Koniec musi być późniejszy niż początek.";
     }
-    if (counterpartyPhone && !isValidPhone(counterpartyPhone)) {
-      found.counterpartyPhone = "Podaj numer telefonu, np. +48 605 405 932.";
-    }
+    const phoneProblem = phoneError(counterpartyPhone);
+    if (phoneProblem) found.counterpartyPhone = phoneProblem;
     if (outcome && !happened) {
       found.outcome = "Rezultat można podać dopiero dla terminu, który się odbył.";
     }
@@ -126,7 +126,7 @@ export function EventForm({
       propertyId: propertyId || null,
       clientId: clientId || null,
       counterpartyName: counterpartyName.trim() || undefined,
-      counterpartyPhone: counterpartyPhone.trim() || undefined,
+      counterpartyPhone: phoneToPayload(counterpartyPhone),
       outcome: happened && outcome ? outcome : null,
       outcomeNote: happened ? outcomeNote.trim() || undefined : undefined,
     };
@@ -270,7 +270,7 @@ export function EventForm({
           />
 
           <Select
-            label="Klient (właściciel)"
+            label="Klient"
             value={clientId}
             onChange={(changed) => setClientId(changed.target.value)}
             placeholder="— bez powiązania —"
@@ -293,11 +293,10 @@ export function EventForm({
             error={errors.counterpartyName}
           />
 
-          <Input
+          <PhoneInput
             label="Telefon drugiej strony"
             value={counterpartyPhone}
-            onChange={(changed) => setCounterpartyPhone(changed.target.value)}
-            placeholder="+48 605 405 932"
+            onChange={setCounterpartyPhone}
             error={errors.counterpartyPhone}
           />
 

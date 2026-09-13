@@ -6,9 +6,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.delta.crm.calendar.CalendarEventRepository;
 import pl.delta.crm.client.dictionary.ClientStatus;
+import pl.delta.crm.client.dictionary.RequirementStatus;
 import pl.delta.crm.client.dto.ClientResponse;
 import pl.delta.crm.client.dto.ClientSummary;
 import pl.delta.crm.client.dto.CreateClientRequest;
+import pl.delta.crm.client.requirement.ClientRequirementRepository;
+import pl.delta.crm.client.requirement.RequirementTransactionCount;
 import pl.delta.crm.contact.PhoneNumber;
 import pl.delta.crm.error.BusinessValidationException;
 import pl.delta.crm.error.ClientNotFoundException;
@@ -34,13 +37,16 @@ public class ClientService {
     private final UserRepository users;
     private final PropertyRepository properties;
     private final CalendarEventRepository events;
+    private final ClientRequirementRepository requirements;
 
     public ClientService(ClientRepository clients, UserRepository users,
-                         PropertyRepository properties, CalendarEventRepository events) {
+                         PropertyRepository properties, CalendarEventRepository events,
+                         ClientRequirementRepository requirements) {
         this.clients = clients;
         this.users = users;
         this.properties = properties;
         this.events = events;
+        this.requirements = requirements;
     }
 
     @Transactional
@@ -63,8 +69,8 @@ public class ClientService {
         client.setNotes(trimToNull(request.notes()));
 
         Client saved = clients.save(client);
-        // Świeży klient nie ma jeszcze powierzonych ofert.
-        return ClientResponse.from(saved, List.of());
+        // Świeży klient nie ma jeszcze powierzonych ofert ani poszukiwań.
+        return ClientResponse.from(saved, List.of(), List.of());
     }
 
     @Transactional
@@ -87,8 +93,7 @@ public class ClientService {
             client.setAgent(resolveAgent(request.agentId(), actor));
         }
 
-        Client saved = clients.save(client);
-        return ClientResponse.from(saved, properties.findByOwnerId(saved.getId()));
+        return card(clients.save(client));
     }
 
     @Transactional
@@ -105,6 +110,9 @@ public class ClientService {
         // To samo z terminami: historia kontaktu zostaje, znika tylko powiązanie.
         // Bez tego klienta, z którym cokolwiek umówiono, nie dało się usunąć.
         events.detachClient(id);
+
+        // Poszukiwania znikają razem z klientem (ON DELETE CASCADE w V13) —
+        // bez osoby, która szuka, nie mają żadnej wartości.
 
         clients.delete(client);
     }
@@ -123,18 +131,27 @@ public class ClientService {
             page = clients.findByAgencyId(agencyId, pageable);
         }
 
-        Map<UUID, long[]> intents = intentsFor(page.getContent());
-        return page.map(client -> {
-            long[] counts = intents.getOrDefault(client.getId(), EMPTY_COUNTS);
-            return ClientSummary.from(client, counts[0], counts[1]);
-        });
+        Map<UUID, long[]> offers = offerCountsFor(page.getContent());
+        Map<UUID, long[]> searches = requirementCountsFor(page.getContent());
+        return page.map(client -> ClientSummary.from(
+                client,
+                offers.getOrDefault(client.getId(), EMPTY_COUNTS),
+                searches.getOrDefault(client.getId(), EMPTY_COUNTS)));
     }
 
     @Transactional(readOnly = true)
     public ClientResponse get(UUID id, User viewer) {
         Client client = clients.findByIdAndAgencyId(id, viewer.getAgency().getId())
                 .orElseThrow(ClientNotFoundException::new);
-        return ClientResponse.from(client, properties.findByOwnerId(client.getId()));
+        return card(client);
+    }
+
+    /** Pełna karta: klient z ofertami i poszukiwaniami. */
+    private ClientResponse card(Client client) {
+        return ClientResponse.from(
+                client,
+                properties.findByOwnerId(client.getId()),
+                requirements.findByClientIdAndAgencyId(client.getId(), client.getAgency().getId()));
     }
 
     /**
@@ -154,7 +171,7 @@ public class ClientService {
         property.setOwner(client);
         properties.save(property);
 
-        return ClientResponse.from(client, properties.findByOwnerId(clientId));
+        return card(client);
     }
 
     @Transactional
@@ -197,8 +214,8 @@ public class ClientService {
                         Map.of("agentId", "Wybrany opiekun nie należy do tego biura.")));
     }
 
-    /** sell/rent per klient, jednym zapytaniem dla całej strony listy. */
-    private Map<UUID, long[]> intentsFor(List<Client> page) {
+    /** Oferty sell/rent per klient, jednym zapytaniem dla całej strony listy. */
+    private Map<UUID, long[]> offerCountsFor(List<Client> page) {
         if (page.isEmpty()) {
             return Map.of();
         }
@@ -206,16 +223,37 @@ public class ClientService {
 
         return properties.countByTransactionForOwners(ids).stream().collect(Collectors.toMap(
                 OwnerTransactionCount::getOwnerId,
-                row -> {
-                    long[] counts = new long[2];
-                    if (row.getTransactionType() == TransactionType.SALE) {
-                        counts[0] = row.getCount();
-                    } else if (row.getTransactionType() == TransactionType.RENT) {
-                        counts[1] = row.getCount();
-                    }
-                    return counts;
-                },
-                (a, b) -> new long[]{a[0] + b[0], a[1] + b[1]}));
+                row -> split(row.getTransactionType(), row.getCount()),
+                ClientService::sum));
+    }
+
+    /** Aktywne poszukiwania kupna/najmu per klient — tak samo jednym zapytaniem. */
+    private Map<UUID, long[]> requirementCountsFor(List<Client> page) {
+        if (page.isEmpty()) {
+            return Map.of();
+        }
+        List<UUID> ids = page.stream().map(Client::getId).toList();
+
+        return requirements.countByTransactionForClients(ids, RequirementStatus.ACTIVE).stream()
+                .collect(Collectors.toMap(
+                        RequirementTransactionCount::getClientId,
+                        row -> split(row.getTransactionType(), row.getCount()),
+                        ClientService::sum));
+    }
+
+    /** [sprzedaż, wynajem] — z jednego wiersza grupowania. */
+    private static long[] split(TransactionType type, long count) {
+        long[] counts = new long[2];
+        if (type == TransactionType.SALE) {
+            counts[0] = count;
+        } else if (type == TransactionType.RENT) {
+            counts[1] = count;
+        }
+        return counts;
+    }
+
+    private static long[] sum(long[] a, long[] b) {
+        return new long[]{a[0] + b[0], a[1] + b[1]};
     }
 
     private static final long[] EMPTY_COUNTS = {0L, 0L};
