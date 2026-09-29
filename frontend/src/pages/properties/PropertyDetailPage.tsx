@@ -11,6 +11,7 @@ import {
 import { ApiError } from "../../api/client";
 import { EventTimeline } from "../calendar/EventTimeline";
 import { PropertyGallery } from "./PropertyGallery";
+import { LazyPropertyMap } from "../../components/map/LazyPropertyMap";
 import { PropertyMatches } from "./PropertyMatches";
 import { Badge } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
@@ -249,7 +250,7 @@ export function PropertyDetailPage() {
           Zmiany w galerii — wgrywanie, zamiana, kolejność — należą do formularza
           oferty, tak samo jak każde inne jej pole. */}
       <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:gap-5">
-        <aside className="lg:sticky lg:top-4 lg:col-start-2 lg:row-start-1">
+        <aside className="flex flex-col gap-4 lg:sticky lg:top-4 lg:col-start-2 lg:row-start-1">
           <section className="card">
             <header className="flex items-center justify-between gap-4 border-b border-line px-4 py-3">
               <h2 className="text-[13px] font-semibold tracking-tight text-ink">
@@ -266,6 +267,50 @@ export function PropertyDetailPage() {
               <PropertyGallery propertyId={p.id} media={p.media} readOnly />
             </div>
           </section>
+
+          {/* Mapa jedzie razem z galerią w przyklejonej kolumnie: zdjęcie mówi,
+              jak obiekt wygląda, mapa — gdzie stoi, i jedno z drugim zestawia
+              się przy czytaniu parametrów. Pinezkę ustawia się w formularzu,
+              tutaj jest tylko do obejrzenia. */}
+          {p.address.latitude != null && p.address.longitude != null && (
+            <section className="card">
+              <header className="flex items-center justify-between gap-4 border-b border-line px-4 py-3">
+                <h2 className="text-[13px] font-semibold tracking-tight text-ink">
+                  Na mapie
+                </h2>
+                <a
+                  href={`https://www.openstreetmap.org/?mlat=${p.address.latitude}&mlon=${p.address.longitude}#map=17/${p.address.latitude}/${p.address.longitude}`}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="text-[12px] text-accent hover:underline"
+                >
+                  Otwórz w OSM
+                </a>
+              </header>
+              <div className="p-4">
+                <LazyPropertyMap
+                  position={{
+                    lat: p.address.latitude,
+                    lng: p.address.longitude,
+                  }}
+                  height={240}
+                  footer={
+                    <p className="text-[12px] text-ink-muted">
+                      {[
+                        [p.address.street, p.address.buildingNumber]
+                          .filter(Boolean)
+                          .join(" "),
+                        p.address.district,
+                        p.address.city,
+                      ]
+                        .filter(Boolean)
+                        .join(", ")}
+                    </p>
+                  }
+                />
+              </div>
+            </section>
+          )}
         </aside>
 
         <div className="flex flex-col gap-4 lg:col-start-1 lg:row-start-1">

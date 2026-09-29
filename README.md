@@ -6,7 +6,8 @@ ogłoszeniowe.
 
 - **Backend** — Java 25 + Spring Boot 4.0.7 (`src/`)
 - **Frontend** — React 19 + TypeScript + Vite + Tailwind v4 (`frontend/`),
-  szata graficzna „Nordic Clean" ([szczegóły](frontend/README.md))
+  szata graficzna „Nordic Clean" ([szczegóły](frontend/README.md)),
+  mapy na MapLibre GL + OpenFreeMap
 
 ## Wymagania
 
@@ -115,9 +116,13 @@ go człowiek.
 ### Co jest wymagane, a co dopiero do publikacji
 
 Do zapisu oferty wystarczy: rodzaj, transakcja, rynek, tytuł, opis, cena,
-powierzchnia oraz województwo i miejscowość. Powiat, gmina i dzielnica są
-opcjonalne — agent często zakłada ofertę z telefonu od właściciela i uzupełnia
+powierzchnia oraz województwo i miejscowość. Powiat, gmina, dzielnica **i ulica**
+są opcjonalne — agent często zakłada ofertę z telefonu od właściciela i uzupełnia
 resztę po oględzinach, a blokowanie zapisu wypychałoby takie oferty do notatnika.
+
+Ulica jest opcjonalna także z drugiego powodu: **spora część wsi nie ma nazw
+ulic** i adres to tam sama miejscowość z numerem („Józefin 12"). Numer budynku
+zostaje wymagany — bez niego nie ma czego wpisać w umowę.
 
 Kompletności pod kątem portalu pilnuje `Property.readyForExport()`, które
 sprawdza m.in. powiat (Otodom wymaga pary województwo + powiat), liczbę pokoi
@@ -194,6 +199,180 @@ otwarta dłużej niż kwadrans pokazywałaby puste kadry.
 Unikat `(property_id, position)` jest **odroczony do commitu** (migracja `V12`) —
 zmiana kolejności przepisuje pozycje wielu wierszom naraz i po drodze przechodzi
 przez stan z duplikatem, mimo że stan końcowy jest poprawny.
+
+### Mapa i geokodowanie
+
+Pod polami sekcji „Lokalizacja" — w formularzu zakładania i edycji — stoi mapa
+**OpenStreetMap** na całą szerokość sekcji. Działa w obie strony:
+
+- **pinezka → pola.** Kliknięcie w mapę albo przeciągnięcie pinezki wypełnia
+  województwo, powiat, gminę, miejscowość, dzielnicę, kod pocztowy, ulicę
+  i numer budynku. Postawienie pinezki jest jednoznacznym „to jest to miejsce",
+  więc adres spod niej **zastępuje** zawartość pól — a **czego OSM dla tego
+  punktu nie zna, to zostaje puste**, bez wyjątków. Zachowanie starej wartości
+  obok nowej pinezki dawało adres zszyty z dwóch miejsc: powiat pruszkowski przy
+  krakowskiej ulicy wyglądał na wpisany świadomie, a był resztką po poprzednim
+  kliknięciu. Powiat i gminę dla miast na prawach powiatu dokłada
+  [`CityCounties`](#miasta-na-prawach-powiatu), bo OSM ich nie zna.
+- **pola → pinezka.** Adres wpisany ręcznie ustawia pinezkę sam, 0,8 s po
+  ostatnim znaku. **Wymagane są województwo i miejscowość** — i tylko one. Sama
+  miejscowość nie wystarcza, bo nazwy się powtarzają (samych „Nowych Wsi" jest
+  ponad sto) i pinezka lądowałaby losowo. Reszta pól zawęża wynik: kod pocztowy
+  rozdziela miejscowości o tej samej nazwie w jednym województwie, ulica schodzi
+  z centrum miejscowości na ulicę, a numer budynku — na budynek. Numer trafia
+  w budynek tylko wtedy, gdy OSM go zna (są w nim adresy punktowe); inaczej
+  pinezka staje na ulicy i dociąga się ją ręcznie.
+
+Powiat, gminę, dzielnicę i kod pocztowy geokoder **dopisuje tylko do pustych
+pól** — agent zna adres z rozmowy z właścicielem i nie ma powodu poprawiać mu
+tego, co wpisał świadomie. Wyjątek: po zmianie **miejscowości** te cztery pola
+opisują już inne miejsce, więc zostają zastąpione. Bez tego oferta przeniesiona
+z Kajetan do Krakowa zostawałaby z powiatem pruszkowskim.
+
+Pętli między jednym kierunkiem a drugim pilnuje odcisk adresu: pola wpisane
+przez geokoder są zapamiętywane i nie wyzwalają kolejnego szukania.
+
+Na **karcie oferty** mapa stoi pod galerią, w tej samej przyklejonej kolumnie —
+zdjęcie mówi, jak obiekt wygląda, mapa, gdzie stoi, i jedno z drugim zestawia się
+przy czytaniu parametrów. Jest tylko do odczytu; pinezkę ustawia się w formularzu,
+tak samo jak zarządza się tam galerią. Karta pokazuje mapę wyłącznie wtedy, gdy
+oferta ma zapisane współrzędne.
+
+#### Wygląd mapy
+
+Styl to **OpenFreeMap „positron"** (kafelki wektorowe, MapLibre GL): ulice,
+obrysy budynków, nazwy i **numery domów** — bez ikon sklepów, restauracji
+i bankomatów, którymi standardowe kafelki OSM zalewają centrum miasta. Przy
+ofercie liczy się, gdzie stoi budynek i przy jakiej ulicy, a nie co jest
+naprzeciwko.
+
+Adres otwiera się na **zoomie 17** (`ADDRESS_ZOOM`) — widać z niego najbliższe
+przecznice, czyli przy której ulicy stoi obiekt i co go otacza. To zarazem
+próg, od którego styl puszcza numery domów.
+
+Trzy rzeczy, które warto znać, zanim się to ruszy:
+
+- **Kafelki wektorowe, bo nie ma dziś bezkluczowego rastra w tym guście.**
+  CARTO Positron, do niedawna standardowa odpowiedź na „czysta mapa OSM",
+  zwraca teraz kafelki z napisem „API KEY REQUIRED". OpenFreeMap serwuje
+  wektory bez klucza, bez rejestracji i bez limitów. Adres stylu jest w stałej
+  `MAP_STYLE`, więc podmiana dostawcy (albo postawienie własnego serwera
+  kafelków) to zmiana jednej linii.
+- **Numery domów i polskie etykiety dokładamy do stylu przed utworzeniem mapy**,
+  a nie po zdarzeniu `load`. Parser kafelka zachowuje tylko te warstwy danych,
+  do których odwołuje się styl — warstwa `housenumber` dołożona po fakcie trafia
+  na kafelki, w których numerów już nikt nie zostawił. Z tego samego powodu jej
+  `minzoom` równa się maksymalnemu zoomowi źródła (14), a próg „pokaż od z17"
+  siedzi w przezroczystości, nie w `minzoom`.
+- **MapLibre jest wyłączony z pre-bundlingu Vite** (`optimizeDeps.exclude`).
+  Biblioteka dekoduje kafelki w web workerze, którego adres składa przez
+  `new Worker(new URL(...))`; esbuild przepisuje ten adres tak, że worker nie
+  wstaje, a mapa rysuje puste płótno — bez błędu widocznego w interfejsie.
+  Dotyczy tylko trybu dev, produkcyjny build przez Rollup radzi sobie sam.
+
+Sama biblioteka waży więcej niż cała reszta aplikacji, a używają jej dwa
+ekrany, więc jedzie **osobnym chunkiem** (`LazyPropertyMap`) — logowanie,
+dashboard i kalendarz nie czekają na mapę, której nie pokazują.
+
+#### Sterowanie
+
+| Co | Jak |
+|---|---|
+| przybliżanie / oddalanie | **`Ctrl` + kółko myszy**, **`Ctrl` + `+` / `Ctrl` + `−`**, same `+` / `−`, przyciski, dwuklik |
+| przewijanie strony | kółko myszy bez modyfikatora — także nad mapą |
+| przesuwanie kadru | przeciągnięcie myszą; strzałki, gdy mapa ma skupienie |
+| ustawienie pinezki | kliknięcie w mapę albo przeciągnięcie pinezki (tylko w formularzu) |
+
+**Kółkiem myszy rządzi `cooperativeGestures` MapLibre**: samo przewija stronę,
+z `Ctrl` (na macOS `Cmd`) przybliża mapę. Bez tego mapa łapałaby każde
+przewinięcie i formularz nie dałby się przewinąć, gdy kursor przejdzie nad
+mapą. Kto kręci kółkiem bez modyfikatora, dostaje na mapie podpowiedź, co
+wcisnąć — jej treść, jak i podpowiedzi przycisków zoomu, ustawiamy przez opcję
+`locale`, bo domyślne są po angielsku.
+
+Skróty działają, **gdy kursor jest nad mapą**, i to nie jest wygoda, tylko
+warunek działania: w formularzu kliknięcie w mapę przestawia pinezkę, więc nie
+da się jej zafokusować, nie zmieniając przy okazji adresu oferty. Gdy mapa ma
+skupienie (dojście Tabem), same `+` / `−` obsługuje MapLibre — razem ze
+strzałkami do przesuwania kadru.
+
+**`Ctrl` + `+` / `Ctrl` + `−` (i `Ctrl` + kółko) to skróty przeglądarki na
+powiększenie całej strony** i korzystają z nich osoby słabowidzące, więc
+przechwytujemy je wyłącznie nad mapą. Kursor gdziekolwiek indziej w CRM-ie i powiększa się
+strona, jak wszędzie — ograniczenie do jednego prostokąta jest tu całym
+zabezpieczeniem. (Na macOS w Safari `Cmd` + `+` bywa skrótem systemowym,
+którego strona nie przechwyci; zostają wtedy przyciski i same `+` / `−`.)
+
+Przy samym `+` / `−`, bez modyfikatora, **pisanie ma pierwszeństwo**: gdy
+kursor tekstowy stoi w polu formularza, skrót nie działa — kursor myszy potrafi
+leżeć nad mapą, gdy agent wpisuje `+48` w telefonie albo `-1` w piętrze.
+`Alt` przepuszczamy dalej jako skrót systemowy.
+
+**Geokodowanie idzie przez backend** (`/api/geo/**` → Nominatim), a nie prosto
+z przeglądarki. Nominatim wysyła nagłówki CORS i dałby się wołać z frontu, ale
+jego polityka użycia stawia trzy warunki, których przeglądarka nie spełni:
+`User-Agent` jednoznacznie wskazujący aplikację (nie da się go nadpisać),
+najwyżej jedno żądanie na sekundę **z całej instalacji** oraz cache'owanie
+powtórzeń. Biuro siedzi za jednym adresem IP, więc pięciu agentów przeciągających
+pinezkę naraz zostałoby wspólnie odciętych. Przez proxy limit i cache (LRU
+w pamięci procesu) są wspólne, a podmiana geokodera na własną instancję to
+zmiana jednego adresu w konfiguracji.
+
+| Endpoint | Dostęp | Opis |
+|---|---|---|
+| `GET /api/geo/reverse?lat=&lon=` | zalogowany | adres pod punktem; `204`, gdy go nie ma |
+| `GET /api/geo/search?voivodeship=&city=&…` | zalogowany | punkty pasujące do adresu, od najlepszego |
+
+#### Czego OSM nie powie o powiecie i gminie
+
+Jest jedna przyczyna i dwa objawy. **Gdy granica jednostki administracyjnej
+pokrywa się z granicą miasta, OSM ma jeden obiekt** i Nominatim opisuje go jako
+`city`/`town`, a nie jako `county` czy `municipality`. Pole wraca puste, choć
+jednostka istnieje:
+
+| Przypadek | Powiat z OSM | Gmina z OSM | Przykłady |
+|---|---|---|---|
+| miasto na prawach powiatu | ✗ | ✗ | Warszawa, Kraków, Katowice, Płock |
+| gmina miejska | ✓ | ✗ | Puławy, Zakopane, Świdnik |
+| gmina miejsko-wiejska | ✓ | ✓ | Piaseczno, Kozienice, Grójec |
+| gmina wiejska | ✓ | ✓ | Sułoszowa, Żelechlinek |
+
+Nie ma czego dopytać — sprawdzone, żaden poziom `zoom` w zapytaniu odwrotnym
+powiatu Warszawy nie wyciąga, bo nie istnieje osobny obiekt, który by go niósł.
+Wiedza musi przyjść z naszej strony, i przychodzi dwiema regułami:
+
+- **Gmina** — miasto bez `municipality` jest gminą miejską, a ta nazywa się tak
+  jak miasto. Reguła dotyczy wyłącznie `city`/`town`: przy wsi brak gminy
+  oznacza dziurę w danych, a nie że wieś jest gminą, więc wpisanie jej nazwy
+  byłoby zgadywaniem.
+- **Powiat** — tu nazwy nie da się wyprowadzić z niczego (powiaty nazywają się
+  przymiotnikowo: „Puławski"), więc potrzebna jest lista. `CityCounties`
+  wylicza 66 miast na prawach powiatu. Zbiór jest zamknięty i praktycznie
+  niezmienny (ostatnia zmiana to odzyskanie praw powiatu przez Wałbrzych
+  w 2013 r.), więc trzymamy go w kodzie, zamiast dokładać zależność sieciową do
+  faktu zmieniającego się raz na dekadę. Klucz to **para województwo + nazwa**,
+  nie sama nazwa: „Chełm" to miasto na prawach powiatu w lubelskim, ale też wieś
+  w małopolskim.
+
+Powiat wychodzi **z wielkiej litery** („Puławski", „Warszawski Zachodni"),
+choć OSM niesie go w formie zdaniowej („powiat puławski"). Tak samo formatuje
+go formularz przy wpisaniu ręcznym (`titleCase`), więc ten sam powiat wygląda
+identycznie niezależnie od tego, czy trafił do pola z pinezki, czy z klawiatury.
+Gminy ta reguła **nie** dotyczy: „Nowe Miasto nad Pilicą" wyszłoby z błędnym
+„Nad", a nazwy gmin przychodzą z OSM już poprawnie zapisane.
+
+Obie reguły uzupełniające wchodzą tylko tam, gdzie pole zostałoby puste —
+wartość z OSM ma pierwszeństwo. Powiat jest tu ważniejszy niż gmina: wymaga go Otodom i sprawdza
+`Property.readyForExport()`, więc bez tego **każda oferta w dużym mieście**
+wychodziła z pinezki niezdatna do wysyłki.
+
+Gdyby kiedyś trzeba było uzupełniać powiat i gminę także tam, gdzie OSM jest
+dziurawy (a nie tylko dla miast na prawach powiatu), właściwym krokiem jest
+import słownika **TERYT** do bazy — kolumny `teryt_simc` i `teryt_ulic`
+czekają w adresie od `V3`.
+
+Współrzędne (`latitude`, `longitude`) były w modelu i w API od `V3` — doszło
+wypełnianie ich z interfejsu, więc mapa nie wymagała migracji.
 
 ### Skąd wziął się zestaw pól
 
@@ -536,6 +715,10 @@ już zaaplikowanej migracji.
 | `DELTA_S3_BUCKET` | `delta-crm-media` | bucket na zdjęcia |
 | `DELTA_S3_ACCESS_KEY` / `DELTA_S3_SECRET_KEY` | `delta` / `delta12345` | dane dostępu do storage'u |
 | `delta.storage.url-ttl` | `15m` | ważność podpisanego linku do pliku |
+| `DELTA_GEO_URL` | `https://nominatim.openstreetmap.org` | instancja Nominatim |
+| `DELTA_GEO_USER_AGENT` | `delta-crm/1.0 (kontakt@delta-crm.pl)` | wymagany przez politykę OSM |
+| `delta.geo.min-interval` | `1s` | minimalny odstęp między żądaniami do geokodera |
+| `delta.geo.cache-size` | `500` | ile odpowiedzi geokodera trzymamy w pamięci |
 | `server.port` | `8080` | port HTTP |
 
 ## Testy
@@ -574,6 +757,21 @@ zamieniane na klienta z notatką i bez poszukiwania, przyjęcie jako nowy klient
 duplikatu i dopięcie do istniejącego klienta, odrzucenie z usunięciem,
 izolację między biurami i unieważnienie starego linku.
 
+`GeoServiceTest` sprawdza tłumaczenie nazewnictwa OpenStreetMap na nasz adres —
+bez sieci i bez kontekstu Springa, na odpowiedziach przepisanych z prawdziwych
+wywołań: dzielnicę z `suburb` zamiast z `quarter` (Warszawa: „Wola", nie
+„Mirów"), zdejmowanie rodzajników „powiat"/„gmina" wraz z podniesieniem
+powiatu do wielkiej litery (także dwuczłonowego „Warszawski Zachodni"
+i łączonego myślnikiem „Jastrzębie-Zdrój"), miejscowość z `town`
+i awaryjnie z gminy, rozpoznanie województwa mimo znaków diakrytycznych
+i myślnika oraz puste pole przy nazwie spoza słownika, a także budowanie
+zapytania (dzielnica tylko wtedy, gdy nie ma ulicy). Osobno pilnuje uzupełniania
+powiatu i gminy: Warszawa dostaje powiat i gminę „Warszawa", Puławy — gminę
+„Puławy" przy powiecie z OSM, wieś Chełm w małopolskim nie dostaje powiatu
+(dopasowanie jest po parze województwo + nazwa), wieś bez gminy nie dostaje
+gminy od swojej nazwy, wartość z OSM ma pierwszeństwo przed listą, a sama lista
+ma mieć komplet 66 pozycji.
+
 `AuthFlowTest` pokrywa pełną ścieżkę: rejestracja → hash hasła → logowanie
 (w tym niewrażliwość na wielkość liter) → `/me` z tokenem i bez → odrzucenie
 podrobionego tokenu → duplikat e-maila → walidacja pól. `PropertyModuleTest`
@@ -600,6 +798,8 @@ Pierwsze `mvn test` po sklonowaniu repozytorium pobiera obrazy Postgresa
       instancjach — limit we współdzielonym magazynie zamiast w pamięci
 - [ ] treść klauzul RODO w `IntakeConsent` do zatwierdzenia przez prawnika biura
 - [ ] `delta.cors.allowed-origins` na prawdziwą domenę
+- [ ] `DELTA_GEO_USER_AGENT` na prawdziwy adres kontaktowy; przy większym ruchu
+      własna instancja Nominatim zamiast publicznej (limit 1 żądanie/s)
 - [ ] hasło do bazy oraz `DELTA_S3_*` z sekretów, nie z wartości domyślnych
 - [ ] przypiąć konkretny `RELEASE` obrazu MinIO zamiast `latest`
 - [ ] sprzątanie osieroconych obiektów w storage (kompensacja jest best-effort:

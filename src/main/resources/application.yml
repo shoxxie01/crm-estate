@@ -58,6 +58,18 @@ delta:
     # Ważność podpisanego linku do zdjęcia. Krótko, bo link działa bez tokenu —
     # kto go dostanie, ten widzi zdjęcie. Tyle wystarczy na obejrzenie galerii.
     url-ttl: 15m
+  geo:
+    # Geokodowanie adresów dla mapy w ofercie. Publiczna instancja Nominatim jest
+    # darmowa i bez klucza, ale jej polityka użycia dopuszcza najwyżej jedno
+    # żądanie na sekundę — stąd limit niżej. Przy większym ruchu: własna instancja
+    # (obraz mediagis/nominatim) i podmiana samego adresu.
+    nominatim-url: ${DELTA_GEO_URL:https://nominatim.openstreetmap.org}
+    # Polityka OSM wymaga User-Agenta, który wskazuje aplikację i sposób kontaktu.
+    # Przed produkcją: podmienić adres na prawdziwy, inaczej ruch bywa blokowany.
+    user-agent: ${DELTA_GEO_USER_AGENT:delta-crm/1.0 (kontakt@delta-crm.pl)}
+    timeout: 5s
+    min-interval: 1s
+    cache-size: 500
 
 logging:
   level:
