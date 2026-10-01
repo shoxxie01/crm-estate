@@ -6,7 +6,7 @@ import java.util.List;
 
 /**
  * Wszystko, czego potrzebuje publiczny formularz: dane biura, treść zgód
- * i słowniki. Jednym żądaniem, bez logowania — i bez niczego ponad to.
+ * i słowniki. Jednym żądaniem, bez logowania. I bez niczego ponad to.
  */
 public record IntakeFormResponse(
         String agencyName,

@@ -64,7 +64,7 @@ export const kpis: KpiDatum[] = [
   },
 ];
 
-/** Transakcje domknięte w podziale na typ — 2 serie, wykres słupkowy skumulowany. */
+/** Transakcje domknięte w podziale na typ. 2 serie, wykres słupkowy skumulowany. */
 export interface TransactionMonth {
   month: string;
   sale: number;
@@ -86,7 +86,7 @@ export const transactionsByMonth: TransactionMonth[] = [
   { month: "lip", sale: 12, rent: 6 },
 ];
 
-/** Źródła pozyskania klientów — magnitude, więc kodowanie sekwencyjne. */
+/** Źródła pozyskania klientów. Magnitude, więc kodowanie sekwencyjne. */
 export interface LeadSource {
   label: string;
   value: number;
@@ -100,7 +100,7 @@ export const leadSources: LeadSource[] = [
   { label: "Kampanie Meta", value: 88 },
 ];
 
-/** Kalendarz — najbliższe wydarzenia. */
+/** Kalendarz. Najbliższe wydarzenia. */
 export interface CalendarEvent {
   id: string;
   time: string;
@@ -115,7 +115,7 @@ export const upcomingEvents: CalendarEvent[] = [
     id: "e1",
     time: "10:30",
     day: "Dziś",
-    title: "Prezentacja — Grzybowska 41",
+    title: "Prezentacja. Grzybowska 41",
     subtitle: "Marta Zielińska · 68 m², 2 pok.",
     kind: "Prezentacja",
   },
@@ -170,17 +170,17 @@ export const portalSyncs: PortalSync[] = [
     portal: "Nieruchomosci-online",
     status: "warning",
     listings: 133,
-    message: "15 ofert bez zdjęć — pominięte",
+    message: "15 ofert bez zdjęć. Pominięte",
   },
   {
     portal: "Gratka",
     status: "critical",
     listings: 0,
-    message: "Błąd autoryzacji API — odnów token",
+    message: "Błąd autoryzacji API. Odnów token",
   },
 ];
 
-/** Klienci wymagający kontaktu — dopasowanie do predyspozycji zakupowych. */
+/** Klienci wymagający kontaktu. Dopasowanie do predyspozycji zakupowych. */
 export interface HotLead {
   id: string;
   name: string;

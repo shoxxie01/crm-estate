@@ -11,7 +11,7 @@ const highlights = [
   {
     icon: Share2,
     title: "Eksport na portale jednym kliknięciem",
-    body: "Otodom, OLX, Gratka i Nieruchomosci-online — z kontrolą statusu synchronizacji.",
+    body: "Otodom, OLX, Gratka i Nieruchomosci-online. Z kontrolą statusu synchronizacji.",
   },
   {
     icon: CalendarDays,
@@ -55,7 +55,7 @@ export function AuthLayout({
         </p>
       </div>
 
-      {/* Panel marki — wyciszony, bez gradientów i cieni */}
+      {/* Panel marki. Wyciszony, bez gradientów i cieni */}
       <aside className="hidden border-l border-line bg-canvas px-12 py-16 lg:flex lg:flex-col lg:justify-center">
         <div className="max-w-[420px]">
           <h2 className="text-[22px] leading-snug font-semibold tracking-tight text-ink">

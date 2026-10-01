@@ -89,7 +89,7 @@ public class InquiryService {
         Agency agency = agencies.findByIntakeToken(token).orElseThrow(IntakeNotFoundException::new);
 
         // Wypełnione pole-pułapka: udajemy sukces, żeby bot nie miał sygnału,
-        // że został rozpoznany — i niczego nie zapisujemy.
+        // że został rozpoznany. I niczego nie zapisujemy.
         if (request.website() != null && !request.website().isBlank()) {
             return;
         }
@@ -136,7 +136,7 @@ public class InquiryService {
     }
 
     /**
-     * Oferty pasujące do zgłoszenia kupna jeszcze przed jego przyjęciem — do
+     * Oferty pasujące do zgłoszenia kupna jeszcze przed jego przyjęciem. Do
      * rozmowy z klientem. Zgłoszenie sprzedaży nie ma czego dopasowywać do ofert.
      */
     @Transactional(readOnly = true)
@@ -153,7 +153,7 @@ public class InquiryService {
      * Przyjęcie zgłoszenia: nowy klient (źródło „Strona WWW") albo dopięcie do
      * istniejącego. Przy kupnie powstaje poszukiwanie z kryteriów zgłoszenia;
      * przy sprzedaży opis nieruchomości trafia do notatki klienta, a ofertę agent
-     * zakłada sam — ogłoszenie wymaga danych, których formularz nie zbiera.
+     * zakłada sam. Ogłoszenie wymaga danych, których formularz nie zbiera.
      */
     @Transactional
     public ConvertInquiryResponse convert(UUID id, ConvertInquiryRequest request, User actor) {
@@ -174,7 +174,7 @@ public class InquiryService {
         if (request != null && request.clientId() != null) {
             client = clients.findByIdAndAgencyId(request.clientId(), actor.getAgency().getId())
                     .orElseThrow(ClientNotFoundException::new);
-            // Uzupełniamy tylko brakujące dane — istniejących nie nadpisujemy tym,
+            // Uzupełniamy tylko brakujące dane. Istniejących nie nadpisujemy tym,
             // co ktoś wpisał w formularz bez weryfikacji.
             if (client.getPhone() == null) {
                 client.setPhone(inquiry.getPhone());
@@ -203,13 +203,13 @@ public class InquiryService {
         return new ConvertInquiryResponse(client.getId(), requirementId);
     }
 
-    /** Odrzucenie usuwa zgłoszenie z danymi osobowymi — nie ma podstawy, żeby je trzymać. */
+    /** Odrzucenie usuwa zgłoszenie z danymi osobowymi. Nie ma podstawy, żeby je trzymać. */
     @Transactional
     public void reject(UUID id, User actor) {
         ClientInquiry inquiry = find(id, actor);
         if (inquiry.getStatus() != InquiryStatus.NEW) {
             throw new BusinessValidationException(
-                    Map.of("status", "Przyjętego zgłoszenia nie można odrzucić — jest już częścią karty klienta."));
+                    Map.of("status", "Przyjętego zgłoszenia nie można odrzucić. Jest już częścią karty klienta."));
         }
         inquiries.delete(inquiry);
     }
@@ -254,19 +254,19 @@ public class InquiryService {
         Map<String, String> errors = new LinkedHashMap<>();
 
         if (trimToNull(request.phone()) == null && trimToNull(request.email()) == null) {
-            errors.put("phone", "Podaj telefon lub e-mail — inaczej biuro nie będzie mogło się z Tobą skontaktować.");
+            errors.put("phone", "Podaj telefon lub e-mail. Inaczej biuro nie będzie mogło się z Tobą skontaktować.");
         }
 
         if (intent == InquiryIntent.SELL) {
             if (request.offer() == null) {
                 errors.put("offer", "Opisz nieruchomość, którą chcesz sprzedać.");
             } else if (request.offer().propertyType() != null && request.offer().propertyType().rentOnly()) {
-                errors.put("offer.propertyType", "Pokoju nie da się sprzedać osobno — wybierz inny rodzaj.");
+                errors.put("offer.propertyType", "Pokoju nie da się sprzedać osobno. Wybierz inny rodzaj.");
             }
         } else if (request.criteria() == null) {
             errors.put("criteria", "Opisz, czego szukasz.");
         } else if (request.criteria().transactionType() != TransactionType.SALE) {
-            // Formularz ma tylko „kupić" i „sprzedać" — najem obsługuje agent.
+            // Formularz ma tylko „kupić" i „sprzedać". Najem obsługuje agent.
             errors.put("criteria.transactionType", "Formularz obsługuje tylko kupno albo sprzedaż.");
         } else {
             // Te same reguły co w formularzu agenta; klucze z prefiksem, jak w błędach adnotacji.
@@ -288,14 +288,14 @@ public class InquiryService {
                 offer.area(), offer.roomsCount(), offer.expectedPrice());
     }
 
-    /** „Mieszkanie, Łódź — Polesie · 48 m² · pokoje: 2 · oczekiwana cena: 550 000 zł" do notatki klienta. */
+    /** „Mieszkanie, Łódź. Polesie · 48 m² · pokoje: 2 · oczekiwana cena: 550 000 zł" do notatki klienta. */
     private static String describe(SaleOfferRequest offer) {
         NumberFormat number = NumberFormat.getNumberInstance(Locale.forLanguageTag("pl-PL"));
         number.setMaximumFractionDigits(2);
 
         List<String> parts = new ArrayList<>();
         parts.add(offer.propertyType().label() + ", " + offer.city()
-                + (offer.district() == null ? "" : " — " + offer.district()));
+                + (offer.district() == null ? "" : ". " + offer.district()));
         if (offer.area() != null) {
             parts.add(number.format(offer.area()) + " m²");
         }
@@ -334,7 +334,7 @@ public class InquiryService {
                 inquiry.getCreatedAt());
     }
 
-    /** Klienci biura z tym samym telefonem albo e-mailem — kandydaci do dopięcia zamiast nowej karty. */
+    /** Klienci biura z tym samym telefonem albo e-mailem. Kandydaci do dopięcia zamiast nowej karty. */
     private List<InquiryResponse.PossibleDuplicate> duplicates(ClientInquiry inquiry, UUID agencyId) {
         Map<UUID, Client> found = new LinkedHashMap<>();
         Map<UUID, List<String>> reasons = new LinkedHashMap<>();

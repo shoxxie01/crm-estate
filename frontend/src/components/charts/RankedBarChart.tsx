@@ -3,7 +3,7 @@ import type { LeadSource } from "../../data/dashboard";
 import { formatNumber } from "../../lib/format";
 import { cn } from "../../lib/cn";
 
-/** Ramp sekwencyjny (jeden odcień, więcej = ciemniej) — zwalidowany na tle #ffffff. */
+/** Ramp sekwencyjny (jeden odcień, więcej = ciemniej). Zwalidowany na tle #ffffff. */
 const RAMP = [
   "var(--color-seq-5)",
   "var(--color-seq-4)",

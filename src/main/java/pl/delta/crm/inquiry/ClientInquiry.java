@@ -20,9 +20,9 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * Zgłoszenie z publicznego formularza — poczekalnia przed bazą klientów.
+ * Zgłoszenie z publicznego formularza. Poczekalnia przed bazą klientów.
  *
- * <p>Kupujący zostawia kryteria, sprzedający — opis nieruchomości. Oba jako
+ * <p>Kupujący zostawia kryteria, sprzedający. Opis nieruchomości. Oba jako
  * JSON w kształcie formularza, a nie w osobnych kolumnach: po zgłoszeniu nikt
  * nie filtruje, a przy przyjęciu i tak powstają z nich właściwe dane klienta.
  */
@@ -58,12 +58,12 @@ public class ClientInquiry {
     @Column(name = "intent", nullable = false, length = 10, updatable = false)
     private InquiryIntent intent;
 
-    /** JSON kryteriów ({@code RequirementRequest}) — tylko przy kupnie. */
+    /** JSON kryteriów ({@code RequirementRequest}). Tylko przy kupnie. */
     @JdbcTypeCode(SqlTypes.LONGVARCHAR)
     @Column(name = "criteria")
     private String criteria;
 
-    /** JSON opisu nieruchomości ({@code SaleOfferRequest}) — tylko przy sprzedaży. */
+    /** JSON opisu nieruchomości ({@code SaleOfferRequest}). Tylko przy sprzedaży. */
     @JdbcTypeCode(SqlTypes.LONGVARCHAR)
     @Column(name = "offer")
     private String offer;
@@ -122,7 +122,7 @@ public class ClientInquiry {
         this.consentProcessingAt = this.createdAt;
     }
 
-    /** Zgłoszenie przyjęte — do nowego albo istniejącego klienta. */
+    /** Zgłoszenie przyjęte. Do nowego albo istniejącego klienta. */
     public void convert(Client client, User handledBy) {
         this.status = InquiryStatus.CONVERTED;
         this.client = client;

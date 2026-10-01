@@ -53,7 +53,7 @@ class PropertyModuleTest {
 
     /**
      * Oferty trzymają klucz obcy do użytkownika, więc muszą zniknąć również po
-     * tej klasie — inaczej {@code users.deleteAll()} w innym teście przewróci się
+     * tej klasie. Inaczej {@code users.deleteAll()} w innym teście przewróci się
      * na więzach, zależnie od kolejności uruchomienia.
      */
     @AfterEach
@@ -172,7 +172,7 @@ class PropertyModuleTest {
     }
 
     @Test
-    @DisplayName("mieszkanie bez liczby pokoi jest odrzucane — portal wymaga RoomsNum")
+    @DisplayName("mieszkanie bez liczby pokoi jest odrzucane. Portal wymaga RoomsNum")
     void rejectsFlatWithoutRoomsCount() throws Exception {
         String token = tokenFor("anna@delta.pl", "Delta Nieruchomości");
 
@@ -187,7 +187,7 @@ class PropertyModuleTest {
     }
 
     @Test
-    @DisplayName("tytuł dłuższy niż 50 znaków jest odrzucany — taki limit ma Otodom")
+    @DisplayName("tytuł dłuższy niż 50 znaków jest odrzucany. Taki limit ma Otodom")
     void rejectsTooLongTitle() throws Exception {
         String token = tokenFor("anna@delta.pl", "Delta Nieruchomości");
 
@@ -256,7 +256,7 @@ class PropertyModuleTest {
     @Test
     @DisplayName("oferta bez powiatu zapisuje się, ale nie jest gotowa do eksportu")
     void allowsMissingCountyButBlocksExport() throws Exception {
-        // Powiat, gmina i dzielnica są opcjonalne przy zapisie — portal wymaga
+        // Powiat, gmina i dzielnica są opcjonalne przy zapisie. Portal wymaga
         // powiatu, więc brak wychodzi dopiero na gotowości do eksportu.
         String token = tokenFor("anna@delta.pl", "Delta Nieruchomości");
 
@@ -286,7 +286,7 @@ class PropertyModuleTest {
                         .header("Authorization", "Bearer " + delta))
                 .andExpect(status().isOk());
 
-        // obce biuro dostaje 404, nie 403 — inaczej dałoby się sprawdzać istnienie ofert
+        // obce biuro dostaje 404, nie 403. Inaczej dałoby się sprawdzać istnienie ofert
         mockMvc.perform(get("/api/properties/" + propertyId)
                         .header("Authorization", "Bearer " + omega))
                 .andExpect(status().isNotFound());
@@ -327,7 +327,7 @@ class PropertyModuleTest {
     @Test
     @DisplayName("klasa energetyczna A+ zapisuje się poprawnie")
     void acceptsEnergyClassAPlus() throws Exception {
-        // Do bazy trafia nazwa stałej (`A_PLUS`), nie etykieta („A+") — kolumna
+        // Do bazy trafia nazwa stałej (`A_PLUS`), nie etykieta („A+"). Kolumna
         // musi być na tyle szeroka. Wcześniej miała VARCHAR(3) i insert padał.
         String token = tokenFor("anna@delta.pl", "Delta Nieruchomości");
 

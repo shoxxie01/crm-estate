@@ -13,7 +13,7 @@ export default defineConfig({
   optimizeDeps: {
     // MapLibre uruchamia dekodowanie kafelków w web workerze, którego adres
     // składa przez `new Worker(new URL(...))`. Wstępne pakowanie zależności
-    // (esbuild) przepisuje ten adres tak, że worker nie wstaje — mapa ładuje
+    // (esbuild) przepisuje ten adres tak, że worker nie wstaje. Mapa ładuje
     // styl i sprite'y, po czym rysuje puste płótno, bez błędu widocznego
     // w interfejsie. Wyłączenie z pre-bundlingu dotyczy tylko trybu dev;
     // produkcyjny build przez Rollup radzi sobie z tym sam.

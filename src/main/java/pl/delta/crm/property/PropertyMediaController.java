@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Galeria oferty. Zakres, jak wszędzie, bierze się z tokenu — oferta obcego
+ * Galeria oferty. Zakres, jak wszędzie, bierze się z tokenu. Oferta obcego
  * biura daje 404 już na etapie jej wyszukania, więc do zdjęć nie ma jak dojść.
  */
 @RestController
@@ -48,7 +48,7 @@ public class PropertyMediaController {
 
     /**
      * Wgranie jednego lub wielu plików naraz. Agent wraca z oględzin z całym
-     * katalogiem zdjęć i zaznacza je jednym ruchem — żądanie na plik oznaczałoby
+     * katalogiem zdjęć i zaznacza je jednym ruchem. Żądanie na plik oznaczałoby
      * czterdzieści osobnych, z których część mogłaby przepaść.
      */
     @PostMapping
@@ -60,7 +60,7 @@ public class PropertyMediaController {
         return mediaService.upload(propertyId, files, type, principal.user());
     }
 
-    /** Podmiana samego pliku — pozycja i podpis zostają. */
+    /** Podmiana samego pliku. Pozycja i podpis zostają. */
     @PutMapping("/{mediaId}/file")
     public MediaResponse replaceFile(@PathVariable UUID propertyId,
                                      @PathVariable UUID mediaId,

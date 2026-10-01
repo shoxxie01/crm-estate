@@ -39,8 +39,8 @@ import java.util.Map;
 /**
  * Słowniki formularza w jednym miejscu.
  *
- * <p>Alternatywą byłoby przepisanie dwudziestu kilku enumów do TypeScriptu —
- * i rozjeżdżanie się ich z backendem przy każdej zmianie. Odpowiedź jest
+ * <p>Alternatywą byłoby przepisanie dwudziestu kilku enumów do TypeScriptu.
+ * I rozjeżdżanie się ich z backendem przy każdej zmianie. Odpowiedź jest
  * statyczna i nadaje się do zacache'owania po stronie frontu na czas sesji.
  */
 @RestController

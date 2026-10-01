@@ -10,7 +10,7 @@ import pl.delta.crm.client.dictionary.LeadSource;
 import java.util.UUID;
 
 /**
- * Formularz nowego klienta. Wymagane są tylko imię i nazwisko — reguła
+ * Formularz nowego klienta. Wymagane są tylko imię i nazwisko. Reguła
  * „telefon albo e-mail" dotyczy dwóch pól naraz, więc pilnuje jej serwis,
  * nie adnotacja na pojedynczym polu.
  */

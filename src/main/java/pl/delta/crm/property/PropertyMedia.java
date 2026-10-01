@@ -99,7 +99,7 @@ public class PropertyMedia {
 
     /**
      * Klucz obiektu w storage. Biuro siedzi w ścieżce, więc podział na agencje
-     * obowiązuje także w warstwie plików — po kluczu widać, czyj jest plik,
+     * obowiązuje także w warstwie plików. Po kluczu widać, czyj jest plik,
      * a skasowanie całego biura to skasowanie jednego prefiksu.
      *
      * <p>Nazwa pliku jest losowa i nie pochodzi od nazwy wgranej przez użytkownika:
@@ -112,7 +112,7 @@ public class PropertyMedia {
     }
 
     /**
-     * Klucz miniatury wyprowadzony z klucza pliku — bez osobnej kolumny. Migracja
+     * Klucz miniatury wyprowadzony z klucza pliku. Bez osobnej kolumny. Migracja
      * V3 i tak wymaga, żeby nazwa pliku dała się wyprowadzić z {@code storage_key}
      * (paczka dla Otodom pakuje pliki płasko do ZIP-a).
      */
@@ -124,7 +124,7 @@ public class PropertyMedia {
     }
 
     /**
-     * Podmiana samego pliku — pozycja w galerii, podpis i identyfikator zostają.
+     * Podmiana samego pliku. Pozycja w galerii, podpis i identyfikator zostają.
      * Agent poprawiający prześwietlone zdjęcie nie powinien tracić kolejności
      * ani opisu, które już ustawił.
      */

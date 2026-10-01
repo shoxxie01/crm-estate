@@ -15,7 +15,7 @@ interface PhoneInputProps {
 
 /**
  * Telefon z kierunkowym +48 na stałe przy polu. Wpisanie „+" na początku
- * przełącza pole na numer zagraniczny, wyczyszczenie — z powrotem na krajowy.
+ * przełącza pole na numer zagraniczny, wyczyszczenie. Z powrotem na krajowy.
  */
 export function PhoneInput({ value, onChange, ...props }: PhoneInputProps) {
   const international = isInternational(value);

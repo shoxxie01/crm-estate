@@ -3,7 +3,7 @@ spring:
     name: delta-crm
 
   datasource:
-    # Port 5434 — patrz compose.yaml. Nadpisywalne przez DELTA_DB_URL.
+    # Port 5434. Patrz compose.yaml. Nadpisywalne przez DELTA_DB_URL.
     url: ${DELTA_DB_URL:jdbc:postgresql://localhost:5434/delta_crm}
     username: ${DELTA_DB_USER:delta}
     password: ${DELTA_DB_PASSWORD:delta}
@@ -14,8 +14,8 @@ spring:
 
   jpa:
     hibernate:
-      # Schemat należy do Flyway. Hibernate ma go tylko sprawdzić przy starcie —
-      # niezgodność encji z migracją ma wybuchnąć od razu, a nie na produkcji.
+      # Schemat należy do Flyway. Hibernate ma go tylko sprawdzić przy starcie.
+      # Niezgodność encji z migracją ma wybuchnąć od razu, a nie na produkcji.
       ddl-auto: validate
     open-in-view: false
     properties:
@@ -28,7 +28,7 @@ spring:
   servlet:
     multipart:
       # Limit na plik wchodzący, nie na zapisany. Zdjęcie z telefonu bywa
-      # 12-megapikselowe i waży kilkanaście MB — po normalizacji do 1920 px
+      # 12-megapikselowe i waży kilkanaście MB. Po normalizacji do 1920 px
       # zostaje z tego kilkaset kB, a dopiero ten rozmiar liczy się dla portalu.
       max-file-size: 15MB
       max-request-size: 120MB
@@ -40,28 +40,28 @@ server:
 
 delta:
   jwt:
-    # Bez DELTA_JWT_SECRET aplikacja się nie uruchomi — to celowe.
+    # Bez DELTA_JWT_SECRET aplikacja się nie uruchomi. To celowe.
     secret: ${DELTA_JWT_SECRET}
     ttl: 12h
     issuer: delta-crm
   cors:
     allowed-origins: http://localhost:5173
   storage:
-    # MinIO z compose.yaml. Adres musi być osiągalny także z przeglądarki —
-    # podpis URL-a obejmuje host, więc backend i front muszą widzieć ten sam.
+    # MinIO z compose.yaml. Adres musi być osiągalny także z przeglądarki.
+    # Podpis URL-a obejmuje host, więc backend i front muszą widzieć ten sam.
     endpoint: ${DELTA_S3_ENDPOINT:http://localhost:9000}
     # MinIO nie ma regionów, ale podpis SigV4 wymaga jakiegoś w kanonicznym żądaniu.
     region: ${DELTA_S3_REGION:us-east-1}
     bucket: ${DELTA_S3_BUCKET:delta-crm-media}
     access-key: ${DELTA_S3_ACCESS_KEY:delta}
     secret-key: ${DELTA_S3_SECRET_KEY:delta12345}
-    # Ważność podpisanego linku do zdjęcia. Krótko, bo link działa bez tokenu —
-    # kto go dostanie, ten widzi zdjęcie. Tyle wystarczy na obejrzenie galerii.
+    # Ważność podpisanego linku do zdjęcia. Krótko, bo link działa bez tokenu.
+    # Kto go dostanie, ten widzi zdjęcie. Tyle wystarczy na obejrzenie galerii.
     url-ttl: 15m
   geo:
     # Geokodowanie adresów dla mapy w ofercie. Publiczna instancja Nominatim jest
     # darmowa i bez klucza, ale jej polityka użycia dopuszcza najwyżej jedno
-    # żądanie na sekundę — stąd limit niżej. Przy większym ruchu: własna instancja
+    # żądanie na sekundę. Stąd limit niżej. Przy większym ruchu: własna instancja
     # (obraz mediagis/nominatim) i podmiana samego adresu.
     nominatim-url: ${DELTA_GEO_URL:https://nominatim.openstreetmap.org}
     # Polityka OSM wymaga User-Agenta, który wskazuje aplikację i sposób kontaktu.

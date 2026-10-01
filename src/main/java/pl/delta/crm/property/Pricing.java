@@ -14,7 +14,7 @@ import java.math.RoundingMode;
  *
  * <p>Czynsz administracyjny jest osobno od ceny, bo portale pokazują go osobno,
  * a przy najmie trzeba jeszcze wiedzieć, czy cena już go zawiera
- * (Otodom: PriceIncludeRent). Każda kwota ma własną walutę — przy ofertach
+ * (Otodom: PriceIncludeRent). Każda kwota ma własną walutę. Przy ofertach
  * w euro czynsz bywa rozliczany w złotówkach.
  */
 @Embeddable
@@ -47,13 +47,13 @@ public class Pricing {
     @Column(name = "deposit_currency", length = 3)
     private Currency depositCurrency;
 
-    /** Prowizja biura. Dane wewnętrzne — nie idą do ogłoszenia. */
+    /** Prowizja biura. Dane wewnętrzne. Nie idą do ogłoszenia. */
     @Column(name = "commission_percent", precision = 5, scale = 2)
     private BigDecimal commissionPercent;
 
     /**
      * Cena za metr kwadratowy. W formularzu wpisywana ręcznie albo wyliczana
-     * automatycznie z ceny i powierzchni — dlatego trzymamy ją wprost, a nie
+     * automatycznie z ceny i powierzchni. Dlatego trzymamy ją wprost, a nie
      * liczymy dopiero przy odczycie.
      */
     @Column(name = "price_per_m2", precision = 14, scale = 2)
@@ -69,7 +69,7 @@ public class Pricing {
     }
 
     /**
-     * Cena za metr — portale wyliczają ją same, ale lista ofert w CRM-ie
+     * Cena za metr. Portale wyliczają ją same, ale lista ofert w CRM-ie
      * sortuje po niej, więc liczymy ją także u siebie.
      */
     public BigDecimal pricePerSquareMeter(BigDecimal totalArea) {

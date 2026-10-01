@@ -42,8 +42,8 @@ public class JwtService {
 
     /**
      * Zwraca id użytkownika, jeśli token jest poprawnie podpisany, nie wygasł
-     * i pochodzi od naszego wystawcy. W przeciwnym razie {@code Optional.empty()} —
-     * powód celowo nie wycieka do klienta.
+     * i pochodzi od naszego wystawcy. W przeciwnym razie {@code Optional.empty()}.
+     * Powód celowo nie wycieka do klienta.
      */
     public Optional<UUID> readSubject(String token) {
         try {

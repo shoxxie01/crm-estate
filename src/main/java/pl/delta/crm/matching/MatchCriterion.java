@@ -2,7 +2,7 @@ package pl.delta.crm.matching;
 
 import pl.delta.crm.property.dictionary.Dictionary;
 
-/** Kryteria, po których poszukiwanie porównuje się z ofertą — w kolejności wyświetlania. */
+/** Kryteria, po których poszukiwanie porównuje się z ofertą. W kolejności wyświetlania. */
 public enum MatchCriterion implements Dictionary {
 
     PROPERTY_TYPE("Rodzaj"),

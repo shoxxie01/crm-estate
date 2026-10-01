@@ -48,7 +48,7 @@ const dateTime = (value: string) =>
 
 /**
  * Skrzynka zgłoszeń z publicznego formularza. Nic stąd nie trafia do bazy
- * klientów samo — agent przyjmuje zgłoszenie (nowy klient albo dopięcie do
+ * klientów samo. Agent przyjmuje zgłoszenie (nowy klient albo dopięcie do
  * istniejącego) albo je odrzuca, co usuwa dane osobowe zgłaszającego.
  */
 export function InquiriesPage() {
@@ -153,7 +153,7 @@ export function InquiriesPage() {
         </p>
       )}
       {success && (
-        <p className="flex flex-wrap items-center gap-1.5 rounded-md border border-good/30 bg-good/8 px-3 py-2 text-[13px] text-[#0a7a0a]">
+        <p className="flex flex-wrap items-center gap-1.5 rounded-md border border-good/30 bg-good/8 px-3 py-2 text-[13px] text-good-ink">
           <Check className="size-4" strokeWidth={2.25} />
           Zgłoszenie {success.name} przyjęte.
           <Link to={`/klienci/${success.clientId}`} className="font-medium underline">
@@ -228,7 +228,7 @@ function IntakeLinkCard() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      setError("Przeglądarka nie pozwoliła skopiować — zaznacz link i skopiuj ręcznie.");
+      setError("Przeglądarka nie pozwoliła skopiować. Zaznacz link i skopiuj ręcznie.");
     }
   }
 
@@ -295,7 +295,7 @@ function IntakeLinkCard() {
       {confirming && (
         <ConfirmDialog
           title="Wygenerować nowy link?"
-          description="Dotychczasowy link przestanie działać od razu — także tam, gdzie jest już wstawiony. Użyj tego, gdy do formularza zaczął trafiać spam."
+          description="Dotychczasowy link przestanie działać od razu. Także tam, gdzie jest już wstawiony. Użyj tego, gdy do formularza zaczął trafiać spam."
           confirmLabel="Wygeneruj"
           busyLabel="Generowanie…"
           busy={regenerating}
@@ -373,7 +373,7 @@ function InquiryCard({
 
       {isNew && q.possibleDuplicates.length > 0 && (
         <div className="mt-3 rounded-md border border-warning/40 bg-warning/12 px-3 py-2.5">
-          <p className="flex items-center gap-1.5 text-[12px] font-medium text-[#8a5c00]">
+          <p className="flex items-center gap-1.5 text-[12px] font-medium text-warning-ink">
             <Users className="size-3.5" strokeWidth={2} />
             Ta osoba może już być w bazie klientów
           </p>
@@ -407,7 +407,7 @@ function InquiryCard({
       <InquiryMatches inquiryId={q.id} enabled={isNew && q.intent === "BUY"} />
       {isNew && q.intent === "SELL" && (
         <p className="mt-3 text-[12px] text-ink-muted">
-          Po przyjęciu opis nieruchomości trafi do notatki klienta — ofertę dodasz po
+          Po przyjęciu opis nieruchomości trafi do notatki klienta. Ofertę dodasz po
           rozmowie albo oględzinach, bo formularz nie zbiera adresu ani zdjęć.
         </p>
       )}
@@ -448,7 +448,7 @@ function InquiryCard({
             {q.handledByName && ` przez ${q.handledByName}`}
             {q.clientId && (
               <>
-                {" — "}
+                {". "}
                 <Link to={`/klienci/${q.clientId}`} className="font-medium text-accent hover:underline">
                   {q.clientName}
                 </Link>
@@ -482,7 +482,7 @@ function OfferSummary({ offer, labels }: { offer: SaleOffer; labels: Requirement
       </div>
       <p className="mt-1 flex items-start gap-1 text-[12px] text-ink-secondary">
         <MapPin className="mt-px size-3.5 shrink-0 text-ink-muted" strokeWidth={2} />
-        {offer.district ? `${offer.city} — ${offer.district}` : offer.city}
+        {offer.district ? `${offer.city}. ${offer.district}` : offer.city}
       </p>
       <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 text-[13px] sm:grid-cols-4">
         {facts
@@ -500,7 +500,7 @@ function OfferSummary({ offer, labels }: { offer: SaleOffer; labels: Requirement
   );
 }
 
-/** Pasujące oferty jeszcze przed przyjęciem — agent dzwoni od razu z konkretami. */
+/** Pasujące oferty jeszcze przed przyjęciem. Agent dzwoni od razu z konkretami. */
 function InquiryMatches({ inquiryId, enabled }: { inquiryId: string; enabled: boolean }) {
   const [matches, setMatches] = useState<PropertyMatch[] | null>(null);
   const [open, setOpen] = useState(false);

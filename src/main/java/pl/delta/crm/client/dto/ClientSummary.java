@@ -10,7 +10,7 @@ import java.util.UUID;
 /**
  * Wiersz listy klientów. {@code sellCount} i {@code rentCount} to liczba
  * powierzonych ofert na sprzedaż i na wynajem, {@code buyerCount} i
- * {@code tenantCount} — liczba aktywnych poszukiwań kupna i najmu. Front
+ * {@code tenantCount}. Liczba aktywnych poszukiwań kupna i najmu. Front
  * wyprowadza z nich etykiety ról; żadna z ról nie jest polem klienta.
  */
 public record ClientSummary(

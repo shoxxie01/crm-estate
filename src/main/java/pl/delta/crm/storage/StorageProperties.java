@@ -11,7 +11,7 @@ import java.time.Duration;
  * storage'u aplikacja nadal działa, traci tylko możliwość dodania zdjęcia.
  * Wywalenie startu odcinałoby całą resztę CRM-u z powodu niedziałającej galerii.
  *
- * @param endpoint  adres API S3 — musi być osiągalny także z przeglądarki, bo
+ * @param endpoint  adres API S3. Musi być osiągalny także z przeglądarki, bo
  *                  podpis URL-a obejmuje host
  * @param region    MinIO regionów nie ma, ale podpis SigV4 wymaga wpisania jakiegoś
  * @param bucket    jeden bucket na całą instalację; rozdział biur robi klucz obiektu
@@ -38,7 +38,7 @@ public record StorageProperties(
             bucket = "delta-crm-media";
         }
         // Dev-owe dane dostępu z compose.yaml, tą samą konwencją co delta/delta
-        // przy bazie. Na produkcji nadpisywane zmiennymi środowiskowymi — bez
+        // przy bazie. Na produkcji nadpisywane zmiennymi środowiskowymi. Bez
         // tego klient S3 nie powstałby nawet tam, gdzie storage nie jest używany.
         if (accessKey == null || accessKey.isBlank()) {
             accessKey = "delta";

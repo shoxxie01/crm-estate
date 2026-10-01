@@ -7,7 +7,7 @@ import type { RequirementCriteria } from "../pages/clients/RequirementDetails";
 /**
  * Publiczny formularz zgłoszeniowy i skrzynka zgłoszeń.
  *
- * Formularz (`/public/intake/{token}`) działa bez logowania — biuro wskazuje
+ * Formularz (`/public/intake/{token}`) działa bez logowania. Biuro wskazuje
  * losowy klucz z linku. Zgłoszenie trafia do skrzynki, a nie od razu do klientów.
  */
 
@@ -21,7 +21,7 @@ export interface IntakeForm {
   financing: DictionaryEntry[];
 }
 
-/** Formularz ma tylko te dwie intencje — najem obsługuje agent. */
+/** Formularz ma tylko te dwie intencje. Najem obsługuje agent. */
 export type InquiryIntent = "BUY" | "SELL";
 
 /** Nieruchomość, którą właściciel chce sprzedać przez biuro. */
@@ -47,7 +47,7 @@ export interface PublicInquiryPayload {
   message?: string;
   consentProcessing: boolean;
   consentMarketing: boolean;
-  /** Pole-pułapka na boty — człowiek zostawia puste. */
+  /** Pole-pułapka na boty. Człowiek zostawia puste. */
   website?: string;
 }
 
@@ -107,7 +107,7 @@ export function fetchInquiryMatches(id: string) {
   return apiFetch<PropertyMatch[]>(`/inquiries/${id}/matches`);
 }
 
-/** Bez `clientId` — nowy klient; z `clientId` — dopięcie do istniejącego. */
+/** Bez `clientId` Nowy klient; z `clientId` dopięcie do istniejącego. */
 export function convertInquiry(id: string, clientId?: string) {
   return apiFetch<{ clientId: string; requirementId: string }>(
     `/inquiries/${id}/convert`,
@@ -129,5 +129,5 @@ export function regenerateIntakeLink() {
   });
 }
 
-/** Zdarzenie okna po zmianie w skrzynce — menu boczne odświeża licznik. */
+/** Zdarzenie okna po zmianie w skrzynce. Menu boczne odświeża licznik. */
 export const INQUIRIES_CHANGED = "delta:inquiries-changed";

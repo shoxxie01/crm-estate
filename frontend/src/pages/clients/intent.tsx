@@ -1,7 +1,7 @@
 import { Badge } from "../../components/ui/Badge";
 
 /**
- * Role klienta wyprowadzone z jego ofert i poszukiwań — nie z pola na kliencie.
+ * Role klienta wyprowadzone z jego ofert i poszukiwań. Nie z pola na kliencie.
  * Sprzedający / wynajmujący z powierzonych ofert, kupujący / najemca
  * z aktywnych poszukiwań. Dowolna kombinacja naraz albo (gdy nie ma niczego)
  * kontakt bez zlecenia.

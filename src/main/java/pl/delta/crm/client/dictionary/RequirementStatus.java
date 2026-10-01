@@ -5,7 +5,7 @@ import pl.delta.crm.property.dictionary.Dictionary;
 /**
  * Stan poszukiwania. Tylko aktywne liczą się do roli klienta (kupujący /
  * najemca) i będą brane pod uwagę przy dopasowaniu ofert. Pozostałe zostają
- * w historii — „kupił u nas w 2026" to też informacja o kliencie.
+ * w historii. „Kupił u nas w 2026" to też informacja o kliencie.
  */
 public enum RequirementStatus implements Dictionary {
 

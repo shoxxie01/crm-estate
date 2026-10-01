@@ -18,7 +18,7 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Dostęp do Nominatim — jedyne miejsce w aplikacji, które wychodzi do OSM.
+ * Dostęp do Nominatim. Jedyne miejsce w aplikacji, które wychodzi do OSM.
  *
  * <p><b>Dlaczego przez backend, a nie prosto z przeglądarki.</b> Nominatim
  * pozwala na ruch z przeglądarki (wysyła nagłówki CORS), ale jego polityka
@@ -53,7 +53,7 @@ public class NominatimClient {
     /**
      * LRU na odpowiedzi. Powtórzeń jest tu sporo: agent przeciąga pinezkę tam
      * i z powrotem, a edycja tej samej oferty pyta o ten sam adres przy każdym
-     * wejściu w formularz. Cache w pamięci procesu wystarcza — dane adresowe
+     * wejściu w formularz. Cache w pamięci procesu wystarcza. Dane adresowe
      * zmieniają się w skali miesięcy, a przy restarcie nie tracimy niczego
      * poza kilkoma milisekundami.
      */
@@ -77,7 +77,7 @@ public class NominatimClient {
                 .requestFactory(factory)
                 .defaultHeader("User-Agent", properties.userAgent())
                 .defaultHeader("Accept", "application/json")
-                // Nominatim odpowiada po polsku, gdy go o to poprosić — inaczej
+                // Nominatim odpowiada po polsku, gdy go o to poprosić. Inaczej
                 // wraca „Masovian Voivodeship" i nie trafia w nasz słownik.
                 .defaultHeader("Accept-Language", "pl")
                 .build();
@@ -109,7 +109,7 @@ public class NominatimClient {
 
     /**
      * @param single {@code /reverse} odpowiada pojedynczym obiektem, {@code /search}
-     *               tablicą — tu obie postaci sprowadzamy do listy.
+     *               tablicą. Tu obie postaci sprowadzamy do listy.
      */
     private List<NominatimPlace> fetch(String path, String query, boolean single) {
         String key = path + "?" + query;
@@ -130,7 +130,7 @@ public class NominatimClient {
             if (single) {
                 NominatimPlace place = response.body(NominatimPlace.class);
                 // Punkt bez adresu (środek morza, nieznany kraj) wraca jako
-                // {"error": …} — po zmapowaniu na rekord zostaje z pustym lat.
+                // {"error": …}. Po zmapowaniu na rekord zostaje z pustym lat.
                 result = place == null || place.lat() == null ? List.of() : List.of(place);
             } else {
                 NominatimPlace[] places = response.body(NominatimPlace[].class);
@@ -148,7 +148,7 @@ public class NominatimClient {
 
     /**
      * Rezerwuje najbliższe wolne okno czasowe i czeka na nie. Rezerwacja jest
-     * pod zamkiem, samo czekanie już nie — inaczej wątki blokowałyby się
+     * pod zamkiem, samo czekanie już nie. Inaczej wątki blokowałyby się
      * nawzajem na czas snu i kolejka rosłaby dwa razy szybciej, niż wynika
      * z limitu.
      */
@@ -175,7 +175,7 @@ public class NominatimClient {
         }
     }
 
-    /** Sześć miejsc po przecinku to ok. 10 cm — więcej nie ma znaczenia dla adresu. */
+    /** Sześć miejsc po przecinku to ok. 10 cm. Więcej nie ma znaczenia dla adresu. */
     private static String format(double value) {
         return String.format(Locale.ROOT, "%.6f", value);
     }

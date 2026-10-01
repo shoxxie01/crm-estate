@@ -116,9 +116,9 @@ public class PropertyService {
 
     /**
      * Pełne nadpisanie oferty. Numer oferty, autor, właściciel, zdjęcia
-     * i publikacje zostają nietknięte — zmienia się tylko to, co obejmuje
+     * i publikacje zostają nietknięte. Zmienia się tylko to, co obejmuje
      * formularz. Pola spoza formularza (np. typ dachu) wracają do wartości
-     * domyślnej, dokładnie jak przy tworzeniu — formularz jest granicą tego,
+     * domyślnej, dokładnie jak przy tworzeniu. Formularz jest granicą tego,
      * co edytowalne.
      */
     @Transactional
@@ -160,7 +160,7 @@ public class PropertyService {
         property.setKeysInfo(request.keysInfo());
         property.setExportable(orDefault(request.exportable(), Boolean.TRUE));
 
-        // Pusty agentId przy edycji znaczy „nie ruszaj prowadzącego" — inaczej
+        // Pusty agentId przy edycji znaczy „nie ruszaj prowadzącego". Inaczej
         // każda zmiana przez inną osobę przepisywałaby ofertę na nią.
         if (request.agentId() != null) {
             property.setAgent(resolveAgent(request.agentId(), editor));
@@ -182,14 +182,14 @@ public class PropertyService {
     public void delete(UUID id, User actor) {
         Property property = properties.findByIdAndAgencyId(id, actor.getAgency().getId())
                 .orElseThrow(PropertyNotFoundException::new);
-        // Terminy nie znikają razem z ofertą — tracą tylko powiązanie. Historia
+        // Terminy nie znikają razem z ofertą. Tracą tylko powiązanie. Historia
         // pokazów zostaje, a bez tego oferta z choćby jednym terminem w ogóle
         // nie dałaby się usunąć (klucz obcy w calendar_events bez ON DELETE).
         events.detachProperty(id);
 
         // Zdjęcia, publikacje i kolekcje cech znikają kaskadowo (cascade/orphan
         // po stronie JPA oraz ON DELETE CASCADE w migracji V3). Kaskada obejmuje
-        // jednak wyłącznie bazę — pliki trzeba skasować osobno, po commicie.
+        // jednak wyłącznie bazę. Pliki trzeba skasować osobno, po commicie.
         mediaService.purgeStorageFor(property);
         properties.delete(property);
     }
@@ -222,7 +222,7 @@ public class PropertyService {
     }
 
     /**
-     * Miniatury zdjęć głównych dla całej strony listy — jednym zapytaniem po
+     * Miniatury zdjęć głównych dla całej strony listy. Jednym zapytaniem po
      * pozycji 0, zamiast rozwijania kolekcji zdjęć w każdym wierszu z osobna.
      */
     private Map<UUID, String> coverThumbnailsFor(List<Property> page) {
@@ -248,10 +248,10 @@ public class PropertyService {
         // Otodom odrzuca mieszkanie i dom bez liczby pokoi (RoomsNum).
         if (request.propertyType().requiresRoomsCount() && request.area().roomsCount() == null) {
             errors.put("area.roomsCount",
-                    "Liczba pokoi jest wymagana dla tego rodzaju nieruchomości — bez niej portal odrzuci ofertę.");
+                    "Liczba pokoi jest wymagana dla tego rodzaju nieruchomości. Bez niej portal odrzuci ofertę.");
         }
 
-        // Pokoju nie da się wystawić na sprzedaż — portale przyjmują go tylko na wynajem.
+        // Pokoju nie da się wystawić na sprzedaż. Portale przyjmują go tylko na wynajem.
         if (request.propertyType().rentOnly() && request.transactionType() != TransactionType.RENT) {
             errors.put("transactionType", "Pokój można wystawić wyłącznie na wynajem.");
         }
@@ -293,7 +293,7 @@ public class PropertyService {
      * Kolejny numer oferty w biurze, w formacie {@code RRRR/MM/NNN}.
      *
      * <p>Portal rozpoznaje ogłoszenie po tym numerze przy każdej kolejnej
-     * wysyłce, więc musi być stabilny i unikalny w obrębie biura — ale nie ma
+     * wysyłce, więc musi być stabilny i unikalny w obrębie biura. Ale nie ma
      * powodu, żeby wpisywał go człowiek. Licznik startuje od liczby ofert
      * z bieżącego miesiąca i przesuwa się, dopóki numer jest zajęty; przy
      * jednoczesnym zapisie z dwóch sesji ostatnim zabezpieczeniem pozostaje
@@ -334,7 +334,7 @@ public class PropertyService {
         pricing.setRent(request.rent(), orDefault(request.rentCurrency(), Currency.PLN));
         pricing.setDeposit(request.deposit(), orDefault(request.depositCurrency(), Currency.PLN));
         pricing.setCommissionPercent(request.commissionPercent());
-        // Front zwykle przysyła cenę za m², ale gdy jej brak — liczymy z ceny
+        // Front zwykle przysyła cenę za m², ale gdy jej brak. Liczymy z ceny
         // i powierzchni, żeby w bazie zawsze była wartość spójna z ceną.
         pricing.setPricePerM2(request.pricePerM2() != null
                 ? request.pricePerM2()
@@ -441,7 +441,7 @@ public class PropertyService {
         return value == null || value.isBlank();
     }
 
-    /** Pomocnicze — używane przez testy i przyszły moduł eksportu. */
+    /** Pomocnicze. Używane przez testy i przyszły moduł eksportu. */
     public static Set<PropertyType> typesRequiringRooms() {
         return Set.of(PropertyType.APARTMENT, PropertyType.HOUSE);
     }

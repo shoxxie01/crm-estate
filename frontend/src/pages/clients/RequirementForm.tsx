@@ -46,7 +46,7 @@ interface LocationRow {
 const text = (value: number | null | undefined) =>
   value == null ? "" : String(value);
 
-/** Przełącznik transakcji — czasownikiem, bo odpowiada na „Klient chce…". */
+/** Przełącznik transakcji. Czasownikiem, bo odpowiada na „Klient chce…". */
 const TRANSACTION_CHOICES = [
   ["SALE", "Kupić"],
   ["RENT", "Najmować"],
@@ -56,7 +56,7 @@ const TRANSACTION_CHOICES = [
 const AREA = /^\d{1,8}([.,]\d{1,2})?$/;
 
 /**
- * Poszukiwanie — formularz pod rozmowę telefoniczną.
+ * Poszukiwanie. Formularz pod rozmowę telefoniczną.
  *
  * Na górze to, o co agent pyta w pierwszej minucie (transakcja, rodzaj,
  * lokalizacja, budżet, metraż, pokoje). Reszta jest zwinięta, żeby nie
@@ -114,7 +114,7 @@ export function RequirementForm({
     return map;
   });
 
-  // Przy edycji rozwijamy szczegóły, jeśli cokolwiek w nich jest — inaczej
+  // Przy edycji rozwijamy szczegóły, jeśli cokolwiek w nich jest. Inaczej
   // zapisane dane byłyby niewidoczne i agent nie wiedziałby, że je ma.
   const [expanded, setExpanded] = useState(
     Boolean(
@@ -139,7 +139,7 @@ export function RequirementForm({
   const showRooms = appliesTo(ROOMS_TYPES, propertyTypes);
   const showFloor = appliesTo(FLOOR_TYPES, propertyTypes);
 
-  // Escape zamyka okno — jak w pozostałych dialogach aplikacji.
+  // Escape zamyka okno. Jak w pozostałych dialogach aplikacji.
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
   useEffect(() => {
@@ -150,7 +150,7 @@ export function RequirementForm({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  // Cechy pasujące do wybranych rodzajów; bez wyboru — wszystkie.
+  // Cechy pasujące do wybranych rodzajów; bez wyboru. Wszystkie.
   const featureGroups = useMemo(
     () =>
       propertyDictionaries.featureGroups
@@ -199,7 +199,7 @@ export function RequirementForm({
 
   function switchTransaction(next: string) {
     setTransactionType(next);
-    // Pokoju nie da się kupić — nie zostawiamy wyboru, którego serwer nie przyjmie.
+    // Pokoju nie da się kupić. Nie zostawiamy wyboru, którego serwer nie przyjmie.
     if (next === "SALE" && propertyTypes.has("ROOM")) {
       const without = new Set(propertyTypes);
       without.delete("ROOM");
@@ -214,7 +214,7 @@ export function RequirementForm({
     setPropertyTypes(next);
   }
 
-  // Jeden klik — musi mieć, drugi — mile widziane, trzeci — bez znaczenia.
+  // Jeden klik Musi mieć, drugi mile widziane, trzeci. Bez znaczenia.
   function cycleFeature(value: string) {
     const next = new Map(features);
     const current = next.get(value);
@@ -303,7 +303,7 @@ export function RequirementForm({
     const optionalNumber = (value: string) =>
       value.trim() === "" || value === "-" ? undefined : Number(value.replace(",", "."));
 
-    // Wysyłamy tylko cechy widoczne dla wybranych rodzajów — po zmianie
+    // Wysyłamy tylko cechy widoczne dla wybranych rodzajów. Po zmianie
     // „mieszkanie" na „działkę" winda nie może zostać w poszukiwaniu po cichu.
     const visible = new Set(
       featureGroups.flatMap((group) => group.features.map((f) => f.value)),
@@ -365,7 +365,7 @@ export function RequirementForm({
 
   return (
     <div
-      className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto bg-ink/20 p-4 sm:p-8"
+      className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto bg-scrim/20 p-4 sm:p-8"
       role="dialog"
       aria-modal="true"
       aria-label={initial ? "Edycja poszukiwania" : "Nowe poszukiwanie"}
@@ -562,9 +562,9 @@ export function RequirementForm({
                 className={cn("size-4 transition-transform", expanded && "rotate-180")}
                 strokeWidth={2}
               />
-              Więcej szczegółów
+              Więcej szczegółów.
               <span className="font-normal text-ink-muted">
-                — rynek, piętro, finansowanie, cechy, notatka
+                Rynek, piętro, finansowanie, cechy, notatka
               </span>
             </button>
 

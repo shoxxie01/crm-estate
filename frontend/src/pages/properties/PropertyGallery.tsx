@@ -20,13 +20,13 @@ import { ApiError } from "../../api/client";
 import { Button } from "../../components/ui/Button";
 import { PropertyLightbox } from "./PropertyLightbox";
 
-/** Tyle materiałów przyjmuje jedna oferta — limit pilnuje też backend. */
+/** Tyle materiałów przyjmuje jedna oferta. Limit pilnuje też backend. */
 const MAX_MEDIA = 50;
 
 interface Props {
   propertyId: string;
   media: PropertyMedia[];
-  /** Wymagane tylko w trybie edycji — w podglądzie nic się nie zmienia. */
+  /** Wymagane tylko w trybie edycji. W podglądzie nic się nie zmienia. */
   onChange?: (media: PropertyMedia[]) => void;
   /**
    * Sam podgląd, bez wgrywania, kasowania i przestawiania. Karta oferty służy
@@ -38,8 +38,8 @@ interface Props {
 /**
  * Galeria oferty.
  *
- * <p>W trybie edycji każda operacja idzie osobnym żądaniem i działa od razu —
- * galeria nie czeka na zapis formularza. Zdjęcie waży kilka megabajtów, więc
+ * <p>W trybie edycji każda operacja idzie osobnym żądaniem i działa od razu.
+ * Galeria nie czeka na zapis formularza. Zdjęcie waży kilka megabajtów, więc
  * trzymanie go w pamięci do czasu, aż ktoś kliknie „Zapisz", oznaczałoby, że
  * nieudany zapis oferty przepuszcza też komplet zdjęć.
  */
@@ -66,7 +66,7 @@ export function PropertyGallery({
   const remaining = MAX_MEDIA - media.length;
 
   // W podglądzie renderujemy odświeżony komplet, jeśli po drodze go pobraliśmy.
-  // W edycji zawsze `media` — tam stan galerii prowadzi formularz.
+  // W edycji zawsze `media`. Tam stan galerii prowadzi formularz.
   const items = readOnly ? (refreshed ?? media) : media;
 
   // Nowy komplet z zewnątrz unieważnia to, co dociągnęliśmy sami.
@@ -74,7 +74,7 @@ export function PropertyGallery({
 
   /**
    * Podpisy linków żyją ~15 minut, a kartę oferty da się trzymać otwartą dłużej.
-   * Gdy zdjęcie przestaje się ładować, pobieramy galerię jeszcze raz — dostajemy
+   * Gdy zdjęcie przestaje się ładować, pobieramy galerię jeszcze raz. Dostajemy
    * te same materiały ze świeżymi URL-ami.
    */
   async function refreshMedia() {
@@ -115,7 +115,7 @@ export function PropertyGallery({
 
     if (picked.length > remaining) {
       setError(
-        `Zostało miejsce na ${remaining} ${remaining === 1 ? "zdjęcie" : "zdjęć"} — wybrano ${picked.length}.`,
+        `Zostało miejsce na ${remaining} ${remaining === 1 ? "zdjęcie" : "zdjęć"}. Wybrano ${picked.length}.`,
       );
       return;
     }
@@ -190,7 +190,7 @@ export function PropertyGallery({
   }
 
   // Podgląd na karcie oferty: zdjęcie główne, pod nim reszta, zero sterowania.
-  // Rozdzielenie jest celowe — kartę otwiera się, żeby ofertę obejrzeć,
+  // Rozdzielenie jest celowe. Kartę otwiera się, żeby ofertę obejrzeć,
   // a przypadkowego skasowania zdjęcia przy przeglądaniu nie da się cofnąć.
   // Kliknięcie kafelka otwiera pełny ekran; w trybie edycji kafelek jest
   // uchwytem do przeciągania, więc podglądu tam nie ma.
@@ -201,7 +201,7 @@ export function PropertyGallery({
       <div className="flex flex-col gap-3">
         <p className="text-[12px] text-ink-muted">
           {items.length === 0
-            ? "Brak zdjęć — dodasz je w edycji oferty. Bez co najmniej jednego oferta nie pójdzie na portal."
+            ? "Brak zdjęć. Dodasz je w edycji oferty. Bez co najmniej jednego oferta nie pójdzie na portal."
             : `${items.length} ${items.length === 1 ? "zdjęcie" : "zdjęć"}. Kliknij, aby otworzyć na pełnym ekranie.`}
         </p>
 
@@ -219,13 +219,13 @@ export function PropertyGallery({
                   alt={cover.caption ?? cover.fileName}
                   className="h-full w-full object-cover"
                 />
-                <span className="absolute top-1.5 left-1.5 inline-flex items-center gap-1 rounded-sm bg-ink/80 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                <span className="absolute top-1.5 left-1.5 inline-flex items-center gap-1 rounded-sm bg-scrim/80 px-1.5 py-0.5 text-[10px] font-medium text-white">
                   <Star size={10} />
                   Główne
                 </span>
                 {!cover.meetsPortalRequirements && (
                   <span
-                    title="Portal odrzuci to zdjęcie — sprawdź rozmiar i wymiary."
+                    title="Portal odrzuci to zdjęcie. Sprawdź rozmiar i wymiary."
                     className="absolute top-1.5 right-1.5 inline-flex items-center gap-1 rounded-sm bg-warning/90 px-1.5 py-0.5 text-[10px] font-medium text-ink"
                   >
                     <AlertTriangle size={10} />
@@ -258,7 +258,7 @@ export function PropertyGallery({
                       />
                       {!item.meetsPortalRequirements && (
                         <span
-                          title="Portal odrzuci to zdjęcie — sprawdź rozmiar i wymiary."
+                          title="Portal odrzuci to zdjęcie. Sprawdź rozmiar i wymiary."
                           className="absolute top-1 right-1 inline-flex items-center rounded-sm bg-warning/90 px-1 py-0.5 text-ink"
                         >
                           <AlertTriangle size={10} />
@@ -291,7 +291,7 @@ export function PropertyGallery({
         <p className="text-[12px] text-ink-muted">
           {media.length === 0
             ? "Brak zdjęć. Bez co najmniej jednego oferta nie pójdzie na portal."
-            : `${media.length} z ${MAX_MEDIA}. Pierwsze zdjęcie jest zdjęciem głównym — kolejność zmienisz przeciąganiem.`}
+            : `${media.length} z ${MAX_MEDIA}. Pierwsze zdjęcie jest zdjęciem głównym. Kolejność zmienisz przeciąganiem.`}
         </p>
         <Button
           type="button"
@@ -367,7 +367,7 @@ export function PropertyGallery({
                   />
 
                   {index === 0 && (
-                    <span className="absolute left-1.5 top-1.5 inline-flex items-center gap-1 rounded-sm bg-ink/80 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                    <span className="absolute left-1.5 top-1.5 inline-flex items-center gap-1 rounded-sm bg-scrim/80 px-1.5 py-0.5 text-[10px] font-medium text-white">
                       <Star size={10} />
                       Główne
                     </span>
@@ -375,7 +375,7 @@ export function PropertyGallery({
 
                   {!item.meetsPortalRequirements && (
                     <span
-                      title="Portal odrzuci to zdjęcie — sprawdź rozmiar i wymiary."
+                      title="Portal odrzuci to zdjęcie. Sprawdź rozmiar i wymiary."
                       className="absolute right-1.5 top-1.5 inline-flex items-center gap-1 rounded-sm bg-warning/90 px-1.5 py-0.5 text-[10px] font-medium text-ink"
                     >
                       <AlertTriangle size={10} />

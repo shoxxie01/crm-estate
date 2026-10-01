@@ -18,7 +18,7 @@ import java.io.IOException;
 /**
  * Czyta `Authorization: Bearer <token>`, weryfikuje podpis i ustawia
  * uwierzytelnienie na czas obsługi żądania. Brak lub niepoprawny token nie
- * kończy łańcucha błędem — po prostu zostawia kontekst pusty, a decyzję
+ * kończy łańcucha błędem. Po prostu zostawia kontekst pusty, a decyzję
  * podejmuje dalej konfiguracja autoryzacji.
  */
 @Component

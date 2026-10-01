@@ -11,7 +11,7 @@ import java.math.BigDecimal;
 /**
  * Adres nieruchomości.
  *
- * <p>Otodom wymaga kompletu kraj + województwo + powiat + miasto — bez tego
+ * <p>Otodom wymaga kompletu kraj + województwo + powiat + miasto. Bez tego
  * odrzuca ogłoszenie niezależnie od pozostałych pól. Dlatego {@code voivodeship},
  * {@code county} i {@code city} są w bazie {@code NOT NULL}.
  */
@@ -26,7 +26,7 @@ public class Address {
     private Voivodeship voivodeship;
 
     /**
-     * Powiat — tekstem, nie enumem. Uzasadnienie w {@link Voivodeship}.
+     * Powiat. Tekstem, nie enumem. Uzasadnienie w {@link Voivodeship}.
      *
      * <p>Opcjonalny przy zapisie, choć portal go wymaga: oferta bez powiatu
      * istnieje w CRM-ie, ale nie przejdzie przez {@code readyForExport()}.
@@ -50,7 +50,7 @@ public class Address {
     @Column(name = "building_number", length = 20)
     private String buildingNumber;
 
-    /** Nigdy nie trafia do ogłoszenia — służy do kontaktu z właścicielem. */
+    /** Nigdy nie trafia do ogłoszenia. Służy do kontaktu z właścicielem. */
     @Column(name = "apartment_number", length = 20)
     private String apartmentNumber;
 
@@ -64,7 +64,7 @@ public class Address {
     private BigDecimal longitude;
 
     /**
-     * Czy ukryć dokładny adres w ogłoszeniu. Domyślnie tak — właściciele rzadko
+     * Czy ukryć dokładny adres w ogłoszeniu. Domyślnie tak. Właściciele rzadko
      * godzą się na numer budynku w publicznym ogłoszeniu, a odwrotna domyślna
      * wartość oznaczałaby ujawnianie go przez przeoczenie.
      */
@@ -115,7 +115,7 @@ public class Address {
     }
 
     /**
-     * Adres w jednej linii — „Grzybowska 41, Warszawa". Używają go moduły, które
+     * Adres w jednej linii. „Grzybowska 41, Warszawa". Używają go moduły, które
      * pokazują ofertę w cudzym kontekście (kalendarz w kafelku terminu), żeby nie
      * składać tego z pojedynczych pól w kilku miejscach i nie rozjechać formatu.
      * Zwraca {@code null}, gdy nie ma z czego złożyć nawet miejscowości.

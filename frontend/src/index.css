@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /* ------------------------------------------------------------------
-   Delta CRM — design tokens ("Nordic Clean")
+   Delta CRM. Design tokens ("Nordic Clean")
    Jasny, gęsty, narzędziowy. Separacja przez hairline, nie przez cień.
    ------------------------------------------------------------------ */
 @theme {
@@ -22,15 +22,21 @@
   --color-accent-subtle: #eef2fd;
   --color-accent-ring: #b8c8f5;
 
-  /* Status — zarezerwowane, nigdy jako kolor serii */
+  /* Status. Zarezerwowane, nigdy jako kolor serii */
   --color-good: #0ca30c;
   --color-warning: #fab219;
   --color-serious: #ec835a;
   --color-critical: #d03b3b;
   --color-delta-up: #006300; /* zieleń o kontraście tekstowym */
   --color-delta-down: #d03b3b;
+  /* Tekst w kolorze statusu (na jasnym tle sam status ma za mały kontrast) */
+  --color-good-ink: #0a7a0a;
+  --color-warning-ink: #8a5c00;
 
-  /* Kalendarz — rodzaj terminu. Dziewięć kategorii to więcej, niż niesie
+  /* Zasłona pod oknami dialogowymi i podpisy na zdjęciach */
+  --color-scrim: #1a1d21;
+
+  /* Kalendarz. Rodzaj terminu. Dziewięć kategorii to więcej, niż niesie
      paleta wykresów, więc te kolory różnią się nie tylko odcieniem, ale
      i jasnością (L* od 29 do 56): przy protanopii i deuteranopii część
      odcieni się zlewa i tylko jasność je rozdziela. Liczby w frontend/README. */
@@ -53,25 +59,105 @@
   --color-event-other: #807779;
   --color-event-other-tint: #e9e6e7;
 
-  /* Wykresy — paleta kategorialna (zwalidowana na tle #ffffff) */
+  /* Wykresy. Paleta kategorialna (zwalidowana na tle #ffffff) */
   --color-series-1: #2a78d6; /* blue   */
   --color-series-2: #eb6834; /* orange */
 
-  /* Wykresy — ramp sekwencyjny (jeden odcień, light -> dark) */
+  /* Wykresy. Ramp sekwencyjny (jeden odcień, light -> dark) */
   --color-seq-1: #86b6ef;
   --color-seq-2: #5598e7;
   --color-seq-3: #2a78d6;
   --color-seq-4: #1c5cab;
   --color-seq-5: #104281;
 
-  /* Wykresy — chrome */
+  /* Wykresy. Chrome */
   --color-grid: #ededf0;
   --color-axis: #d4d4d8;
+  --color-sparkline: #b4b7bd;
 
   --radius-card: 8px;
 
   --font-sans: "Inter var", "Inter", system-ui, -apple-system, "Segoe UI",
     sans-serif;
+}
+
+/* ------------------------------------------------------------------
+   Ciemny motyw. Te same tokeny, inne wartości. Komponenty nie wiedzą,
+   który motyw jest włączony: atrybut data-theme ustawia ThemeProvider
+   (i skrypt w index.html, zanim React cokolwiek namaluje).
+   Odcienie czerni, nie granatu. Hierarchia powierzchni przez jasność:
+   im wyżej leży element, tym jest jaśniejszy.
+   ------------------------------------------------------------------ */
+:root {
+  color-scheme: light;
+  --shadow-popover: 0 4px 16px rgba(26, 29, 33, 0.09);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-canvas: #0e0f11;
+  --color-surface: #16171a;
+  --color-subtle: #1f2024;
+  --color-line: #2a2c31;
+  --color-line-strong: #3a3d43;
+
+  --color-ink: #e8e9eb;
+  --color-ink-secondary: #a6aab1;
+  --color-ink-muted: #7d828b;
+
+  --color-accent: #4a76ec;
+  --color-accent-hover: #6389f0;
+  --color-accent-subtle: #1a2340;
+  --color-accent-ring: #34508f;
+
+  --color-good: #2fb52f;
+  --color-warning: #f2b631;
+  --color-serious: #ef9168;
+  --color-critical: #e25858;
+  --color-delta-up: #4cc94c;
+  --color-delta-down: #f06b6b;
+  --color-good-ink: #5fd35f;
+  --color-warning-ink: #f2c14e;
+
+  --color-scrim: #000000;
+
+  /* Kalendarz. Kolory rozjaśnione (służą też za kolor tekstu), tła
+     przyciemnione do poziomu powierzchni. */
+  --color-event-presentation: #5ea3e6;
+  --color-event-presentation-tint: #172a40;
+  --color-event-meeting: #a98bd0;
+  --color-event-meeting-tint: #2a2238;
+  --color-event-valuation: #2fc0bf;
+  --color-event-valuation-tint: #0f2d2d;
+  --color-event-contract: #78b374;
+  --color-event-contract-tint: #1b2b1a;
+  --color-event-open-house: #d97a5a;
+  --color-event-open-house-tint: #3a1e15;
+  --color-event-photo: #e06aae;
+  --color-event-photo-tint: #3a1a2c;
+  --color-event-phone: #cdb35a;
+  --color-event-phone-tint: #332c14;
+  --color-event-task: #8aa6ba;
+  --color-event-task-tint: #1d2730;
+  --color-event-other: #a89fa1;
+  --color-event-other-tint: #2a2728;
+
+  --color-series-1: #4a90e8;
+  --color-series-2: #f07a48;
+
+  /* Na ciemnym tle "więcej" znaczy jaśniej, więc ramp idzie odwrotnie */
+  --color-seq-1: #1c4f8f;
+  --color-seq-2: #2a6cc0;
+  --color-seq-3: #3f87dc;
+  --color-seq-4: #6aa3e8;
+  --color-seq-5: #9cc4f5;
+
+  --color-grid: #232529;
+  --color-axis: #3a3d43;
+  --color-sparkline: #5d6169;
+
+  --shadow-popover: 0 4px 16px rgba(0, 0, 0, 0.5);
 }
 
 @layer base {
@@ -99,6 +185,12 @@
     outline: 2px solid var(--color-accent);
     outline-offset: 2px;
   }
+}
+
+/* Cień menu i dymków. Poza @theme, bo Tailwind wkleja wartości cieni
+   na sztywno i ciemny motyw nie mógłby ich nadpisać. */
+@utility shadow-popover {
+  box-shadow: var(--shadow-popover);
 }
 
 @layer components {

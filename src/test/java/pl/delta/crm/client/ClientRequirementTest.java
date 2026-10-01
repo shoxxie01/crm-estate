@@ -224,7 +224,7 @@ class ClientRequirementTest {
                 .andExpect(jsonPath("$.content[0].buyerCount").value(0))
                 .andExpect(jsonPath("$.content[0].tenantCount").value(1));
 
-        // Zrealizowane zostaje na karcie — jako historia, za aktywnymi.
+        // Zrealizowane zostaje na karcie. Jako historia, za aktywnymi.
         mockMvc.perform(get("/api/clients/" + clientId)
                         .header("Authorization", "Bearer " + token))
                 .andExpect(jsonPath("$.requirements.length()").value(2))

@@ -12,7 +12,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Słowniki formularza terminu — ten sam wzorzec co przy ofertach i klientach,
+ * Słowniki formularza terminu. Ten sam wzorzec co przy ofertach i klientach,
  * żeby front nie powielał enumów w TypeScripcie.
  */
 @RestController

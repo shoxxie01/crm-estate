@@ -2,7 +2,7 @@ package pl.delta.crm.client.dictionary;
 
 import pl.delta.crm.property.dictionary.Dictionary;
 
-/** Skąd trafił do biura klient — źródło pozyskania kontaktu. */
+/** Skąd trafił do biura klient. Źródło pozyskania kontaktu. */
 public enum LeadSource implements Dictionary {
 
     REFERRAL("Polecenie"),

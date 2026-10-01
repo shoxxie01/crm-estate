@@ -6,7 +6,7 @@ import pl.delta.crm.calendar.dictionary.EventOutcome;
 import pl.delta.crm.calendar.dictionary.EventStatus;
 
 /**
- * Domknięcie terminu jednym ruchem — osobno od pełnej edycji.
+ * Domknięcie terminu jednym ruchem. Osobno od pełnej edycji.
  *
  * <p>Agent oznacza wynik prezentacji zaraz po niej, zwykle z telefonu i między
  * jednym spotkaniem a drugim. Gdyby wymagało to otwarcia całego formularza,

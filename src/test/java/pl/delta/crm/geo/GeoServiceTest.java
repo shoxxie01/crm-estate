@@ -11,7 +11,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Tłumaczenie między nazewnictwem OpenStreetMap a naszym adresem.
  *
- * <p>Bez sieci i bez kontekstu Springa — sprawdzamy samo mapowanie, bo to ono
+ * <p>Bez sieci i bez kontekstu Springa. Sprawdzamy samo mapowanie, bo to ono
  * decyduje, co wpadnie do formularza. Odpowiedzi w testach są przepisane
  * z prawdziwych wywołań Nominatim dla Warszawy, Piaseczna i Krakowa; różnią się
  * one układem kluczy na tyle, że każda pilnuje innej reguły.
@@ -34,7 +34,7 @@ class GeoServiceTest {
         assertThat(location.street()).isEqualTo("Aleja Jana Pawła II");
         assertThat(location.buildingNumber()).isEqualTo("12");
         assertThat(location.postalCode()).isEqualTo("00-828");
-        // OSM nie podaje powiatu dla miasta na prawach powiatu — dokłada go
+        // OSM nie podaje powiatu dla miasta na prawach powiatu. Dokłada go
         // CityCounties, bo bez niego oferta nie przejdzie przez readyForExport().
         assertThat(location.county()).isEqualTo("Warszawa");
     }
@@ -102,7 +102,7 @@ class GeoServiceTest {
     }
 
     @Test
-    @DisplayName("Wieś bez gminy jej nie dostaje — brak danych to nie to samo co bycie gminą")
+    @DisplayName("Wieś bez gminy jej nie dostaje. Brak danych to nie to samo co bycie gminą")
     void doesNotInventCommuneForVillage() {
         GeoLocation location = GeoService.toLocation(place("52.0", "21.0",
                 new NominatimPlace.Address(
@@ -119,7 +119,7 @@ class GeoServiceTest {
     @DisplayName("Ta sama nazwa poza swoim województwem nie dostaje powiatu z automatu")
     void doesNotFillCountyForSameNameElsewhere() {
         // Chełm to miasto na prawach powiatu w lubelskim, ale też wieś
-        // w małopolskim — dopasowanie po samej nazwie dopisałoby wsi powiat,
+        // w małopolskim. Dopasowanie po samej nazwie dopisałoby wsi powiat,
         // którego nie ma.
         GeoLocation wies = GeoService.toLocation(place("49.9", "20.0",
                 new NominatimPlace.Address(
@@ -147,7 +147,7 @@ class GeoServiceTest {
     }
 
     @Test
-    @DisplayName("Powiat dwuczłonowy podnosi oba człony, a łączony myślnikiem — oba po myślniku")
+    @DisplayName("Powiat dwuczłonowy podnosi oba człony, a łączony myślnikiem. Oba po myślniku")
     void capitalizesEveryWord() {
         GeoLocation dwuczlonowy = GeoService.toLocation(place("52.2", "20.6",
                 new NominatimPlace.Address(
@@ -211,6 +211,6 @@ class GeoServiceTest {
     }
 
     private static NominatimPlace place(String lat, String lon, NominatimPlace.Address address) {
-        return new NominatimPlace(lat, lon, "—", address);
+        return new NominatimPlace(lat, lon, "-", address);
     }
 }

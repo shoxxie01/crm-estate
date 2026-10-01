@@ -8,10 +8,10 @@ export interface LatLng {
 }
 
 interface PropertyMapProps {
-  /** Pinezka. `null` — brak lokalizacji, mapa pokazuje wtedy całą Polskę. */
+  /** Pinezka. `null`. Brak lokalizacji, mapa pokazuje wtedy całą Polskę. */
   position: LatLng | null;
   /**
-   * Wołane, gdy agent wskaże miejsce — kliknięciem w mapę albo przeciągnięciem
+   * Wołane, gdy agent wskaże miejsce. Kliknięciem w mapę albo przeciągnięciem
    * pinezki. Brak tej funkcji przełącza mapę w tryb tylko do odczytu.
    */
   onPick?: (position: LatLng) => void;
@@ -19,18 +19,18 @@ interface PropertyMapProps {
   height?: number;
   /** Nakładka „pracuję" na czas geokodowania. */
   busy?: boolean;
-  /** Linia pod mapą — znaleziony adres albo komunikat błędu. */
+  /** Linia pod mapą. Znaleziony adres albo komunikat błędu. */
   footer?: ReactNode;
 }
 
 /**
- * Styl mapy: OpenFreeMap „positron" — same ulice, budynki i etykiety, bez
+ * Styl mapy: OpenFreeMap „positron". Same ulice, budynki i etykiety, bez
  * ikon sklepów, restauracji i bankomatów, którymi standardowe kafelki OSM
  * zalewają centrum miasta. Przy ofercie liczy się, gdzie stoi budynek i przy
  * jakiej ulicy, a nie co jest naprzeciwko.
  *
  * <p>Wybór padł na kafelki wektorowe, bo <b>nie ma dziś bezkluczowego
- * rastrowego stylu w tym guście</b> — CARTO Positron, do niedawna standardowa
+ * rastrowego stylu w tym guście</b>. CARTO Positron, do niedawna standardowa
  * odpowiedź, od pewnego czasu zwraca kafelki z napisem „API KEY REQUIRED".
  * OpenFreeMap serwuje wektory bez klucza, bez limitów i bez rejestracji.
  * Adres jest w stałej, więc podmiana dostawcy (albo postawienie własnego
@@ -38,13 +38,13 @@ interface PropertyMapProps {
  */
 const MAP_STYLE = "https://tiles.openfreemap.org/styles/positron";
 
-/** Środek Polski i zoom, przy którym widać cały kraj — widok startowy bez pinezki. */
+/** Środek Polski i zoom, przy którym widać cały kraj. Widok startowy bez pinezki. */
 const POLAND_CENTER: [number, number] = [19.4, 52.0];
 const POLAND_ZOOM = 5;
 /**
  * Zoom, na który schodzimy, pokazując konkretny adres.
  *
- * <p>17 pokazuje najbliższe przecznice — widać, przy której ulicy stoi obiekt
+ * <p>17 pokazuje najbliższe przecznice. Widać, przy której ulicy stoi obiekt
  * i co go otacza, a jednocześnie nie trzeba dojeżdżać kółkiem. To zarazem
  * próg, od którego styl puszcza numery domów, więc pojawiają się od razu.
  * Dalej (18+) kadr zawęża się do jednego kwartału i orientację trzeba
@@ -77,7 +77,7 @@ function pinElement(): HTMLElement {
  */
 /**
  * Warstwa numerów domów. Nie ma jej w żadnym gotowym stylu OpenFreeMap, ale
- * dane są — schemat OpenMapTiles wystawia punkty adresowe warstwą
+ * dane są. Schemat OpenMapTiles wystawia punkty adresowe warstwą
  * `housenumber`. Bez niej mapa nie odpowiada na pytanie „który to budynek".
  */
 const HOUSE_NUMBERS_LAYER = {
@@ -88,7 +88,7 @@ const HOUSE_NUMBERS_LAYER = {
   /*
    * Kafelki kończą się na z14 i wyżej są rozciągane. Gdyby próg „pokaż od
    * z17" siedział w `minzoom`, warstwa byłaby przy kafelku z14 uznana za
-   * nieaktywną i numery nie zostałyby z niego w ogóle wczytane — niezależnie
+   * nieaktywną i numery nie zostałyby z niego w ogóle wczytane. Niezależnie
    * od tego, jak blisko podjedzie mapa. Dlatego `minzoom` równa się
    * maksymalnemu zoomowi źródła, a próg widoczności schodzi do przezroczystości.
    */
@@ -110,12 +110,12 @@ const HOUSE_NUMBERS_LAYER = {
 /**
  * Styl pobrany i doprawiony <b>zanim</b> powstanie mapa.
  *
- * <p>Obie zmiany — polskie etykiety i numery domów — dałoby się teoretycznie
+ * <p>Obie zmiany Polskie etykiety i numery domów dałoby się teoretycznie
  * nanieść po `load`, na gotowej mapie. W praktyce jest za późno: kafelki dla
  * pierwszego widoku są wtedy już pobrane i zparsowane, a parser zachowuje
  * z kafelka tylko te warstwy danych, do których odwołuje się styl. Warstwa
  * `housenumber` dołożona po fakcie trafia więc na kafelki, w których numerów
- * nikt nie zostawił — i mapa uparcie pokazuje puste miejsca.
+ * nikt nie zostawił. I mapa uparcie pokazuje puste miejsca.
  *
  * <p>Wynik trzymamy w module: styl jest ten sam dla wszystkich map w aplikacji,
  * a formularz i karta oferty potrafią go zawołać w tej samej chwili.
@@ -131,7 +131,7 @@ function loadStyle(): Promise<maplibregl.StyleSpecification> {
         const layout = layer.layout as Record<string, unknown> | undefined;
         if (!layout?.["text-field"]) continue;
         // Styl przychodzi z angielskimi nazwami („Main Market Square" zamiast
-        // „Rynek Główny") — tak wygląda domyślne pole `name` w OpenMapTiles.
+        // „Rynek Główny"). Tak wygląda domyślne pole `name` w OpenMapTiles.
         layout["text-field"] = [
           "coalesce",
           ["get", "name:pl"],
@@ -145,7 +145,7 @@ function loadStyle(): Promise<maplibregl.StyleSpecification> {
       return style;
     })
     .catch(() => {
-      // Gdy pobranie stylu padnie, oddajemy sam adres — mapa wstanie
+      // Gdy pobranie stylu padnie, oddajemy sam adres. Mapa wstanie
       // z angielskimi etykietami i bez numerów, ale wstanie.
       stylePromise = null;
       return MAP_STYLE as unknown as maplibregl.StyleSpecification;
@@ -175,7 +175,7 @@ export function PropertyMap({
   const readOnly = !onPick;
 
   // Mapa powstaje raz i żyje do odmontowania komponentu. Pozycję pinezki
-  // i tryb zmieniamy osobnymi efektami, na gotowym obiekcie — stąd `ready`,
+  // i tryb zmieniamy osobnymi efektami, na gotowym obiekcie. Stąd `ready`,
   // który je odpala, gdy styl dojedzie i mapa faktycznie istnieje.
   useEffect(() => {
     const container = containerRef.current;
@@ -207,8 +207,8 @@ export function PropertyMap({
          * modyfikatora, MapLibre pokazuje na mapie podpowiedź, co wcisnąć.
          */
         cooperativeGestures: true,
-        // Podpowiedzi po polsku, jak reszta interfejsu, i od razu ze skrótem —
-        // to jedyne miejsca, w których skrót sam się pokazuje.
+        // Podpowiedzi po polsku, jak reszta interfejsu, i od razu ze skrótem.
+        // To jedyne miejsca, w których skrót sam się pokazuje.
         locale: {
           "NavigationControl.ZoomIn": "Przybliż (Ctrl + lub +)",
           "NavigationControl.ZoomOut": "Oddal (Ctrl − lub −)",
@@ -230,7 +230,7 @@ export function PropertyMap({
       );
 
       // Bez tego błędy MapLibre (brakujący font, niedostępne kafelki) giną
-      // bezgłośnie — mapa po prostu rysuje mniej, niż powinna.
+      // bezgłośnie. Mapa po prostu rysuje mniej, niż powinna.
       map.on("error", (event) => {
         console.error("[mapa]", event.error?.message ?? event);
       });
@@ -238,7 +238,7 @@ export function PropertyMap({
       map.on("load", () => {
         // Kontrolka atrybucji startuje rozwinięta i w wąskiej kolumnie karty
         // oferty łamie się na dwie linie przez pół mapy. Zwijamy ją do ikony
-        // „i", tak jak zrobiłoby pierwsze kliknięcie — treść zostaje
+        // „i", tak jak zrobiłoby pierwsze kliknięcie. Treść zostaje
         // o kliknięcie dalej, więc wymóg licencji ODbL jest spełniony.
         // Gdyby klasa kiedyś zniknęła, atrybucja po prostu zostanie rozwinięta.
         container
@@ -247,7 +247,7 @@ export function PropertyMap({
       });
 
       // Sekcja formularza i przyklejona kolumna karty zmieniają szerokość bez
-      // zmiany rozmiaru okna — sam `resize` na window tego nie łapie, a płótno
+      // zmiany rozmiaru okna. Sam `resize` na window tego nie łapie, a płótno
       // policzone na starej szerokości zostawia puste pasy.
       observer = new ResizeObserver(() => map?.resize());
       observer.observe(container);
@@ -267,7 +267,7 @@ export function PropertyMap({
   }, []);
 
   /*
-   * Zoom z klawiatury — `Ctrl` + `+` / `Ctrl` + `−`, a także same `+` / `−`.
+   * Zoom z klawiatury. `Ctrl` + `+` / `Ctrl` + `−`, a także same `+` / `−`.
    * Jedno i drugie działa, <b>gdy kursor jest nad mapą</b>.
    *
    * Na najechaniu, a nie po kliknięciu, i to nie jest wygoda, tylko warunek
@@ -276,7 +276,7 @@ export function PropertyMap({
    *
    * <p><b>Ctrl + / Ctrl − to skrót przeglądarki na powiększenie całej strony</b>
    * i korzystają z niego osoby słabowidzące. Przechwytujemy go wyłącznie nad
-   * mapą — kursor obok, w dowolnym innym miejscu CRM-u, i powiększa się strona,
+   * mapą. Kursor obok, w dowolnym innym miejscu CRM-u, i powiększa się strona,
    * jak wszędzie. Ograniczenie do jednego prostokąta jest tu całym
    * zabezpieczeniem: gdyby skrót był globalny, nie dałoby się już powiększyć
    * formularza.
@@ -298,7 +298,7 @@ export function PropertyMap({
 
     const handleKey = (event: KeyboardEvent) => {
       if (!hovered) return;
-      // Alt bywa skrótem systemowym — w niego nie wchodzimy. Shift zostaje,
+      // Alt bywa skrótem systemowym. W niego nie wchodzimy. Shift zostaje,
       // bo na większości układów bez niego nie ma jak wpisać plusa.
       if (event.altKey) return;
 
@@ -320,7 +320,7 @@ export function PropertyMap({
         if (target?.closest("input, textarea, select, [contenteditable='true']")) {
           return;
         }
-        // Skupienie na mapie — MapLibre obsłuży klawisz sam, nie dublujemy.
+        // Skupienie na mapie. MapLibre obsłuży klawisz sam, nie dublujemy.
         // Przy Ctrl już nie: tego wariantu MapLibre nie zna, a przeglądarka
         // powiększyłaby stronę.
         if (target && container.contains(target)) return;
@@ -394,8 +394,8 @@ export function PropertyMap({
       markerRef.current = marker;
 
       // Pierwsza pinezka zawsze zabiera widok ze sobą. Bez tego wejście
-      // w zapisaną ofertę pokazuje ją jako punkcik na mapie całego kraju —
-      // formalnie poprawnie, ale nie widać z tego nic.
+      // w zapisaną ofertę pokazuje ją jako punkcik na mapie całego kraju.
+      // Formalnie poprawnie, ale nie widać z tego nic.
       map.jumpTo({ center: point, zoom: ADDRESS_ZOOM });
       return;
     }

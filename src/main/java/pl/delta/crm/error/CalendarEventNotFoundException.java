@@ -1,7 +1,7 @@
 package pl.delta.crm.error;
 
 /**
- * Termin nie istnieje albo należy do innego biura — jak przy ofertach
+ * Termin nie istnieje albo należy do innego biura. Jak przy ofertach
  * i klientach nie rozróżniamy tych przypadków, żeby po kodzie odpowiedzi nie
  * dało się sprawdzać, co ma w kalendarzu konkurencja.
  */

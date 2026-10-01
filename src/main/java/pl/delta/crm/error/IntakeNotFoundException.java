@@ -1,6 +1,6 @@
 package pl.delta.crm.error;
 
-/** Nieznany klucz formularza — link literówką albo wymieniony przez administratora biura. */
+/** Nieznany klucz formularza. Link literówką albo wymieniony przez administratora biura. */
 public class IntakeNotFoundException extends RuntimeException {
 
     public IntakeNotFoundException() {

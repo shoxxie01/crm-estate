@@ -3,7 +3,7 @@ package pl.delta.crm.inquiry;
 import pl.delta.crm.property.dictionary.Dictionary;
 
 /**
- * Stan zgłoszenia. Nie ma „odrzuconego" — odrzucenie usuwa zgłoszenie razem
+ * Stan zgłoszenia. Nie ma „odrzuconego". Odrzucenie usuwa zgłoszenie razem
  * z danymi osobowymi, bo biuro nie ma podstawy, żeby je dalej trzymać.
  */
 public enum InquiryStatus implements Dictionary {

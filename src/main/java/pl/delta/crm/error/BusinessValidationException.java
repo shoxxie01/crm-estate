@@ -4,7 +4,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Błąd walidacji zależności między polami — czegoś, czego Bean Validation nie
+ * Błąd walidacji zależności między polami. Czegoś, czego Bean Validation nie
  * widzi, bo warunek nie dotyczy jednego pola, tylko relacji między kilkoma
  * (np. „liczba pokoi jest wymagana, ale tylko dla mieszkania i domu").
  *

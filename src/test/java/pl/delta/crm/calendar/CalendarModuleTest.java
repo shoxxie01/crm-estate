@@ -29,7 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * <p>Pokrywają to, co w tym module najłatwiej zepsuć bezgłośnie: powiązanie
  * terminu z ofertą i klientem, zapytanie o zakres dat (przecięcie, nie
  * zawieranie), izolację między biurami oraz dwie reguły, których nie widać
- * w adnotacjach — rezultat wyłącznie dla odbytego terminu i ostrzeżenie
+ * w adnotacjach. Rezultat wyłącznie dla odbytego terminu i ostrzeżenie
  * o kolizji, które ma <b>nie</b> blokować zapisu.
  */
 @SpringBootTest
@@ -62,7 +62,7 @@ class CalendarModuleTest {
 
     /**
      * Terminy trzymają klucze obce do ofert, klientów i użytkowników, więc muszą
-     * zniknąć również po tej klasie — inaczej {@code users.deleteAll()} w innym
+     * zniknąć również po tej klasie. Inaczej {@code users.deleteAll()} w innym
      * teście przewróci się na więzach, zależnie od kolejności uruchomienia.
      */
     @AfterEach
@@ -241,7 +241,7 @@ class CalendarModuleTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.summary.title").value("Prezentacja — Gdańska, Łódź"))
+                .andExpect(jsonPath("$.summary.title").value("Prezentacja. Gdańska, Łódź"))
                 .andExpect(jsonPath("$.summary.counterpartyName").value("Piotr Nowak"));
     }
 
@@ -250,7 +250,7 @@ class CalendarModuleTest {
     void listsEventsOverlappingRange() throws Exception {
         String token = tokenFor("anna@delta.pl", "Delta Nieruchomości");
 
-        // Termin trwający od poniedziałku do środy — pytamy o sam wtorek.
+        // Termin trwający od poniedziałku do środy. Pytamy o sam wtorek.
         createEvent(token, eventBody("OPEN_HOUSE", "2026-09-07T06:00:00Z", "2026-09-09T18:00:00Z"));
 
         mockMvc.perform(get("/api/calendar/events")
@@ -416,7 +416,7 @@ class CalendarModuleTest {
         String eventId = createEvent(token, """
                 {
                   "type": "PRESENTATION",
-                  "title": "Prezentacja — Gdańska 41",
+                  "title": "Prezentacja. Gdańska 41",
                   "startsAt": "2026-09-10T10:00:00Z",
                   "endsAt": "2026-09-10T11:00:00Z",
                   "propertyId": "%s"
@@ -424,7 +424,7 @@ class CalendarModuleTest {
                 """.formatted(propertyId));
 
         // Klucz obcy calendar_events.property_id nie ma ON DELETE, więc bez
-        // jawnego odpięcia baza odrzucała kasowanie — a termin do oferty umawia
+        // jawnego odpięcia baza odrzucała kasowanie. A termin do oferty umawia
         // się przy każdej normalnej ofercie.
         mockMvc.perform(delete("/api/properties/" + propertyId)
                         .header("Authorization", "Bearer " + token))
@@ -435,7 +435,7 @@ class CalendarModuleTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.summary.propertyId").doesNotExist())
-                .andExpect(jsonPath("$.summary.title").value("Prezentacja — Gdańska 41"));
+                .andExpect(jsonPath("$.summary.title").value("Prezentacja. Gdańska 41"));
     }
 
     @Test

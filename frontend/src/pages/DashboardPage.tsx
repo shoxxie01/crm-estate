@@ -50,7 +50,7 @@ export function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      {/* Nagłówek + filtry — jeden rząd nad wykresami */}
+      {/* Nagłówek + filtry. Jeden rząd nad wykresami */}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-lg font-semibold tracking-tight text-ink">
@@ -102,8 +102,7 @@ export function DashboardPage() {
         </Card>
 
         <Card
-          title="Źródła pozyskania klientów"
-          description="Liczba leadów wg kanału"
+          title="Źródła pozyskania klientów"
         >
           <RankedBarChart data={leadSources} />
         </Card>
@@ -183,8 +182,7 @@ export function DashboardPage() {
         </Card>
 
         <Card
-          title="Eksport na portale"
-          description="Status synchronizacji ofert"
+          title="Eksport na portale"
           bodyClassName="p-0"
         >
           <ul className="divide-y divide-line">

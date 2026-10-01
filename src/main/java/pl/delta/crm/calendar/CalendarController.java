@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Kalendarz biura. Zakres widoczności bierze się z tokenu — identyfikatora biura
+ * Kalendarz biura. Zakres widoczności bierze się z tokenu. Identyfikatora biura
  * nie ma w żadnym parametrze, tak samo jak przy ofertach i klientach.
  *
  * <p>Lista terminów nie jest stronicowana, w odróżnieniu od ofert i klientów:
@@ -91,7 +91,7 @@ public class CalendarController {
         return calendar.update(id, request, principal.user());
     }
 
-    /** Szybkie domknięcie terminu — bez przechodzenia przez cały formularz. */
+    /** Szybkie domknięcie terminu. Bez przechodzenia przez cały formularz. */
     @PutMapping("/{id}/status")
     public EventResponse changeStatus(@PathVariable UUID id,
                                       @Valid @RequestBody UpdateEventStatusRequest request,

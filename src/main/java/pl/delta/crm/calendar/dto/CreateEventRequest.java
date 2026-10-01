@@ -8,18 +8,19 @@ import pl.delta.crm.calendar.dictionary.EventStatus;
 import pl.delta.crm.calendar.dictionary.EventType;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 /**
- * Formularz terminu — ten sam przy dodawaniu i edycji, jak w pozostałych modułach.
+ * Formularz terminu. Ten sam przy dodawaniu i edycji, jak w pozostałych modułach.
  *
  * <p>Wymagane są tylko rodzaj i zakres czasu. <b>Tytuł jest opcjonalny</b>: przy
- * powiązanej ofercie serwis złoży go z rodzaju i adresu („Prezentacja —
+ * powiązanej ofercie serwis złoży go z rodzaju i adresu („Prezentacja.
  * Grzybowska 41"), bo przepisywanie tego ręcznie przy każdym terminie to praca,
  * której komputer może nie zlecać człowiekowi.
  *
- * <p>Reguły dotyczące dwóch pól naraz — koniec po początku, rezultat tylko przy
- * statusie {@code COMPLETED}, oferta i klient z tego samego biura — pilnuje
+ * <p>Reguły dotyczące dwóch pól naraz. Koniec po początku, rezultat tylko przy
+ * statusie {@code COMPLETED}, oferta i klient z tego samego biura. Pilnuje
  * serwis, bo Bean Validation widzi pojedyncze pola.
  */
 public record CreateEventRequest(
@@ -47,7 +48,7 @@ public record CreateEventRequest(
         /**
          * Obiekt, nie prymityw: przy {@code boolean} pominięcie pola w ciele
          * żądania wywraca całą deserializację rekordu, a wtedy nawet poprawny
-         * termin wraca jako „nie udało się odczytać danych" — mimo że pole jest
+         * termin wraca jako „nie udało się odczytać danych". Mimo że pole jest
          * opcjonalne. Brak wartości czytamy jako {@code false}.
          */
         Boolean allDay,
@@ -59,19 +60,28 @@ public record CreateEventRequest(
         UUID clientId,
 
         /**
-         * Druga strona spoza bazy klientów — kupujący, najemca, rzeczoznawca.
+         * Druga strona spoza bazy klientów. Kupujący, najemca, rzeczoznawca.
          * Patrz komentarz w encji: strony popytu nie ma jeszcze w modelu.
          */
         @Size(max = 160, message = "Nazwa jest zbyt długa.")
         String counterpartyName,
 
-        // Ten sam format co przy kliencie — spójność między modułami.
+        // Ten sam format co przy kliencie. Spójność między modułami.
         // Normalizacją zajmuje się PhoneNumber, tak samo po obu stronach.
         @Pattern(
                 regexp = "^\\+?\\d(?:[ -]?\\d){8,14}$",
                 message = "Podaj numer telefonu, np. 605 405 932.")
         @Size(max = 30, message = "Numer telefonu jest zbyt długi.")
         String counterpartyPhone,
+
+        /** Transakcja z tablicy Kanban, której krokiem jest termin. */
+        UUID dealId,
+
+        /**
+         * Zainteresowani z tej transakcji, którzy będą na terminie. Pusta lista
+         * (albo brak pola) = bez uczestników. Wymaga {@code dealId}.
+         */
+        List<UUID> participantIds,
 
         /** Czyj to termin. Pusty = osoba dodająca wpis. */
         UUID agentId,

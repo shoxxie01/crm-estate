@@ -1,6 +1,6 @@
 import { cn } from "../../lib/cn";
 
-/** Delta — trójkąt (Δ) z wyciętym środkiem, w kolorze akcentu. */
+/** Delta. Trójkąt (Δ) z wyciętym środkiem, w kolorze akcentu. */
 export function LogoMark({ className }: { className?: string }) {
   return (
     <svg

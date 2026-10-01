@@ -19,7 +19,7 @@ public record PricingRequest(
 
         Boolean priceNegotiable,
 
-        /* Czynsz administracyjny — portale pokazują go osobno od ceny. */
+        /* Czynsz administracyjny. Portale pokazują go osobno od ceny. */
         @DecimalMin(value = "0.00")
         @Digits(integer = 10, fraction = 2, message = "Maksymalnie 2 miejsca po przecinku.")
         BigDecimal rent,
@@ -39,7 +39,7 @@ public record PricingRequest(
         @Digits(integer = 3, fraction = 2, message = "Maksymalnie 2 miejsca po przecinku.")
         BigDecimal commissionPercent,
 
-        /* Cena za m² — w formularzu pole wymagane (wpisywane ręcznie albo liczone
+        /* Cena za m². W formularzu pole wymagane (wpisywane ręcznie albo liczone
            z ceny i powierzchni). W API opcjonalne: gdy go brak, serwis wylicza je
            sam z ceny i powierzchni całkowitej, więc wartość zawsze trafia do bazy. */
         @DecimalMin(value = "0.01", message = "Cena za m² musi być większa od zera.")

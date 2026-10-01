@@ -4,7 +4,7 @@ package pl.delta.crm.property.dictionary;
  * Klasa energetyczna budynku.
  *
  * <p>Polskie świadectwo charakterystyki energetycznej opiera się na wskaźnikach
- * liczbowych (EP, EK), a nie na literze — klasa jest wygodnym skrótem używanym
+ * liczbowych (EP, EK), a nie na literze. Klasa jest wygodnym skrótem używanym
  * w ogłoszeniach i w formatach części portali. Dlatego jest opcjonalna,
  * a źródłem prawdy pozostają wskaźniki.
  */

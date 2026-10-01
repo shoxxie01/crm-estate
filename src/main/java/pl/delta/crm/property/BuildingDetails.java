@@ -15,7 +15,7 @@ import pl.delta.crm.property.dictionary.Surroundings;
 import pl.delta.crm.property.dictionary.WindowsType;
 
 /**
- * Parametry budynku. Wszystko opcjonalne — portale nie wymagają żadnego z tych
+ * Parametry budynku. Wszystko opcjonalne. Portale nie wymagają żadnego z tych
  * pól, ale każde podniesione zwiększa widoczność oferty w ich filtrach, więc
  * warto mieć gdzie je zapisać od pierwszego dnia.
  */

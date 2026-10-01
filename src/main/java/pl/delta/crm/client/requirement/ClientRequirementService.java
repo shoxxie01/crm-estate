@@ -101,7 +101,7 @@ public class ClientRequirementService {
     }
 
     /**
-     * Niezapisane poszukiwanie z kryteriów formularza — do podglądu dopasowań.
+     * Niezapisane poszukiwanie z kryteriów formularza. Do podglądu dopasowań.
      * Te same reguły co przy zapisie, żeby podgląd nie obiecywał czegoś, czego
      * przyjęte poszukiwanie potem nie znajdzie.
      */
@@ -126,7 +126,7 @@ public class ClientRequirementService {
         requirement.setFloorMin(request.floorMin());
         requirement.setFloorMax(request.floorMax());
         requirement.setExcludeTopFloor(Boolean.TRUE.equals(request.excludeTopFloor()));
-        // Formularz chowa finansowanie przy najmie — gdyby jednak przyszło (np. po
+        // Formularz chowa finansowanie przy najmie. Gdyby jednak przyszło (np. po
         // przełączeniu z kupna), czyścimy je zamiast odrzucać cały zapis.
         requirement.setFinancing(purchase ? request.financing() : null);
         requirement.setMoveInDate(request.moveInDate());
@@ -135,7 +135,7 @@ public class ClientRequirementService {
     }
 
     /**
-     * Relacje między polami — poza zasięgiem Bean Validation. Publiczne, bo te
+     * Relacje między polami. Poza zasięgiem Bean Validation. Publiczne, bo te
      * same reguły obowiązują kryteria wysłane z formularza zgłoszeniowego.
      */
     public static void validate(RequirementRequest request) {
@@ -143,7 +143,7 @@ public class ClientRequirementService {
 
         if (request.transactionType() == TransactionType.SALE
                 && request.propertyTypes().stream().anyMatch(PropertyType::rentOnly)) {
-            errors.put("propertyTypes", "Pokój można tylko najmować — usuń go albo zmień transakcję na najem.");
+            errors.put("propertyTypes", "Pokój można tylko najmować. Usuń go albo zmień transakcję na najem.");
         }
 
         checkRange(errors, "priceMax", request.priceMin(), request.priceMax(),

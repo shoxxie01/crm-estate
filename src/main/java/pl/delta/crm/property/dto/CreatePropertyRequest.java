@@ -28,12 +28,12 @@ import java.util.UUID;
  * województwo i miejscowość. Reszta jest opcjonalna, bo praca agenta zwykle
  * wygląda tak, że najpierw powstaje szkic, a szczegóły dochodzą po oględzinach.
  *
- * <p>Numeru oferty tu nie ma — nadaje go serwis. Portal wymaga stabilnego,
+ * <p>Numeru oferty tu nie ma. Nadaje go serwis. Portal wymaga stabilnego,
  * unikalnego identyfikatora, ale wpisywanie go ręcznie było tylko okazją do
  * literówki i kolizji.
  *
  * <p>Zależności między polami (np. liczba pokoi wymagana dla mieszkania i domu)
- * sprawdza serwis — Bean Validation nie widzi tu jednego pola, tylko relację.
+ * sprawdza serwis. Bean Validation nie widzi tu jednego pola, tylko relację.
  */
 public record CreatePropertyRequest(
 
@@ -43,13 +43,13 @@ public record CreatePropertyRequest(
         @NotNull(message = "Wybierz typ transakcji.")
         TransactionType transactionType,
 
-        @NotNull(message = "Wybierz rynek — portale wymagają tej informacji.")
+        @NotNull(message = "Wybierz rynek. Portale wymagają tej informacji.")
         MarketType marketType,
 
         PropertyStatus status,
 
         @NotBlank(message = "Podaj tytuł ogłoszenia.")
-        @Size(max = 50, message = "Tytuł może mieć najwyżej 50 znaków — dłuższy zostanie obcięty przez portal.")
+        @Size(max = 50, message = "Tytuł może mieć najwyżej 50 znaków. Dłuższy zostanie obcięty przez portal.")
         String title,
 
         @NotBlank(message = "Podaj opis.")

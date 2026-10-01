@@ -32,7 +32,7 @@ export function StackedBarChart({ data }: { data: TransactionMonth[] }) {
   return (
     <figure className="m-0">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        {/* Legenda — obecna zawsze przy 2+ seriach */}
+        {/* Legenda. Obecna zawsze przy 2+ seriach */}
         <ul className="flex items-center gap-4">
           {SERIES.map((series) => (
             <li
@@ -96,7 +96,7 @@ export function StackedBarChart({ data }: { data: TransactionMonth[] }) {
       ) : (
         <div className="pl-8">
           <div className="relative" style={{ height: PLOT_HEIGHT }}>
-            {/* Siatka — hairline, recesywna */}
+            {/* Siatka. Hairline, recesywna */}
             {scale.ticks.map((tick) => (
               <div
                 key={tick}
@@ -109,7 +109,7 @@ export function StackedBarChart({ data }: { data: TransactionMonth[] }) {
               />
             ))}
 
-            {/* Podpisy osi Y — cyfry tabularne */}
+            {/* Podpisy osi Y. Cyfry tabularne */}
             {scale.ticks.map((tick) => (
               <span
                 key={tick}
@@ -150,7 +150,7 @@ export function StackedBarChart({ data }: { data: TransactionMonth[] }) {
                       )}
                     />
 
-                    {/* Etykieta bezpośrednia — tylko na szczycie serii */}
+                    {/* Etykieta bezpośrednia. Tylko na szczycie serii */}
                     {index === peakIndex && (
                       <span
                         className="tabular absolute z-10 text-[11px] font-medium text-ink-secondary"
@@ -181,7 +181,7 @@ export function StackedBarChart({ data }: { data: TransactionMonth[] }) {
 
                     {isHovered && (
                       <div
-                        className="card pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 w-40 -translate-x-1/2 p-2.5 shadow-[0_4px_16px_rgba(26,29,33,0.10)]"
+                        className="card pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 w-40 -translate-x-1/2 p-2.5 shadow-popover"
                         role="tooltip"
                       >
                         <p className="mb-1.5 text-[12px] font-medium text-ink">

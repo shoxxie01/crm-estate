@@ -25,19 +25,19 @@ public enum PropertyType implements Dictionary {
         return label;
     }
 
-    /** Otodom wymaga liczby pokoi dla mieszkania i domu — bez niej odrzuca ofertę. */
+    /** Otodom wymaga liczby pokoi dla mieszkania i domu. Bez niej odrzuca ofertę. */
     public boolean requiresRoomsCount() {
         return this == APARTMENT || this == HOUSE;
     }
 
-    /** Pokój da się wyłącznie wynająć — portale nie przyjmują go na sprzedaż. */
+    /** Pokój da się wyłącznie wynająć. Portale nie przyjmują go na sprzedaż. */
     public boolean rentOnly() {
         return this == ROOM;
     }
 
     /**
      * Czy typ wymaga świadectwa energetycznego do publikacji. Działka nie ma
-     * budynku, a garaż i pojedynczy pokój są z obowiązku zwolnione — dla nich
+     * budynku, a garaż i pojedynczy pokój są z obowiązku zwolnione. Dla nich
      * brak świadectwa nie może blokować eksportu.
      */
     public boolean requiresEnergyCertificate() {

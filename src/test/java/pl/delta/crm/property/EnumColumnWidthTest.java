@@ -59,11 +59,11 @@ import static org.assertj.core.api.Assertions.fail;
  *
  * <p>Ten test istnieje, bo `ddl-auto: validate` tego nie sprawdza: Hibernate
  * weryfikuje istnienie i typ kolumny, ale nie porównuje jej długości z zawartością
- * enuma. Pierwsza ofiara — `energy_class VARCHAR(3)`, którego długość dobrano pod
+ * enuma. Pierwsza ofiara. `energy_class VARCHAR(3)`, którego długość dobrano pod
  * etykietę „A+", podczas gdy do bazy idzie nazwa stałej `A_PLUS`. Błąd wychodził
  * dopiero przy zapisie oferty z tą jedną klasą energetyczną.
  *
- * <p>Zamiast testu na jeden przypadek sprawdzamy wszystkie naraz — dołożenie
+ * <p>Zamiast testu na jeden przypadek sprawdzamy wszystkie naraz. Dołożenie
  * dłuższej wartości do dowolnego słownika zapali się tutaj, a nie u użytkownika.
  */
 @SpringBootTest

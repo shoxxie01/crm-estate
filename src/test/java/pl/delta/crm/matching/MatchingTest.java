@@ -167,7 +167,7 @@ class MatchingTest {
     // --- testy ---------------------------------------------------------------
 
     @Test
-    @DisplayName("karta oferty pokazuje klientów, których poszukiwanie pasuje — z wyjaśnieniem")
+    @DisplayName("karta oferty pokazuje klientów, których poszukiwanie pasuje. Z wyjaśnieniem")
     void listsMatchingClientsForProperty() throws Exception {
         String propertyId = createProperty("DRAFT");
 
@@ -188,7 +188,7 @@ class MatchingTest {
                 }
                 """);
 
-        // Cena ~5,6% ponad budżet — pasuje z ostrzeżeniem.
+        // Cena ~5,6% ponad budżet. Pasuje z ostrzeżeniem.
         String near = createClient("Prawie");
         createRequirement(near, """
                 { "transactionType": "SALE", "propertyTypes": ["APARTMENT"], "priceMax": 520000 }

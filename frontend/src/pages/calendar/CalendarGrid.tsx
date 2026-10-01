@@ -1,4 +1,6 @@
+import { FileText } from "lucide-react";
 import type { EventSummary } from "../../api/calendar";
+import type { CalendarDeadline } from "../../api/deals";
 import { cn } from "../../lib/cn";
 import {
   addDays,
@@ -9,6 +11,7 @@ import {
   startOfMonthGrid,
   startOfWeek,
   timeRange,
+  toDateInput,
   type CalendarView,
 } from "./dates";
 import { eventIcon, statusChip, typeChip, typeInk } from "./eventMeta";
@@ -19,8 +22,13 @@ interface GridProps {
   events: EventSummary[];
   selectedId: string | null;
   onSelect: (event: EventSummary) => void;
-  /** Kliknięcie w pustą część dnia — zakłada termin na tej dacie. */
+  /** Kliknięcie w pustą część dnia. Zakłada termin na tej dacie. */
   onCreateAt: (day: Date) => void;
+  /** Terminy umowne transakcji. Warstwa tylko do odczytu, nad terminami dnia. */
+  deadlines: CalendarDeadline[];
+  /** Kliknięcie terminu umownego. Prowadzi do karty transakcji. */
+  onOpenDeadline: (deadline: CalendarDeadline) => void;
+  label: (value: string) => string;
 }
 
 /** Ile kafelków mieści komórka miesiąca, zanim zacznie zwijać resztę w „+N". */
@@ -32,7 +40,7 @@ export function CalendarGrid(props: GridProps) {
   return <MonthGrid {...props} />;
 }
 
-/** Kafelek terminu. Rodzaj niesie kolor i ikona, status — sposób podania (patrz eventMeta). */
+/** Kafelek terminu. Rodzaj niesie kolor i ikona, status. Sposób podania (patrz eventMeta). */
 function EventChip({
   event,
   selected,
@@ -74,12 +82,55 @@ function EventChip({
   );
 }
 
+/**
+ * Termin umowny w siatce. Celowo inny niż kafelek spotkania. Przerywana ramka
+ * i ikona dokumentu. Bo to nie jest wpis, który się odbywa, tylko data z umowy.
+ */
+function DeadlineChip({
+  deadline,
+  label,
+  onOpen,
+  dense,
+}: {
+  deadline: CalendarDeadline;
+  label: (value: string) => string;
+  onOpen: (deadline: CalendarDeadline) => void;
+  dense?: boolean;
+}) {
+  const met = deadline.status === "MET";
+  return (
+    <button
+      type="button"
+      onClick={(clickEvent) => {
+        clickEvent.stopPropagation();
+        onOpen(deadline);
+      }}
+      className={cn(
+        "flex w-full items-center gap-1.5 rounded border border-dashed border-line-strong bg-surface px-1.5 text-left transition hover:bg-subtle",
+        dense ? "py-0.5 text-[11px]" : "py-1 text-[12px]",
+        met ? "text-ink-muted line-through" : "font-medium text-ink",
+      )}
+      title={`${label(deadline.type)}. ${deadline.dealTitle}${met ? " (dotrzymany)" : ""}`}
+    >
+      <FileText className="size-3 shrink-0 text-ink-secondary" strokeWidth={2} aria-hidden />
+      <span className="truncate">
+        {label(deadline.type)} · {deadline.dealTitle}
+      </span>
+    </button>
+  );
+}
+
+function deadlinesOn(deadlines: CalendarDeadline[], day: Date): CalendarDeadline[] {
+  const date = toDateInput(day);
+  return deadlines.filter((deadline) => deadline.dueDate === date);
+}
+
 function eventsOn(events: EventSummary[], day: Date): EventSummary[] {
   const from = startOfDay(day);
   const to = addDays(from, 1);
 
-  // Termin wielodniowy ma się pokazać w każdym dniu, na który zachodzi —
-  // stąd przecięcie zakresów, a nie porównanie samej daty początku.
+  // Termin wielodniowy ma się pokazać w każdym dniu, na który zachodzi.
+  // Stąd przecięcie zakresów, a nie porównanie samej daty początku.
   return events.filter((event) => {
     const starts = new Date(event.startsAt);
     const ends = new Date(event.endsAt);
@@ -87,7 +138,16 @@ function eventsOn(events: EventSummary[], day: Date): EventSummary[] {
   });
 }
 
-function MonthGrid({ anchor, events, selectedId, onSelect, onCreateAt }: GridProps) {
+function MonthGrid({
+  anchor,
+  events,
+  selectedId,
+  onSelect,
+  onCreateAt,
+  deadlines,
+  onOpenDeadline,
+  label,
+}: GridProps) {
   const first = startOfMonthGrid(anchor);
   const days = Array.from({ length: 42 }, (_, index) => addDays(first, index));
   const today = new Date();
@@ -108,6 +168,10 @@ function MonthGrid({ anchor, events, selectedId, onSelect, onCreateAt }: GridPro
       <div className="grid grid-cols-7">
         {days.map((day) => {
           const dayEvents = eventsOn(events, day);
+          const dayDeadlines = deadlinesOn(deadlines, day);
+          // Terminy umowne mają pierwszeństwo. Zajmują miejsca w komórce przed spotkaniami.
+          const eventSlots = Math.max(0, MONTH_CHIP_LIMIT - dayDeadlines.length);
+          const hidden = Math.max(0, dayEvents.length - eventSlots);
           const outside = day.getMonth() !== anchor.getMonth();
           const isToday = sameDay(day, today);
 
@@ -134,7 +198,16 @@ function MonthGrid({ anchor, events, selectedId, onSelect, onCreateAt }: GridPro
               </div>
 
               <div className="flex flex-col gap-0.5">
-                {dayEvents.slice(0, MONTH_CHIP_LIMIT).map((event) => (
+                {dayDeadlines.map((deadline) => (
+                  <DeadlineChip
+                    key={deadline.id}
+                    deadline={deadline}
+                    label={label}
+                    onOpen={onOpenDeadline}
+                    dense
+                  />
+                ))}
+                {dayEvents.slice(0, eventSlots).map((event) => (
                   <EventChip
                     key={event.id}
                     event={event}
@@ -143,10 +216,8 @@ function MonthGrid({ anchor, events, selectedId, onSelect, onCreateAt }: GridPro
                     dense
                   />
                 ))}
-                {dayEvents.length > MONTH_CHIP_LIMIT && (
-                  <span className="px-1 text-[11px] text-ink-muted">
-                    +{dayEvents.length - MONTH_CHIP_LIMIT} więcej
-                  </span>
+                {hidden > 0 && (
+                  <span className="px-1 text-[11px] text-ink-muted">+{hidden} więcej</span>
                 )}
               </div>
             </div>
@@ -157,7 +228,16 @@ function MonthGrid({ anchor, events, selectedId, onSelect, onCreateAt }: GridPro
   );
 }
 
-function WeekGrid({ anchor, events, selectedId, onSelect, onCreateAt }: GridProps) {
+function WeekGrid({
+  anchor,
+  events,
+  selectedId,
+  onSelect,
+  onCreateAt,
+  deadlines,
+  onOpenDeadline,
+  label,
+}: GridProps) {
   const first = startOfWeek(anchor);
   const days = Array.from({ length: 7 }, (_, index) => addDays(first, index));
   const today = new Date();
@@ -166,6 +246,7 @@ function WeekGrid({ anchor, events, selectedId, onSelect, onCreateAt }: GridProp
     <div className="card grid grid-cols-7 overflow-hidden">
       {days.map((day) => {
         const dayEvents = eventsOn(events, day);
+        const dayDeadlines = deadlinesOn(deadlines, day);
         const isToday = sameDay(day, today);
 
         return (
@@ -194,6 +275,14 @@ function WeekGrid({ anchor, events, selectedId, onSelect, onCreateAt }: GridProp
             </div>
 
             <div className="flex flex-col gap-1 p-1.5">
+              {dayDeadlines.map((deadline) => (
+                <DeadlineChip
+                  key={deadline.id}
+                  deadline={deadline}
+                  label={label}
+                  onOpen={onOpenDeadline}
+                />
+              ))}
               {dayEvents.map((event) => (
                 <EventChip
                   key={event.id}
@@ -202,8 +291,8 @@ function WeekGrid({ anchor, events, selectedId, onSelect, onCreateAt }: GridProp
                   onSelect={onSelect}
                 />
               ))}
-              {dayEvents.length === 0 && (
-                <span className="px-1 py-2 text-[11px] text-ink-muted">—</span>
+              {dayEvents.length === 0 && dayDeadlines.length === 0 && (
+                <span className="px-1 py-2 text-[11px] text-ink-muted">-</span>
               )}
             </div>
           </div>
@@ -216,10 +305,20 @@ function WeekGrid({ anchor, events, selectedId, onSelect, onCreateAt }: GridProp
 /**
  * Widok dnia jest listą, nie siatką godzin. Terminy w biurze nieruchomości są
  * rozrzucone po całym dniu, więc oś godzinowa to w praktyce ekran pustych
- * wierszy — lista daje ten sam porządek bez przewijania przez pustkę.
+ * wierszy. Lista daje ten sam porządek bez przewijania przez pustkę.
  */
-function DayAgenda({ anchor, events, selectedId, onSelect, onCreateAt }: GridProps) {
+function DayAgenda({
+  anchor,
+  events,
+  selectedId,
+  onSelect,
+  onCreateAt,
+  deadlines,
+  onOpenDeadline,
+  label,
+}: GridProps) {
   const dayEvents = eventsOn(events, anchor);
+  const dayDeadlines = deadlinesOn(deadlines, anchor);
 
   return (
     <div className="card flex flex-col">
@@ -233,6 +332,20 @@ function DayAgenda({ anchor, events, selectedId, onSelect, onCreateAt }: GridPro
             : `${dayEvents.length} ${dayEvents.length === 1 ? "termin" : "terminy/-ów"}`}
         </span>
       </header>
+
+      {dayDeadlines.length > 0 && (
+        <div className="flex flex-col gap-1 border-b border-line px-4 py-2.5">
+          <p className="text-[11px] font-medium text-ink-muted">Terminy umowne</p>
+          {dayDeadlines.map((deadline) => (
+            <DeadlineChip
+              key={deadline.id}
+              deadline={deadline}
+              label={label}
+              onOpen={onOpenDeadline}
+            />
+          ))}
+        </div>
+      )}
 
       {dayEvents.length === 0 ? (
         <button

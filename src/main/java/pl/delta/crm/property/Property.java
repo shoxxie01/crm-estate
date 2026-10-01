@@ -44,8 +44,8 @@ import java.util.UUID;
 /**
  * Oferta nieruchomości.
  *
- * <p>Zestaw pól jest podyktowany wymaganiami importu portali ogłoszeniowych —
- * szczegóły i uzasadnienie w migracji {@code V3__create_properties_tables.sql}.
+ * <p>Zestaw pól jest podyktowany wymaganiami importu portali ogłoszeniowych.
+ * Szczegóły i uzasadnienie w migracji {@code V3__create_properties_tables.sql}.
  * Pola wymagane przez Otodom przy każdym typie obiektu (numer oferty, cena,
  * waluta, powierzchnia, opis, rynek, komplet lokalizacji) są tu
  * niemodyfikowalne po utworzeniu albo pilnowane przez {@code NOT NULL};
@@ -77,7 +77,7 @@ public class Property {
 
     /**
      * Właściciel-zleceniodawca. Opcjonalny: oferta może powstać jako szkic, zanim
-     * skojarzy się ją z klientem. To ta relacja — a nie pole na kliencie —
+     * skojarzy się ją z klientem. To ta relacja A nie pole na kliencie
      * decyduje, czy klient jest „sprzedającym" czy „wynajmującym": wynika to
      * z {@code transactionType} powierzonych przez niego ofert.
      */
@@ -101,7 +101,7 @@ public class Property {
     @Column(name = "status", nullable = false, length = 20)
     private PropertyStatus status = PropertyStatus.DRAFT;
 
-    /** Otodom obcina tytuł do 50 znaków — pilnujemy limitu u siebie. */
+    /** Otodom obcina tytuł do 50 znaków. Pilnujemy limitu u siebie. */
     @Column(name = "title", nullable = false, length = 50)
     private String title;
 
@@ -153,16 +153,16 @@ public class Property {
     @Embedded
     private CommercialDetails commercial = new CommercialDetails();
 
-    /** Rodzaj garażu / miejsca postojowego — tylko dla typu GARAGE. */
+    /** Rodzaj garażu / miejsca postojowego. Tylko dla typu GARAGE. */
     @Enumerated(EnumType.STRING)
     @Column(name = "garage_type", length = 30)
     private GarageType garageType;
 
-    /** Dla ilu osób przeznaczony pokój — tylko dla typu ROOM. */
+    /** Dla ilu osób przeznaczony pokój. Tylko dla typu ROOM. */
     @Column(name = "occupants")
     private Short occupants;
 
-    /** Dostęp do łazienki przy wynajmie pokoju — tylko dla typu ROOM. */
+    /** Dostęp do łazienki przy wynajmie pokoju. Tylko dla typu ROOM. */
     @Enumerated(EnumType.STRING)
     @Column(name = "room_bathroom", length = 20)
     private RoomBathroom roomBathroom;
@@ -225,8 +225,8 @@ public class Property {
 
     /**
      * Konstruktor przyjmuje dokładnie te pola, bez których żaden portal nie
-     * przyjmie ogłoszenia. Wszystko pozostałe da się uzupełnić później —
-     * i tak zwykle wygląda praca agenta: najpierw szkic, potem szczegóły.
+     * przyjmie ogłoszenia. Wszystko pozostałe da się uzupełnić później.
+     * I tak zwykle wygląda praca agenta: najpierw szkic, potem szczegóły.
      */
     public Property(Agency agency,
                     String referenceNumber,
@@ -446,7 +446,7 @@ public class Property {
     // Kiedy wszystkie kolumny grupy @Embeddable są puste, Hibernate wczytuje ją
     // jako null zamiast pustego obiektu. Dla nas „działka bez wypełnionych pól"
     // i „brak danych o działce" to ten sam stan, więc gettery domykają tę różnicę
-    // — dzięki temu żaden mapper ani eksport nie musi sprawdzać null-a.
+    //. Dzięki temu żaden mapper ani eksport nie musi sprawdzać null-a.
 
     public BuildingDetails getBuilding() {
         if (building == null) {

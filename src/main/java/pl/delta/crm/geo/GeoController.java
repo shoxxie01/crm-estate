@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Geokodowanie na potrzeby mapy w ofercie — w obie strony.
+ * Geokodowanie na potrzeby mapy w ofercie. W obie strony.
  *
  * <p>Wymaga zalogowania jak każdy inny endpoint pod {@code /api/**}. Nie ma tu
  * zakresu biura, bo i nie ma czego zawężać: odpowiedź pochodzi z publicznych
@@ -33,7 +33,7 @@ public class GeoController {
     }
 
     /**
-     * Adres pod pinezką. {@code 204}, gdy pod punktem nie ma adresu — to nie
+     * Adres pod pinezką. {@code 204}, gdy pod punktem nie ma adresu. To nie
      * błąd, tylko informacja, że agent trafił w las albo w wodę.
      */
     @GetMapping("/reverse")
@@ -55,7 +55,7 @@ public class GeoController {
 
     /**
      * Punkty pasujące do adresu, od najlepiej dopasowanego. Pusta lista znaczy
-     * „nie znaleziono" — front zostawia wtedy pinezkę tam, gdzie była.
+     * „nie znaleziono". Front zostawia wtedy pinezkę tam, gdzie była.
      */
     @GetMapping("/search")
     public List<GeoLocation> search(

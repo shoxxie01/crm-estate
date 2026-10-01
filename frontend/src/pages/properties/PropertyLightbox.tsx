@@ -22,13 +22,13 @@ interface PropertyLightboxProps {
   index: number;
   onClose: () => void;
   onIndexChange: (index: number) => void;
-  /** Wołane, gdy zdjęcie nie chce się załadować — patrz komentarz przy `onError`. */
+  /** Wołane, gdy zdjęcie nie chce się załadować. Patrz komentarz przy `onError`. */
   onExpired?: () => void;
 }
 
 /**
  * Podgląd zdjęcia na całym ekranie: przewijanie w lewo/prawo, zoom i pasek
- * miniatur. Pokazuje `url` (pełny rozmiar) — miniatury zostają tylko na dole.
+ * miniatur. Pokazuje `url` (pełny rozmiar). Miniatury zostają tylko na dole.
  *
  * Renderowany przez portal do `document.body`, bo galeria stoi w kontenerze
  * `sticky`: `position: fixed` wewnątrz takiego rodzica potrafi się przykleić
@@ -70,7 +70,7 @@ export function PropertyLightbox({
     [media.length, onIndexChange],
   );
 
-  // Zmiana zdjęcia zaczyna od nowa — inaczej kolejne otwierałoby się przesunięte
+  // Zmiana zdjęcia zaczyna od nowa. Inaczej kolejne otwierałoby się przesunięte
   // w miejsce, które miało sens tylko dla poprzedniego kadru.
   useEffect(resetZoom, [index, resetZoom]);
 
@@ -178,7 +178,7 @@ export function PropertyLightbox({
       aria-modal="true"
       aria-label={`Zdjęcie ${index + 1} z ${media.length}`}
       tabIndex={-1}
-      className="fixed inset-0 z-50 flex flex-col bg-ink/95 outline-none"
+      className="fixed inset-0 z-50 flex flex-col bg-scrim/95 outline-none"
     >
       <header className="flex items-center justify-between gap-4 px-4 py-3 text-white">
         <div className="min-w-0">
@@ -348,7 +348,7 @@ function NavButton({
       aria-label={label}
       title={label}
       className={
-        "absolute top-1/2 flex size-11 -translate-y-1/2 items-center justify-center rounded-full bg-ink/60 text-white/90 transition-colors hover:bg-ink/80 hover:text-white " +
+        "absolute top-1/2 flex size-11 -translate-y-1/2 items-center justify-center rounded-full bg-scrim/60 text-white/90 transition-colors hover:bg-scrim/80 hover:text-white " +
         (side === "left" ? "left-4" : "right-4")
       }
     >

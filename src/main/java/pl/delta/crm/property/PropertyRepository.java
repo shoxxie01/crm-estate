@@ -18,7 +18,7 @@ import java.util.UUID;
  * Każde zapytanie jest zawężone do agencji.
  *
  * <p>Nie ma tu ani jednej metody, która potrafiłaby zwrócić ofertę bez podania
- * {@code agencyId} — również {@code findById}. To celowe: gdyby taka metoda
+ * {@code agencyId}. Również {@code findById}. To celowe: gdyby taka metoda
  * istniała, prędzej czy później ktoś użyłby jej w kontrolerze i wyciekłyby
  * oferty innego biura.
  */
@@ -36,11 +36,11 @@ public interface PropertyRepository extends JpaRepository<Property, UUID> {
 
     boolean existsByAgencyIdAndReferenceNumber(UUID agencyId, String referenceNumber);
 
-    /** Oferty powierzone przez danego właściciela — na kartę klienta. */
+    /** Oferty powierzone przez danego właściciela. Na kartę klienta. */
     List<Property> findByOwnerId(UUID ownerId);
 
     /**
-     * Rozkład ofert na typy transakcji dla wielu właścicieli naraz — jednym
+     * Rozkład ofert na typy transakcji dla wielu właścicieli naraz. Jednym
      * zapytaniem, żeby lista klientów nie robiła N+1 na kolekcji ofert.
      */
     @Query("""
@@ -51,7 +51,7 @@ public interface PropertyRepository extends JpaRepository<Property, UUID> {
             """)
     List<OwnerTransactionCount> countByTransactionForOwners(@Param("ownerIds") Collection<UUID> ownerIds);
 
-    /** Kandydaci do dopasowania z poszukiwaniem — kryteria szczegółowe ocenia {@code RequirementMatcher}. */
+    /** Kandydaci do dopasowania z poszukiwaniem. Kryteria szczegółowe ocenia {@code RequirementMatcher}. */
     @Query("""
             select p from Property p
             where p.agency.id = :agencyId
@@ -64,7 +64,22 @@ public interface PropertyRepository extends JpaRepository<Property, UUID> {
                                        @Param("propertyTypes") Collection<PropertyType> propertyTypes,
                                        @Param("statuses") Collection<PropertyStatus> statuses);
 
-    /** Ile ofert biura ma już numer z danego miesiąca — podstawa kolejnego numeru. */
+    /**
+     * Szybkie wyszukiwanie z nagłówka: numer oferty, tytuł albo adres.
+     * {@code q} buduje {@link pl.delta.crm.search.SearchTerms#like(String)}.
+     */
+    @Query("""
+            select p from Property p
+            where p.agency.id = :agencyId
+              and (lower(coalesce(p.referenceNumber, '')) like :q
+                   or lower(coalesce(p.title, '')) like :q
+                   or lower(coalesce(p.address.city, '')) like :q
+                   or lower(coalesce(p.address.district, '')) like :q
+                   or lower(coalesce(p.address.street, '')) like :q)
+            """)
+    Page<Property> search(@Param("agencyId") UUID agencyId, @Param("q") String q, Pageable pageable);
+
+    /** Ile ofert biura ma już numer z danego miesiąca. Podstawa kolejnego numeru. */
     long countByAgencyIdAndReferenceNumberStartingWith(UUID agencyId, String prefix);
 
     long countByAgencyId(UUID agencyId);

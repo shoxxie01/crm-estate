@@ -13,7 +13,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Słowniki formularza klienta w jednym miejscu — ten sam wzorzec co przy
+ * Słowniki formularza klienta w jednym miejscu. Ten sam wzorzec co przy
  * ofertach, żeby front nie powielał enumów w TypeScripcie.
  */
 @RestController

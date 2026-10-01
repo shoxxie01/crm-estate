@@ -1,7 +1,7 @@
 import type { ChangeEvent } from "react";
 import { cn } from "../../lib/cn";
 
-/** Klasy pola tekstowego zgodne z `Input` — dla pól składanych ręcznie. */
+/** Klasy pola tekstowego zgodne z `Input`. Dla pól składanych ręcznie. */
 export function fieldClass(invalid: boolean) {
   return cn(
     "h-9 w-full min-w-0 rounded-md border bg-surface px-3 text-sm text-ink tabular-nums transition-colors",

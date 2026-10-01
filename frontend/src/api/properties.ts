@@ -3,8 +3,8 @@ import { apiFetch } from "./client";
 /**
  * Kontrakt modułu nieruchomości.
  *
- * Wartości słownikowe są tu zwykłymi stringami, a nie uniami literałów —
- * listy pochodzą z `GET /api/properties/dictionaries`, więc powielanie
+ * Wartości słownikowe są tu zwykłymi stringami, a nie uniami literałów.
+ * Listy pochodzą z `GET /api/properties/dictionaries`, więc powielanie
  * dwudziestu kilku enumów w TypeScripcie oznaczałoby dwa źródła prawdy
  * rozjeżdżające się przy każdej zmianie po stronie backendu.
  */
@@ -78,7 +78,7 @@ export interface PropertySummary {
 
 /**
  * Materiał przypięty do oferty. `url` i `thumbnailUrl` są podpisane i wygasają
- * (domyślnie po 15 minutach) — nie wolno ich zapisywać ani cache'ować dłużej
+ * (domyślnie po 15 minutach). Nie wolno ich zapisywać ani cache'ować dłużej
  * niż trwa widok; po odświeżeniu oferty przychodzą nowe.
  */
 export interface PropertyMedia {
@@ -103,7 +103,7 @@ export interface PageResponse<T> {
   size: number;
 }
 
-/** Numeru oferty tu nie ma — nadaje go backend przy zapisie. */
+/** Numeru oferty tu nie ma. Nadaje go backend przy zapisie. */
 export interface CreatePropertyPayload {
   propertyType: string;
   transactionType: string;
@@ -165,7 +165,7 @@ export interface CreatePropertyPayload {
   exportable?: boolean;
 }
 
-/** Pełny widok oferty — odpowiada PropertyResponse z backendu. */
+/** Pełny widok oferty. Odpowiada PropertyResponse z backendu. */
 export interface PropertyDetail {
   id: string;
   referenceNumber: string;
@@ -326,7 +326,7 @@ export function uploadPropertyMedia(propertyId: string, files: File[]) {
   });
 }
 
-/** Podmiana pliku pod istniejącym zdjęciem — pozycja i podpis zostają. */
+/** Podmiana pliku pod istniejącym zdjęciem. Pozycja i podpis zostają. */
 export function replacePropertyMediaFile(
   propertyId: string,
   mediaId: string,
@@ -347,7 +347,7 @@ export function deletePropertyMedia(propertyId: string, mediaId: string) {
   });
 }
 
-/** Komplet identyfikatorów w docelowej kolejności — pierwszy jest zdjęciem głównym. */
+/** Komplet identyfikatorów w docelowej kolejności. Pierwszy jest zdjęciem głównym. */
 export function reorderPropertyMedia(propertyId: string, mediaIds: string[]) {
   return apiFetch<PropertyMedia[]>(`/properties/${propertyId}/media/order`, {
     method: "PUT",

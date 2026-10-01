@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { X } from "lucide-react";
 import {
   createEvent,
@@ -9,6 +9,7 @@ import {
 } from "../../api/calendar";
 import { ApiError } from "../../api/client";
 import type { ClientSummary } from "../../api/clients";
+import { fetchDeal, type InterestEntry } from "../../api/deals";
 import type { PropertySummary } from "../../api/properties";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
@@ -22,15 +23,30 @@ interface EventFormProps {
   dictionaries: CalendarDictionaries;
   /** Termin do edycji; pusty = nowy wpis. */
   initial: EventDetail | null;
-  /** Dzień, w który kliknięto w siatce — punkt startowy nowego terminu. */
+  /** Dzień, w który kliknięto w siatce. Punkt startowy nowego terminu. */
   defaultDay: Date;
   properties: PropertySummary[];
   clients: ClientSummary[];
-  onSaved: () => void;
+  /**
+   * Podpowiedzi dla nowego terminu zakładanego spoza kalendarza. Z karty
+   * transakcji przychodzą rodzaj, oferta, klient i sama transakcja.
+   */
+  preset?: EventPreset;
+  /** Dostaje zapisany termin. Kalendarz otwiera go, gdy jest propozycja etapu. */
+  onSaved: (saved: EventDetail) => void;
   onClose: () => void;
 }
 
-/** Domyślna długość terminu: godzina — tyle trwa prezentacja z dojazdem po niej. */
+export interface EventPreset {
+  type?: string;
+  title?: string;
+  propertyId?: string | null;
+  clientId?: string | null;
+  dealId?: string;
+  dealTitle?: string;
+}
+
+/** Domyślna długość terminu: godzina. Tyle trwa prezentacja z dojazdem po niej. */
 const DEFAULT_DURATION_MINUTES = 60;
 
 export function EventForm({
@@ -39,6 +55,7 @@ export function EventForm({
   defaultDay,
   properties,
   clients,
+  preset,
   onSaved,
   onClose,
 }: EventFormProps) {
@@ -47,16 +64,55 @@ export function EventForm({
     ? new Date(initial.summary.endsAt)
     : new Date(defaultDay.getTime() + DEFAULT_DURATION_MINUTES * 60_000);
 
-  const [type, setType] = useState(initial?.summary.type ?? "PRESENTATION");
+  const [type, setType] = useState(
+    initial?.summary.type ?? preset?.type ?? "PRESENTATION",
+  );
   const [status, setStatus] = useState(initial?.summary.status ?? "PLANNED");
-  const [title, setTitle] = useState(initial?.summary.title ?? "");
+  const [title, setTitle] = useState(initial?.summary.title ?? preset?.title ?? "");
   const [allDay, setAllDay] = useState(initial?.summary.allDay ?? false);
   const [date, setDate] = useState(toDateInput(start));
   const [endDate, setEndDate] = useState(toDateInput(initial ? end : start));
   const [startTime, setStartTime] = useState(toTimeInput(start));
   const [endTime, setEndTime] = useState(toTimeInput(end));
-  const [propertyId, setPropertyId] = useState(initial?.summary.propertyId ?? "");
-  const [clientId, setClientId] = useState(initial?.summary.clientId ?? "");
+  const [propertyId, setPropertyId] = useState(
+    initial ? (initial.summary.propertyId ?? "") : (preset?.propertyId ?? ""),
+  );
+  const [clientId, setClientId] = useState(
+    initial ? (initial.summary.clientId ?? "") : (preset?.clientId ?? ""),
+  );
+  // Transakcji nie wybiera się w formularzu. Przychodzi z karty Kanbana
+  // i przy edycji zostaje taka, jaka była.
+  const dealId = initial ? initial.summary.dealId : (preset?.dealId ?? null);
+  const dealTitle = initial ? initial.summary.dealTitle : (preset?.dealTitle ?? null);
+
+  // Uczestnicy to zainteresowani z tej transakcji. Wspólne oglądanie dwóch
+  // osób to jeden termin, ale każda ma potem swój status na karcie.
+  const [participantIds, setParticipantIds] = useState<string[]>(
+    initial?.participants.map((participant) => participant.id) ?? [],
+  );
+  const [candidates, setCandidates] = useState<InterestEntry[]>([]);
+
+  useEffect(() => {
+    if (!dealId) return;
+    const chosen = new Set(initial?.participants.map((participant) => participant.id));
+    fetchDeal(dealId)
+      .then((deal) =>
+        // Ci, którzy odpadli, nie przyjdą na kolejne oglądanie. Chyba że już
+        // są na tym terminie (edycja starszego wpisu).
+        setCandidates(
+          deal.interests.filter(
+            (interest) => interest.status !== "DROPPED" || chosen.has(interest.id),
+          ),
+        ),
+      )
+      .catch(() => undefined);
+  }, [dealId, initial]);
+
+  function toggleParticipant(id: string) {
+    setParticipantIds((current) =>
+      current.includes(id) ? current.filter((existing) => existing !== id) : [...current, id],
+    );
+  }
   const [counterpartyName, setCounterpartyName] = useState(
     initial?.summary.counterpartyName ?? "",
   );
@@ -64,7 +120,7 @@ export function EventForm({
     phoneToField(initial?.summary.counterpartyPhone),
   );
   const [location, setLocation] = useState(
-    // Przy powiązanej ofercie miejsce jest wyliczone z jej adresu — nie wpisujemy
+    // Przy powiązanej ofercie miejsce jest wyliczone z jej adresu. Nie wpisujemy
     // go z powrotem do pola, bo zapisałoby się jako kopia adresu.
     initial && !initial.summary.propertyId ? (initial.summary.location ?? "") : "",
   );
@@ -78,7 +134,7 @@ export function EventForm({
 
   const happened = status === "COMPLETED";
 
-  /** Te same reguły co w serwisie — błąd ma być widoczny, zanim żądanie poleci. */
+  /** Te same reguły co w serwisie. Błąd ma być widoczny, zanim żądanie poleci. */
   function validate(startsAt: Date | null, endsAt: Date | null) {
     const found: Record<string, string> = {};
 
@@ -125,6 +181,8 @@ export function EventForm({
       allDay,
       propertyId: propertyId || null,
       clientId: clientId || null,
+      dealId,
+      participantIds: dealId ? participantIds : [],
       counterpartyName: counterpartyName.trim() || undefined,
       counterpartyPhone: phoneToPayload(counterpartyPhone),
       outcome: happened && outcome ? outcome : null,
@@ -135,12 +193,10 @@ export function EventForm({
     setErrors({});
     setMessage(null);
     try {
-      if (initial) {
-        await updateEvent(initial.summary.id, payload);
-      } else {
-        await createEvent(payload);
-      }
-      onSaved();
+      const saved = initial
+        ? await updateEvent(initial.summary.id, payload)
+        : await createEvent(payload);
+      onSaved(saved);
     } catch (cause) {
       if (cause instanceof ApiError) {
         setErrors(cause.fieldErrors ?? {});
@@ -154,7 +210,7 @@ export function EventForm({
 
   return (
     <div
-      className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto bg-ink/20 p-4 sm:p-8"
+      className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto bg-scrim/20 p-4 sm:p-8"
       role="dialog"
       aria-modal="true"
       aria-label={initial ? "Edycja terminu" : "Nowy termin"}
@@ -179,6 +235,12 @@ export function EventForm({
         </header>
 
         <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2">
+          {dealTitle && (
+            <p className="rounded-md border border-line bg-subtle px-2.5 py-1.5 text-[12px] text-ink-secondary sm:col-span-2">
+              Krok transakcji: <span className="font-medium text-ink">{dealTitle}</span>
+            </p>
+          )}
+
           <Select
             label="Rodzaj"
             required
@@ -250,8 +312,7 @@ export function EventForm({
               value={title}
               onChange={(changed) => setTitle(changed.target.value)}
               maxLength={120}
-              placeholder="Zostaw puste — złożymy z rodzaju i adresu oferty"
-              hint="Opcjonalny. Pusty tytuł uzupełni serwer."
+              placeholder="Zostaw puste. Złożymy z rodzaju i adresu oferty"
               error={errors.title}
             />
           </div>
@@ -260,7 +321,7 @@ export function EventForm({
             label="Oferta"
             value={propertyId}
             onChange={(changed) => setPropertyId(changed.target.value)}
-            placeholder="— bez powiązania —"
+            placeholder="Bez powiązania"
             options={properties.map((property) => ({
               value: property.id,
               label: `${property.referenceNumber} · ${property.title}`,
@@ -273,7 +334,7 @@ export function EventForm({
             label="Klient"
             value={clientId}
             onChange={(changed) => setClientId(changed.target.value)}
-            placeholder="— bez powiązania —"
+            placeholder="Bez powiązania"
             options={clients.map((client) => ({
               value: client.id,
               label: `${client.firstName} ${client.lastName}`,
@@ -281,8 +342,32 @@ export function EventForm({
             error={errors.clientId}
           />
 
+          {candidates.length > 0 && (
+            <fieldset className="flex flex-col gap-1.5 sm:col-span-2">
+              <legend className="mb-1.5 text-[13px] font-medium text-ink">
+                Uczestnicy z listy zainteresowanych
+              </legend>
+              <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+                {candidates.map((interest) => (
+                  <label key={interest.id} className="flex items-center gap-2 text-[13px] text-ink">
+                    <input
+                      type="checkbox"
+                      checked={participantIds.includes(interest.id)}
+                      onChange={() => toggleParticipant(interest.id)}
+                      className="size-4 rounded border-line accent-accent"
+                    />
+                    {interest.name}
+                  </label>
+                ))}
+              </div>
+              {errors.participantIds && (
+                <p className="text-[12px] text-critical">{errors.participantIds}</p>
+              )}
+            </fieldset>
+          )}
+
           {/*
-            Strona popytu nie ma jeszcze swojej tabeli — kupujący i najemcy
+            Strona popytu nie ma jeszcze swojej tabeli. Kupujący i najemcy
             wpisywani są tu z ręki. Patrz komentarz w encji CalendarEvent.
           */}
           <Input
@@ -329,7 +414,7 @@ export function EventForm({
                 label="Rezultat"
                 value={outcome}
                 onChange={(changed) => setOutcome(changed.target.value)}
-                placeholder="— nie podano —"
+                placeholder="Nie podano"
                 options={dictionaries.outcome}
                 error={errors.outcome}
               />

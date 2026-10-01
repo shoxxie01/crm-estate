@@ -3,7 +3,7 @@ package pl.delta.crm.auth.dto;
 import pl.delta.crm.user.Role;
 import pl.delta.crm.user.User;
 
-/** Publiczna reprezentacja użytkownika — bez hasła. Kształt zgodny z typem `User` na froncie. */
+/** Publiczna reprezentacja użytkownika. Bez hasła. Kształt zgodny z typem `User` na froncie. */
 public record UserDto(
         String id,
         String email,

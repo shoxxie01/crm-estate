@@ -74,7 +74,7 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- Baza: PostgreSQL wszędzie — dev (docker compose) i testy (Testcontainers) -->
+        <!-- Baza: PostgreSQL wszędzie. Dev (docker compose) i testy (Testcontainers) -->
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
@@ -82,7 +82,7 @@
         </dependency>
 
         <!-- Migracje schematu. W Boot 4 autokonfiguracja Flyway mieszka w osobnym
-             module — sam flyway-core nie zostanie podpięty. -->
+             module. Sam flyway-core nie zostanie podpięty. -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-flyway</artifactId>
@@ -147,7 +147,7 @@
             <artifactId>testcontainers-junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
-        <!-- Testy storage'u jadą na prawdziwym MinIO, nie na atrapie — inaczej
+        <!-- Testy storage'u jadą na prawdziwym MinIO, nie na atrapie. Inaczej
              nie sprawdziłyby ani podpisywania URL-i, ani kasowania obiektów. -->
         <dependency>
             <groupId>org.testcontainers</groupId>

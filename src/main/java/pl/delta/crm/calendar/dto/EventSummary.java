@@ -5,6 +5,7 @@ import pl.delta.crm.calendar.dictionary.EventOutcome;
 import pl.delta.crm.calendar.dictionary.EventStatus;
 import pl.delta.crm.calendar.dictionary.EventType;
 import pl.delta.crm.client.Client;
+import pl.delta.crm.deal.Deal;
 import pl.delta.crm.property.Address;
 import pl.delta.crm.property.Property;
 
@@ -16,7 +17,7 @@ import java.util.UUID;
  *
  * <p>Struktura jest płaska, bo widok miesiąca renderuje kilkadziesiąt takich
  * pozycji naraz i nie ma po co wysyłać do niego zagnieżdżonych ofert. Nazwy
- * powiązań są rozwinięte po stronie serwera — front nie dociąga oferty ani
+ * powiązań są rozwinięte po stronie serwera. Front nie dociąga oferty ani
  * klienta tylko po to, żeby napisać, czego dotyczy termin.
  */
 public record EventSummary(
@@ -29,7 +30,7 @@ public record EventSummary(
         Instant endsAt,
         boolean allDay,
 
-        /** Miejsce do pokazania — własne albo wyprowadzone z adresu oferty. */
+        /** Miejsce do pokazania. Własne albo wyprowadzone z adresu oferty. */
         String location,
 
         UUID agentId,
@@ -42,6 +43,9 @@ public record EventSummary(
         UUID clientId,
         String clientName,
 
+        UUID dealId,
+        String dealTitle,
+
         String counterpartyName,
         String counterpartyPhone
 ) {
@@ -49,6 +53,7 @@ public record EventSummary(
     public static EventSummary from(CalendarEvent event) {
         Property property = event.getProperty();
         Client client = event.getClient();
+        Deal deal = event.getDeal();
 
         return new EventSummary(
                 event.getId(),
@@ -67,14 +72,16 @@ public record EventSummary(
                 property == null ? null : property.getTitle(),
                 client == null ? null : client.getId(),
                 client == null ? null : client.fullName(),
+                deal == null ? null : deal.getId(),
+                deal == null ? null : deal.getTitle(),
                 event.getCounterpartyName(),
                 event.getCounterpartyPhone()
         );
     }
 
     /**
-     * Przy powiązanej ofercie miejsce spotkania jest po prostu jej adresem —
-     * przepisywanie go ręcznie w termin oznaczałoby dwa źródła prawdy i adres,
+     * Przy powiązanej ofercie miejsce spotkania jest po prostu jej adresem.
+     * Przepisywanie go ręcznie w termin oznaczałoby dwa źródła prawdy i adres,
      * który zostaje nieaktualny po korekcie oferty. Własne pole wygrywa, bo
      * bywa dokładniejsze („wejście od podwórza", biuro, kancelaria).
      */
@@ -82,7 +89,7 @@ public record EventSummary(
         if (event.getLocation() != null) {
             return event.getLocation();
         }
-        // Termin nie musi mieć oferty — telefon czy zadanie własne nie dotyczy
+        // Termin nie musi mieć oferty. Telefon czy zadanie własne nie dotyczy
         // żadnej. Wtedy po prostu nie ma czego pokazać jako miejsca.
         Property property = event.getProperty();
         if (property == null) {

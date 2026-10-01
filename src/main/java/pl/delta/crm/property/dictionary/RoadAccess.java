@@ -1,6 +1,6 @@
 package pl.delta.crm.property.dictionary;
 
-/** Dojazd (Otodom: AccessMask — dla działki, domu i hali). */
+/** Dojazd (Otodom: AccessMask. Dla działki, domu i hali). */
 public enum RoadAccess implements Dictionary {
 
     ASPHALT("Asfaltowy"),

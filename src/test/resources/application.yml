@@ -1,4 +1,4 @@
-# Datasource wstrzykuje Testcontainers przez @ServiceConnection — celowo nie ma
+# Datasource wstrzykuje Testcontainers przez @ServiceConnection. Celowo nie ma
 # go tutaj. Migracje Flyway jadą na tym samym kontenerze co produkcyjne, więc
 # testy weryfikują też same migracje, nie tylko kod.
 spring:

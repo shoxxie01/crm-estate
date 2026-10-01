@@ -15,13 +15,13 @@ import {
  * Ikony, kolory i tonacje terminów.
  *
  * Kafelek w siatce koduje dwie rzeczy naraz, więc mają rozdzielone kanały:
- * **rodzaj niesie kolor** (tło, obramowanie, ikona, kropka), a **status —
- * sposób podania** (pogrubienie, wyblaknięcie, przekreślenie, obwódka przy
+ * **rodzaj niesie kolor** (tło, obramowanie, ikona, kropka), a **status.
+ * Sposób podania** (pogrubienie, wyblaknięcie, przekreślenie, obwódka przy
  * nieobecności). Gdyby oba sięgały po kolor, jedno musiałoby ustąpić.
  *
  * Kolor nie jest jedynym nośnikiem rodzaju: obok zawsze stoi ikona, a w panelu
  * i na osi czasu również etykieta słownikowa. To istotne, bo dziewięciu
- * kategorii nie da się rozdzielić samym odcieniem przy daltonizmie — paleta
+ * kategorii nie da się rozdzielić samym odcieniem przy daltonizmie. Paleta
  * rozstrzela więc także jasność (L* od 29 do 56), co przy protanopii
  * i deuteranopii robi całą robotę. Liczby w `frontend/README.md`.
  */
@@ -113,7 +113,7 @@ export function typeInk(type: string): string {
 }
 
 /**
- * Status kafelka — bez własnego koloru poza nieobecnością, która jako jedyna
+ * Status kafelka. Bez własnego koloru poza nieobecnością, która jako jedyna
  * jest problemem wymagającym reakcji i dostaje czerwoną obwódkę ze skali
  * statusów.
  */
@@ -149,7 +149,7 @@ export function statusTone(status: string): StatusTone {
   }
 }
 
-/** Tonacja odznaki statusu — zgodna z paletą statusów systemu. */
+/** Tonacja odznaki statusu. Zgodna z paletą statusów systemu. */
 export const badgeTone: Record<
   StatusTone,
   "neutral" | "accent" | "good" | "warning" | "critical"

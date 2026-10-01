@@ -1,7 +1,7 @@
 /**
  * Pomocniki dat kalendarza.
  *
- * Wszystko liczymy w czasie lokalnym przeglądarki — z API przychodzą punkty
+ * Wszystko liczymy w czasie lokalnym przeglądarki. Z API przychodzą punkty
  * w czasie (UTC), a siatka dni jest z natury lokalna: „poniedziałek" zaczyna się
  * o północy u agenta, nie w Greenwich. Tydzień zaczyna się w poniedziałek, jak
  * w polskich kalendarzach.
@@ -43,7 +43,7 @@ export function startOfMonth(date: Date): Date {
   return copy;
 }
 
-/** Pierwszy dzień siatki miesiąca — poniedziałek poprzedzający pierwszy dzień. */
+/** Pierwszy dzień siatki miesiąca. Poniedziałek poprzedzający pierwszy dzień. */
 export function startOfMonthGrid(date: Date): Date {
   return startOfWeek(startOfMonth(date));
 }
@@ -56,7 +56,7 @@ export function sameDay(a: Date, b: Date): boolean {
   );
 }
 
-/** Zakres [od, do) pokrywający widok — dokładnie o to pytamy backend. */
+/** Zakres [od, do) pokrywający widok. Dokładnie o to pytamy backend. */
 export function rangeFor(view: CalendarView, anchor: Date): [Date, Date] {
   if (view === "day") {
     const from = startOfDay(anchor);
@@ -116,7 +116,7 @@ export function timeRange(startsAt: string, endsAt: string, allDay: boolean): st
 
 // --- pola formularza -------------------------------------------------------
 
-/** Data w formacie `<input type="date">` — lokalna, nie UTC. */
+/** Data w formacie `<input type="date">`. Lokalna, nie UTC. */
 export function toDateInput(date: Date): string {
   const month = `${date.getMonth() + 1}`.padStart(2, "0");
   const day = `${date.getDate()}`.padStart(2, "0");

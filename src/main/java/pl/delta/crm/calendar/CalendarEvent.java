@@ -8,6 +8,8 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -18,10 +20,14 @@ import pl.delta.crm.calendar.dictionary.EventOutcome;
 import pl.delta.crm.calendar.dictionary.EventStatus;
 import pl.delta.crm.calendar.dictionary.EventType;
 import pl.delta.crm.client.Client;
+import pl.delta.crm.deal.Deal;
+import pl.delta.crm.deal.DealInterest;
 import pl.delta.crm.property.Property;
 import pl.delta.crm.user.User;
 
 import java.time.Instant;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -30,7 +36,7 @@ import java.util.UUID;
  * <p>Zdarzenie jest w tym CRM-ie łącznikiem, a nie bytem samodzielnym: wiąże
  * agenta z ofertą ({@link #property}) i z właścicielem ({@link #client}).
  * Oba wiązania są opcjonalne, bo połowa terminów powstaje, zanim będzie co
- * wiązać — wycena poprzedza ofertę, a spotkanie akwizycyjne poprzedza klienta.
+ * wiązać. Wycena poprzedza ofertę, a spotkanie akwizycyjne poprzedza klienta.
  *
  * <p>Kupujący i najemcy nie mają tu klucza obcego, tylko pola
  * {@link #counterpartyName} / {@link #counterpartyPhone}. W tej wersji CRM-u
@@ -64,10 +70,26 @@ public class CalendarEvent {
     @JoinColumn(name = "property_id")
     private Property property;
 
-    /** Właściciel powiązany z terminem — np. przy podpisaniu umowy pośrednictwa. */
+    /** Właściciel powiązany z terminem. Np. przy podpisaniu umowy pośrednictwa. */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "client_id")
     private Client client;
+
+    /** Transakcja z tablicy Kanban, której krokiem jest ten termin. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "deal_id")
+    private Deal deal;
+
+    /**
+     * Zainteresowani z transakcji, którzy biorą udział w terminie. Wspólne
+     * oglądanie dwóch osób to jeden termin, ale każda z nich ma potem własny
+     * status na liście zainteresowanych. Tylko przy powiązanej transakcji.
+     */
+    @ManyToMany
+    @JoinTable(name = "calendar_event_participants",
+            joinColumns = @JoinColumn(name = "event_id"),
+            inverseJoinColumns = @JoinColumn(name = "interest_id"))
+    private Set<DealInterest> participants = new LinkedHashSet<>();
 
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false, length = 30)
@@ -77,7 +99,7 @@ public class CalendarEvent {
     @Column(name = "status", nullable = false, length = 20)
     private EventStatus status = EventStatus.PLANNED;
 
-    /** Wypełniany dopiero po fakcie — wyłącznie przy statusie COMPLETED. */
+    /** Wypełniany dopiero po fakcie. Wyłącznie przy statusie COMPLETED. */
     @Enumerated(EnumType.STRING)
     @Column(name = "outcome", length = 30)
     private EventOutcome outcome;
@@ -94,7 +116,7 @@ public class CalendarEvent {
     @Column(name = "description")
     private String description;
 
-    /** Miejsce wpisane ręcznie — przy powiązanej ofercie adres bierze się z niej. */
+    /** Miejsce wpisane ręcznie. Przy powiązanej ofercie adres bierze się z niej. */
     @Column(name = "location", length = 200)
     private String location;
 
@@ -106,7 +128,7 @@ public class CalendarEvent {
 
     /**
      * Zdarzenie całodniowe (dzień otwarty, urlop). Zakres i tak jest zapisany
-     * co do sekundy — flaga mówi tylko tyle, że godziny nie należy pokazywać.
+     * co do sekundy. Flaga mówi tylko tyle, że godziny nie należy pokazywać.
      */
     @Column(name = "all_day", nullable = false)
     private boolean allDay;
@@ -182,6 +204,23 @@ public class CalendarEvent {
 
     public void setClient(Client client) {
         this.client = client;
+    }
+
+    public Deal getDeal() {
+        return deal;
+    }
+
+    public void setDeal(Deal deal) {
+        this.deal = deal;
+    }
+
+    public Set<DealInterest> getParticipants() {
+        return participants;
+    }
+
+    public void setParticipants(Set<DealInterest> participants) {
+        this.participants.clear();
+        this.participants.addAll(participants);
     }
 
     public EventType getType() {

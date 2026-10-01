@@ -40,15 +40,15 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Poszukiwanie — czego klient szuka jako kupujący albo najemca.
+ * Poszukiwanie. Czego klient szuka jako kupujący albo najemca.
  *
  * <p>Osobna encja, a nie pola na {@link Client}: ta sama osoba potrafi szukać
  * kilku rzeczy naraz, a każde poszukiwanie ma własny stan (aktywne, wstrzymane,
- * zrealizowane). Z aktywnych poszukiwań wynika rola kupującego / najemcy —
- * dokładnie tak, jak rola sprzedającego wynika z powierzonych ofert.
+ * zrealizowane). Z aktywnych poszukiwań wynika rola kupującego / najemcy.
+ * Dokładnie tak, jak rola sprzedającego wynika z powierzonych ofert.
  *
  * <p>Każda granica zakresu jest opcjonalna. Klient przez telefon mówi „do
- * 600 tysięcy, minimum dwa pokoje" — i tyle ma trafić do bazy, bez zmyślania
+ * 600 tysięcy, minimum dwa pokoje". I tyle ma trafić do bazy, bez zmyślania
  * brakujących połówek.
  */
 @Entity
@@ -166,7 +166,7 @@ public class ClientRequirement {
     }
 
     /**
-     * Poszukiwanie bez klienta, <b>nigdy nie zapisywane</b> — do podglądu
+     * Poszukiwanie bez klienta, <b>nigdy nie zapisywane</b>. Do podglądu
      * pasujących ofert dla zgłoszenia, zanim agent zamieni je na klienta.
      */
     public static ClientRequirement draft(Agency agency, TransactionType transactionType) {

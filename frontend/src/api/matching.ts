@@ -3,7 +3,7 @@ import type { ClientRequirement } from "./clients";
 import type { PropertySummary } from "./properties";
 
 /**
- * Dopasowanie ofert do poszukiwań. Liczone na serwerze na żądanie — w odpowiedzi
+ * Dopasowanie ofert do poszukiwań. Liczone na serwerze na żądanie. W odpowiedzi
  * są wyłącznie pasujące pozycje, każda z wyjaśnieniem kryterium po kryterium.
  */
 
@@ -25,7 +25,7 @@ export interface ClientMatch {
   agentName: string;
   requirement: ClientRequirement;
   criteria: MatchCriterion[];
-  /** Kryteria „prawie" i „brak danych" — do dopytania. 0 = pewne dopasowanie. */
+  /** Kryteria „prawie" i „brak danych". Do dopytania. 0 = pewne dopasowanie. */
   warnings: number;
 }
 

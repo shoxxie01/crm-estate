@@ -9,7 +9,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 /**
- * Świadectwo charakterystyki energetycznej — obowiązkowe przy sprzedaży
+ * Świadectwo charakterystyki energetycznej. Obowiązkowe przy sprzedaży
  * i najmie od 28.04.2023, poza budynkami zwolnionymi z obowiązku.
  */
 public record EnergyRequest(

@@ -21,7 +21,7 @@ import {
 interface RequirementsSectionProps {
   clientId: string;
   requirements: ClientRequirement[];
-  /** Po każdej zmianie karta klienta wczytuje się na nowo — zmienia się też rola. */
+  /** Po każdej zmianie karta klienta wczytuje się na nowo. Zmienia się też rola. */
   onChanged: () => Promise<void>;
 }
 
@@ -134,7 +134,7 @@ export function RequirementsSection({
       {removing && (
         <ConfirmDialog
           title="Usunąć to poszukiwanie?"
-          description="Jeśli klient kupił albo zrezygnował, lepiej zmienić stan na „Zrealizowane” lub „Nieaktualne” — historia zostanie na karcie."
+          description="Jeśli klient kupił albo zrezygnował, lepiej zmienić stan na „Zrealizowane” lub „Nieaktualne”. Historia zostanie na karcie."
           busy={busy}
           onCancel={() => setRemoving(null)}
           onConfirm={() =>
@@ -229,7 +229,7 @@ function RequirementCard({
         {new Date(r.createdAt).toLocaleDateString("pl-PL")}
       </p>
 
-      {/* Tylko dla aktywnych — dla wstrzymanych i zamkniętych lista ofert
+      {/* Tylko dla aktywnych. Dla wstrzymanych i zamkniętych lista ofert
           byłaby szumem, a każda to osobne zapytanie. */}
       {active && (
         <RequirementMatches

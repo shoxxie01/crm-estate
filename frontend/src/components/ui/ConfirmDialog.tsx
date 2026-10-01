@@ -3,15 +3,15 @@ import { createPortal } from "react-dom";
 import { Button } from "./Button";
 
 interface ConfirmDialogProps {
-  /** Pytanie w nagłówku — pełne zdanie, nie sama nazwa operacji. */
+  /** Pytanie w nagłówku. Pełne zdanie, nie sama nazwa operacji. */
   title: string;
   /** Czego dotyczy i co się stanie. Opcjonalne. */
   description?: React.ReactNode;
   confirmLabel?: string;
   cancelLabel?: string;
-  /** Napis na przycisku w trakcie operacji — domyślnie „Usuwanie…". */
+  /** Napis na przycisku w trakcie operacji. Domyślnie „Usuwanie…". */
   busyLabel?: string;
-  /** Trwa operacja — oba przyciski blokujemy, żeby nie poszła dwa razy. */
+  /** Trwa operacja. Oba przyciski blokujemy, żeby nie poszła dwa razy. */
   busy?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
@@ -24,7 +24,7 @@ interface ConfirmDialogProps {
  * potrafi stać w komórce tabeli albo w przyklejonej kolumnie, gdzie `fixed`
  * przykleiłby się do rodzica zamiast do okna.
  *
- * <p>Focus startuje na „Anuluj" — okno otwiera się po kliknięciu kosza, więc
+ * <p>Focus startuje na „Anuluj". Okno otwiera się po kliknięciu kosza, więc
  * Enter odruchowo wciśnięty zaraz po nim ma anulować, a nie kasować.
  */
 export function ConfirmDialog({
@@ -40,7 +40,7 @@ export function ConfirmDialog({
   const titleId = useId();
 
   // Wołający zwykle podaje `onCancel` jako świeżą funkcję przy każdym renderze.
-  // Trzymamy ją w ref, żeby efekt biegł raz na otwarcie — inaczej co render
+  // Trzymamy ją w ref, żeby efekt biegł raz na otwarcie. Inaczej co render
   // zdejmowałby blokadę przewijania i przerzucał focus z powrotem na kosz.
   const cancelRef = useRef(onCancel);
   cancelRef.current = onCancel;
@@ -66,7 +66,7 @@ export function ConfirmDialog({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/20 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-scrim/20 p-4"
       onClick={(event) => {
         if (event.target === event.currentTarget && !busy) onCancel();
       }}

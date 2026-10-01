@@ -12,7 +12,7 @@ import pl.delta.crm.property.dictionary.PropertyType;
 import java.math.BigDecimal;
 
 /**
- * Nieruchomość, którą właściciel chce sprzedać przez biuro — tyle, ile umie
+ * Nieruchomość, którą właściciel chce sprzedać przez biuro. Tyle, ile umie
  * podać w formularzu. Resztę (adres, stan, zdjęcia) agent ustala przy rozmowie
  * albo na oględzinach, zanim założy ofertę.
  */

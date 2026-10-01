@@ -7,6 +7,8 @@ import { RegisterPage } from "./pages/auth/RegisterPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { PlaceholderPage } from "./pages/PlaceholderPage";
 import { CalendarPage } from "./pages/calendar/CalendarPage";
+import { KanbanPage } from "./pages/kanban/KanbanPage";
+import { DealReportPage } from "./pages/kanban/DealReportPage";
 import { ClientsPage } from "./pages/clients/ClientsPage";
 import { ClientFormPage } from "./pages/clients/ClientFormPage";
 import { ClientDetailPage } from "./pages/clients/ClientDetailPage";
@@ -23,13 +25,15 @@ export default function App() {
         <Routes>
           <Route path="/logowanie" element={<LoginPage />} />
           <Route path="/rejestracja" element={<RegisterPage />} />
-          {/* Publiczny formularz dla klientów — poza logowaniem i poza powłoką CRM. */}
+          {/* Publiczny formularz dla klientów. Poza logowaniem i poza powłoką CRM. */}
           <Route path="/zgloszenie/:token" element={<IntakePage />} />
 
           <Route element={<ProtectedRoute />}>
             <Route element={<AppShell />}>
               <Route index element={<DashboardPage />} />
               <Route path="/kalendarz" element={<CalendarPage />} />
+              <Route path="/kanban" element={<KanbanPage />} />
+              <Route path="/kanban/raport" element={<DealReportPage />} />
               <Route path="/nieruchomosci" element={<PropertiesPage />} />
               <Route path="/nieruchomosci/nowa" element={<PropertyFormPage />} />
               <Route

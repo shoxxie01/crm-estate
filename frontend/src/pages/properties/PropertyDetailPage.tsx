@@ -63,7 +63,7 @@ export function PropertyDetailPage() {
     fetchDictionaries().then(setDict).catch(() => undefined);
   }, []);
 
-  // Jedna mapa etykiet ze wszystkich słowników — front trzyma wartości jako
+  // Jedna mapa etykiet ze wszystkich słowników. Front trzyma wartości jako
   // techniczne nazwy, a tu tłumaczymy je na polskie etykiety do wyświetlenia.
   const labels = useMemo(() => {
     const map = new Map<string, string>();
@@ -132,7 +132,7 @@ export function PropertyDetailPage() {
   const isGaraz = type === "GARAGE";
   const isPokoj = type === "ROOM";
 
-  // Ta sama logika widoczności co w formularzu — szczegóły muszą pokazywać
+  // Ta sama logika widoczności co w formularzu. Szczegóły muszą pokazywać
   // dokładnie te pola, które dla danego typu mają sens.
   const showUsableArea = isMieszkanie || isDom || isLokal || isHala;
   const showPlotArea = isDom;
@@ -244,10 +244,10 @@ export function PropertyDetailPage() {
         </p>
       )}
 
-      {/* Szczegóły po lewej, galeria po prawej — zdjęcie zostaje w polu widzenia
+      {/* Szczegóły po lewej, galeria po prawej. Zdjęcie zostaje w polu widzenia
           przy czytaniu parametrów, bo to je się z nimi zestawia. Poniżej lg
           układ wraca do jednej kolumny, a galeria ląduje pod nagłówkiem.
-          Zmiany w galerii — wgrywanie, zamiana, kolejność — należą do formularza
+          Zmiany w galerii Wgrywanie, zamiana, kolejność należą do formularza
           oferty, tak samo jak każde inne jej pole. */}
       <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:gap-5">
         <aside className="flex flex-col gap-4 lg:sticky lg:top-4 lg:col-start-2 lg:row-start-1">
@@ -269,7 +269,7 @@ export function PropertyDetailPage() {
           </section>
 
           {/* Mapa jedzie razem z galerią w przyklejonej kolumnie: zdjęcie mówi,
-              jak obiekt wygląda, mapa — gdzie stoi, i jedno z drugim zestawia
+              jak obiekt wygląda, mapa. Gdzie stoi, i jedno z drugim zestawia
               się przy czytaniu parametrów. Pinezkę ustawia się w formularzu,
               tutaj jest tylko do obejrzenia. */}
           {p.address.latitude != null && p.address.longitude != null && (
@@ -444,11 +444,11 @@ export function PropertyDetailPage() {
         ) : (
           <>
             <Field
-              label="EP — energia pierwotna"
+              label="EP. Energia pierwotna"
               value={p.energy.energyPrimary != null ? `${formatNumber(p.energy.energyPrimary)} kWh/(m²·rok)` : null}
             />
             <Field
-              label="EK — energia końcowa"
+              label="EK. Energia końcowa"
               value={p.energy.energyFinal != null ? `${formatNumber(p.energy.energyFinal)} kWh/(m²·rok)` : null}
             />
             <Field label="Klasa energetyczna" value={L(p.energy.energyClass)} />
@@ -496,7 +496,7 @@ export function PropertyDetailPage() {
       )}
 
       {/* Terminy z kalendarza. Seria prezentacji z rezultatem „cena za wysoka"
-          jest argumentem w rozmowie z właścicielem — dlatego historia pokazów
+          jest argumentem w rozmowie z właścicielem. Dlatego historia pokazów
           mieszka na karcie oferty, a nie tylko w siatce kalendarza. */}
       <section className="card">
         <header className="border-b border-line px-4 py-3">
@@ -537,7 +537,7 @@ function Field({ label, value }: { label: string; value: ReactNode }) {
         {label}
       </dt>
       <dd className="text-ink">
-        {value ? value : <span className="text-ink-muted">—</span>}
+        {value ? value : <span className="text-ink-muted">-</span>}
       </dd>
     </div>
   );

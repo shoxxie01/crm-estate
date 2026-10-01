@@ -22,13 +22,13 @@ import { ROOMS_TYPES, appliesTo } from "../clients/requirementMeta";
 const MAX_LOCATIONS = 5;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-/** Tylko dwie opcje — najem obsługuje agent przy rozmowie. */
+/** Tylko dwie opcje. Najem obsługuje agent przy rozmowie. */
 const INTENTS: [InquiryIntent, string][] = [
   ["BUY", "Kupić"],
   ["SELL", "Sprzedać"],
 ];
 
-/** Pokoju nie da się ani kupić, ani sprzedać osobno — portale przyjmują go tylko na najem. */
+/** Pokoju nie da się ani kupić, ani sprzedać osobno. Portale przyjmują go tylko na najem. */
 const withoutRooms = (types: IntakeForm["propertyType"]) =>
   types.filter((type) => type.value !== "ROOM");
 
@@ -41,7 +41,7 @@ interface LocationRow {
 type AmountSetter = (event: ChangeEvent<HTMLInputElement>) => void;
 
 /**
- * Publiczny formularz zgłoszeniowy — strona bez logowania, pod linkiem biura.
+ * Publiczny formularz zgłoszeniowy. Strona bez logowania, pod linkiem biura.
  * Pisany dla klienta, nie dla agenta: dwie ścieżki („kupić" / „sprzedać"),
  * bez żargonu i bez pól, o które klient i tak nie umiałby odpowiedzieć.
  */
@@ -77,7 +77,7 @@ export function IntakePage() {
             body={
               sent === "SELL"
                 ? `${form.agencyName} odezwie się, żeby porozmawiać o sprzedaży i umówić się na oględziny.`
-                : `${form.agencyName} odezwie się, gdy tylko przejrzy Twoje kryteria — zwykle z pierwszymi pasującymi ofertami.`
+                : `${form.agencyName} odezwie się, gdy tylko przejrzy Twoje kryteria. Zwykle z pierwszymi pasującymi ofertami.`
             }
           />
         ) : (
@@ -159,7 +159,7 @@ function IntakeFormView({
   const showWantedRooms = appliesTo(ROOMS_TYPES, wantedTypes);
   const showOfferRooms = ROOMS_TYPES.has(offer.propertyType);
 
-  // Po nieudanej próbie — do pierwszego błędnego pola, jak w formularzach CRM.
+  // Po nieudanej próbie. Do pierwszego błędnego pola, jak w formularzach CRM.
   useEffect(() => {
     if (errorSignal === 0) return;
     const invalid = document.querySelector<HTMLElement>('[aria-invalid="true"]');
@@ -167,7 +167,7 @@ function IntakeFormView({
     invalid?.focus({ preventScroll: true });
   }, [errorSignal]);
 
-  /** Kwota grupowana spacjami w trakcie pisania — karetka zostaje na miejscu. */
+  /** Kwota grupowana spacjami w trakcie pisania. Karetka zostaje na miejscu. */
   const amountSetter =
     (previous: string, apply: (value: string) => void): AmountSetter =>
     (event) => {
@@ -211,7 +211,7 @@ function IntakeFormView({
       found.email = "Podaj poprawny adres e-mail.";
     }
     if (!found.phone && !contact.phone.trim() && !contact.email.trim()) {
-      found.phone = "Podaj telefon lub e-mail — inaczej biuro nie będzie mogło się z Tobą skontaktować.";
+      found.phone = "Podaj telefon lub e-mail. Inaczej biuro nie będzie mogło się z Tobą skontaktować.";
     }
 
     if (buying) {
@@ -332,8 +332,8 @@ function IntakeFormView({
           Jak możemy pomóc?
         </h1>
         <p className="mt-1 text-[13px] leading-relaxed text-ink-secondary">
-          Kilka pytań zamiast wielu telefonów. Wypełnij tylko to, co wiesz —
-          resztę ustalimy w rozmowie.
+          Kilka pytań zamiast wielu telefonów. Wypełnij tylko to, co wiesz.
+          Resztę ustalimy w rozmowie.
         </p>
       </header>
 
@@ -554,7 +554,7 @@ function IntakeFormView({
               inputMode="numeric"
               value={offer.expectedPrice}
               onChange={amountSetter(offer.expectedPrice, (v) => setOffer((o) => ({ ...o, expectedPrice: v })))}
-              hint="Jeśli nie wiesz — zostaw puste, pomożemy wycenić."
+              hint="Jeśli nie wiesz. Zostaw puste, pomożemy wycenić."
               error={errors["offer.expectedPrice"]}
             />
           </Group>
@@ -598,7 +598,7 @@ function IntakeFormView({
             value={contact.phone}
             onChange={(phone) => setContact((c) => ({ ...c, phone }))}
             error={errors.phone}
-            hint="Telefon lub e-mail — wystarczy jedno."
+            hint="Telefon lub e-mail. Wystarczy jedno."
           />
           <Input
             label="E-mail"

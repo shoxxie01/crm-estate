@@ -12,7 +12,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * Wiersz listy ofert. Tylko to, co widać w tabeli — bez ładowania kolekcji.
+ * Wiersz listy ofert. Tylko to, co widać w tabeli. Bez ładowania kolekcji.
  *
  * <p>Miniatura zdjęcia głównego przychodzi z zewnątrz, a nie z {@code property
  * .getMedia()}: sięgnięcie po kolekcję rozwinęłoby ją dla każdego wiersza z
@@ -41,7 +41,7 @@ public record PropertySummary(
 ) {
 
     /**
-     * Wariant dla list, które pokazują oferty tekstowo — jak sekcja „Powierzone
+     * Wariant dla list, które pokazują oferty tekstowo. Jak sekcja „Powierzone
      * oferty" na karcie klienta. Nazwany wprost, żeby brak miniatury był decyzją
      * widoczną w miejscu wywołania, a nie przeoczonym {@code null}-em.
      */

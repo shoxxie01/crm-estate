@@ -3,7 +3,7 @@ package pl.delta.crm.geo;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Surowa odpowiedź Nominatim. Nie wychodzi poza ten pakiet — na zewnątrz idzie
+ * Surowa odpowiedź Nominatim. Nie wychodzi poza ten pakiet. Na zewnątrz idzie
  * {@link pl.delta.crm.geo.dto.GeoLocation} z polami nazwanymi tak jak w naszym
  * adresie, żeby zmiana dostawcy geokodowania nie dotykała frontu.
  *
@@ -17,11 +17,10 @@ record NominatimPlace(String lat, String lon,
 
     /**
      * Klucze adresu w Nominatim odpowiadają poziomom administracyjnym OSM.
-     * Dla Polski: {@code state} to województwo (level 4), {@code county} —
-     * powiat (6), {@code municipality} — gmina (7). Miejscowość przychodzi
+     * Dla Polski: {@code state} to województwo (level 4), {@code county} * powiat (6), {@code municipality} gmina (7). Miejscowość przychodzi
      * pod jednym z {@code city}/{@code town}/{@code village}/{@code hamlet},
      * zależnie od jej wielkości, a dzielnica pod jednym z czterech kluczy
-     * poniżej — stąd łańcuchy „pierwsze niepuste" w {@link GeoService}.
+     * poniżej. Stąd łańcuchy „pierwsze niepuste" w {@link GeoService}.
      *
      * <p>Świadomie pomijamy {@code neighbourhood}: bywa nazwą osiedla albo
      * przysiółka, a nie dzielnicy w rozumieniu ogłoszenia, i częściej zaśmiecał

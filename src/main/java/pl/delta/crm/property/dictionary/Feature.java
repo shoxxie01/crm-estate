@@ -20,13 +20,13 @@ import static pl.delta.crm.property.dictionary.PropertyType.APARTMENT;
 import static pl.delta.crm.property.dictionary.PropertyType.ROOM;
 
 /**
- * Cechy nieruchomości — jeden zbiór zamiast sześciu osobnych list boolean.
+ * Cechy nieruchomości. Jeden zbiór zamiast sześciu osobnych list boolean.
  *
  * <p>Suma zbiorów masek Otodom dla wszystkich typów obiektu, poszerzona o kilka
  * pozycji, których ich słownik z 2017 r. nie zna, a które są dziś standardem
  * w ogłoszeniach (komórka lokatorska, miejsce postojowe, loggia, studnia).
  *
- * <p>Każda cecha zna typy obiektu, dla których ma sens — formularz pokazuje
+ * <p>Każda cecha zna typy obiektu, dla których ma sens. Formularz pokazuje
  * w sekcji „Cechy" tylko te pasujące do wybranego rodzaju (garaż nie pyta
  * o pralkę, mieszkanie o studnię).
  */
@@ -68,7 +68,7 @@ public enum Feature implements Dictionary {
 
     // --- media ----------------------------------------------------------------
     ELECTRICITY("Prąd", UTILITIES, HOUSE, PLOT, COMMERCIAL_UNIT, HALL_WAREHOUSE, PropertyType.GARAGE),
-    THREE_PHASE_POWER("Prąd — siła (3-fazowy)", UTILITIES, HOUSE, PLOT, COMMERCIAL_UNIT, HALL_WAREHOUSE),
+    THREE_PHASE_POWER("Prąd. Siła (3-fazowy)", UTILITIES, HOUSE, PLOT, COMMERCIAL_UNIT, HALL_WAREHOUSE),
     MUNICIPAL_WATER("Woda miejska", UTILITIES, HOUSE, PLOT, COMMERCIAL_UNIT, HALL_WAREHOUSE),
     WELL("Studnia", UTILITIES, HOUSE, PLOT),
     GAS("Gaz", UTILITIES, HOUSE, PLOT, COMMERCIAL_UNIT, HALL_WAREHOUSE),
@@ -127,7 +127,7 @@ public enum Feature implements Dictionary {
         return types;
     }
 
-    /** Pogrupowane cechy — front rysuje z tego sekcje formularza. */
+    /** Pogrupowane cechy. Front rysuje z tego sekcje formularza. */
     public static Map<FeatureCategory, List<Feature>> byCategory() {
         return Arrays.stream(values())
                 .collect(Collectors.groupingBy(Feature::category,
