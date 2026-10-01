@@ -172,7 +172,7 @@ public record PropertyResponse(
                 name(p.getRoomBathroom()),
                 p.getAvailableFrom(),
                 // Kopie, nie referencje. Kolekcje encji są leniwe, a rekord
-                // przeżywa transakcję — Jackson rozwijałby je, kiedy sesja
+                // przeżywa transakcję. Jackson rozwijałby je, kiedy sesja
                 // jest już zamknięta. Set.copyOf iteruje je tu i teraz.
                 Set.copyOf(p.getFeatures()),
                 Set.copyOf(p.getHeatingTypes()),

@@ -76,7 +76,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Kontener obsługuje błędy osobnym przebiegiem przez /error.
                         // Bez tej reguły ten przebieg wpada na `anyRequest().authenticated()`
-                        // i każdy błąd — 400 z niepoprawnego JSON-a, 500 z bazy — wraca do
+                        // i każdy błąd 400 z niepoprawnego JSON-a, 500 z bazy wraca do
                         // przeglądarki jako 401. Klient traktuje to wtedy jak wygasłą sesję
                         // i wylogowuje użytkownika zamiast pokazać, co się naprawdę stało.
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()

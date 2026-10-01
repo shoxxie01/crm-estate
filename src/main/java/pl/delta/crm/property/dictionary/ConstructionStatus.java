@@ -3,8 +3,8 @@ package pl.delta.crm.property.dictionary;
 /**
  * Stan wykończenia (Otodom: ConstructionStatus).
  *
- * <p>Otodom trzyma dla mieszkania trzy wartości, a dla domu i hali pięć —
- * z dwoma stanami surowymi. Zbiór jest sumą; {@link #DEVELOPER_STANDARD} dochodzi
+ * <p>Otodom trzyma dla mieszkania trzy wartości, a dla domu i hali pięć.
+ * Z dwoma stanami surowymi. Zbiór jest sumą; {@link #DEVELOPER_STANDARD} dochodzi
  * od nas, bo to najczęściej używane określenie na rynku pierwotnym.
  */
 public enum ConstructionStatus implements Dictionary {

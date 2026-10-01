@@ -2,7 +2,7 @@ package pl.delta.crm.inquiry;
 
 import pl.delta.crm.property.dictionary.Dictionary;
 
-/** Po co klient przychodzi z formularza — tylko te dwie opcje, najem obsługuje agent. */
+/** Po co klient przychodzi z formularza. Tylko te dwie opcje, najem obsługuje agent. */
 public enum InquiryIntent implements Dictionary {
 
     /** Opisuje kryteria; przyjęcie tworzy poszukiwanie. */

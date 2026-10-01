@@ -71,7 +71,7 @@ public class AuthService {
     @Transactional(readOnly = true)
     public AuthResponse login(LoginRequest request) {
         // Rzuca BadCredentialsException zarówno przy złym haśle, jak i nieznanym
-        // e-mailu — celowo nie rozróżniamy, żeby nie dało się enumerować kont.
+        // e-mailu. Celowo nie rozróżniamy, żeby nie dało się enumerować kont.
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(normalize(request.email()), request.password()));
 

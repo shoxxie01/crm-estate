@@ -23,7 +23,7 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Dopasowanie ofert do poszukiwań — w obie strony: „kto szuka czegoś takiego
+ * Dopasowanie ofert do poszukiwań. W obie strony: „kto szuka czegoś takiego
  * jak ta oferta" i „co mamy dla tego klienta".
  *
  * <p>Liczone na żądanie, a nie zapisywane: kryteria i oferty zmieniają się
@@ -35,7 +35,7 @@ import java.util.UUID;
 public class MatchingService {
 
     /**
-     * Oferty, którymi da się jeszcze obsłużyć klienta. Robocza też — agent
+     * Oferty, którymi da się jeszcze obsłużyć klienta. Robocza też. Agent
      * zakłada ofertę i od razu chce wiedzieć, do kogo z nią dzwonić, zanim
      * w ogóle trafi na portale.
      */

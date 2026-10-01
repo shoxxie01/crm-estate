@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Nowa kolejność galerii — komplet identyfikatorów w docelowej kolejności,
+ * Nowa kolejność galerii. Komplet identyfikatorów w docelowej kolejności,
  * a nie „przesuń to o jedno w lewo".
  *
  * <p>Stan końcowy zamiast operacji, bo przeciąganie kafelków generuje ich serię,

@@ -32,7 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * Publiczny formularz zgłoszeniowy i skrzynka zgłoszeń.
  *
- * <p>Każdy test wysyła zgłoszenia z innego adresu IP — limit zgłoszeń jest
+ * <p>Każdy test wysyła zgłoszenia z innego adresu IP. Limit zgłoszeń jest
  * w pamięci procesu i przeżywa między testami tej samej klasy.
  */
 @SpringBootTest
@@ -397,7 +397,7 @@ class InquiryTest {
     }
 
     @Test
-    @DisplayName("formularz przyjmuje tylko kupno albo sprzedaż — bez najmu i bez brakujących danych")
+    @DisplayName("formularz przyjmuje tylko kupno albo sprzedaż. Bez najmu i bez brakujących danych")
     void onlyBuyOrSell() throws Exception {
         mockMvc.perform(submit("""
                         {

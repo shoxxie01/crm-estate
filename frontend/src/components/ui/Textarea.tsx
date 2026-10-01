@@ -5,7 +5,7 @@ interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   label: string;
   error?: string;
   hint?: string;
-  /** Licznik znaków — przydatny tam, gdzie portal ma twardy limit. */
+  /** Licznik znaków. Przydatny tam, gdzie portal ma twardy limit. */
   counter?: { value: number; max: number };
 }
 

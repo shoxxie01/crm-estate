@@ -1,6 +1,6 @@
 package pl.delta.crm.property.dictionary;
 
-/** Materiał budowy (Otodom: BuildingMaterial — wspólny dla mieszkania i domu). */
+/** Materiał budowy (Otodom: BuildingMaterial. Wspólny dla mieszkania i domu). */
 public enum BuildingMaterial implements Dictionary {
 
     BRICK("Cegła"),

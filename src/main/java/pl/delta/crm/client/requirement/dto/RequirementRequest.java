@@ -22,8 +22,8 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Formularz poszukiwania. Wymagane są tylko transakcja i rodzaj nieruchomości —
- * reszta to tyle, ile klient zdążył powiedzieć. Relacje między polami
+ * Formularz poszukiwania. Wymagane są tylko transakcja i rodzaj nieruchomości.
+ * Reszta to tyle, ile klient zdążył powiedzieć. Relacje między polami
  * („od" nie większe niż „do", pokój tylko na wynajem) sprawdza serwis.
  */
 public record RequirementRequest(
@@ -78,7 +78,7 @@ public record RequirementRequest(
 
         Boolean excludeTopFloor,
 
-        /** Tylko przy kupnie — przy najmie serwis go czyści. */
+        /** Tylko przy kupnie. Przy najmie serwis go czyści. */
         Financing financing,
 
         LocalDate moveInDate,

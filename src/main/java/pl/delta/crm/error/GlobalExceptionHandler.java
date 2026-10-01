@@ -71,6 +71,15 @@ public class GlobalExceptionHandler {
         return problem;
     }
 
+    @ExceptionHandler({DealNotFoundException.class, InterestNotFoundException.class,
+            DeadlineNotFoundException.class})
+    public ProblemDetail handleDealNotFound(RuntimeException exception) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.NOT_FOUND, exception.getMessage());
+        problem.setTitle("Nie znaleziono");
+        return problem;
+    }
+
     @ExceptionHandler(RequirementNotFoundException.class)
     public ProblemDetail handleRequirementNotFound(RequirementNotFoundException exception) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(
@@ -95,7 +104,7 @@ public class GlobalExceptionHandler {
         return problem;
     }
 
-    /** Operacja zastrzeżona dla roli — np. wymiana linku formularza tylko przez administratora. */
+    /** Operacja zastrzeżona dla roli. Np. wymiana linku formularza tylko przez administratora. */
     @ExceptionHandler(AccessDeniedException.class)
     public ProblemDetail handleAccessDenied(AccessDeniedException exception) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(
@@ -114,7 +123,7 @@ public class GlobalExceptionHandler {
 
     /**
      * Storage nie odpowiedział. Osobno od błędów walidacji, bo użytkownik nie ma
-     * tu czego poprawić — ma spróbować ponownie. Treść wyjątku nie idzie na
+     * tu czego poprawić. Ma spróbować ponownie. Treść wyjątku nie idzie na
      * zewnątrz, poszłyby w niej adresy i nazwy bucketów.
      */
     @ExceptionHandler(MediaStorageException.class)
@@ -129,7 +138,7 @@ public class GlobalExceptionHandler {
     /**
      * Geokoder milczy albo odmówił obsługi. Osobny status od błędów walidacji:
      * w formularzu oferty nie ma tu czego poprawiać, a sam zapis oferty nadal
-     * jest możliwy — mapa jest udogodnieniem, nie warunkiem.
+     * jest możliwy. Mapa jest udogodnieniem, nie warunkiem.
      */
     @ExceptionHandler(GeoUnavailableException.class)
     public ProblemDetail handleGeoUnavailable(GeoUnavailableException exception) {
@@ -161,7 +170,7 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Ciało żądania, którego nie da się odczytać — uszkodzony JSON albo wartość
+     * Ciało żądania, którego nie da się odczytać. Uszkodzony JSON albo wartość
      * spoza słownika w polu enumowym. Bez tej obsługi błąd trafiał do domyślnego
      * `/error` i wracał w innym kształcie niż reszta API, więc front nie miał
      * czego pokazać poza komunikatem zastępczym.
@@ -177,12 +186,12 @@ public class GlobalExceptionHandler {
 
     /**
      * Naruszenie więzów bazy, którego nie wychwyciła wcześniejsza walidacja.
-     * Nie pokazujemy treści błędu SQL — poszłyby w niej nazwy kolumn i tabel.
+     * Nie pokazujemy treści błędu SQL. Poszłyby w niej nazwy kolumn i tabel.
      */
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ProblemDetail handleDataIntegrity(DataIntegrityViolationException exception) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(
-                HttpStatus.CONFLICT, "Nie udało się zapisać danych — sprawdź poprawność pól.");
+                HttpStatus.CONFLICT, "Nie udało się zapisać danych. Sprawdź poprawność pól.");
         problem.setTitle("Konflikt danych");
         return problem;
     }

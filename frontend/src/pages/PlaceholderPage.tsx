@@ -19,7 +19,7 @@ export function PlaceholderPage() {
         </h1>
         <p className="mt-1.5 text-[13px] leading-relaxed text-ink-secondary">
           Ten moduł nie jest jeszcze zbudowany. Szata graficzna, nawigacja
-          i design tokeny są już na miejscu — widok wystarczy wypełnić treścią.
+          i design tokeny są już na miejscu. Widok wystarczy wypełnić treścią.
         </p>
       </div>
     </div>

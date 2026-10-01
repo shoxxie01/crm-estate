@@ -10,11 +10,11 @@ import {
   formatPriceRange,
 } from "../clients/requirementMeta";
 
-/** Statusy, dla których serwer w ogóle szuka klientów — jak MatchingService.AVAILABLE. */
+/** Statusy, dla których serwer w ogóle szuka klientów. Jak MatchingService.AVAILABLE. */
 const AVAILABLE = new Set(["DRAFT", "ACTIVE", "RESERVED"]);
 
 /**
- * „Kto szuka czegoś takiego" — klienci z aktywnym poszukiwaniem pasującym do
+ * „Kto szuka czegoś takiego". Klienci z aktywnym poszukiwaniem pasującym do
  * tej oferty. Z kontaktem od razu pod ręką, bo następny krok to telefon.
  */
 export function PropertyMatches({
@@ -89,7 +89,7 @@ export function PropertyMatches({
               r.propertyTypes.map((t) => label(t) ?? t).join(", "),
               r.locations.length
                 ? r.locations
-                    .map((l) => (l.district ? `${l.city} — ${l.district}` : l.city))
+                    .map((l) => (l.district ? `${l.city}. ${l.district}` : l.city))
                     .join(" · ")
                 : null,
               formatPriceRange(r.priceMin, r.priceMax),

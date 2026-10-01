@@ -1,11 +1,11 @@
 package pl.delta.crm.property.dictionary;
 
 /**
- * Województwo (Otodom: Province — pole obowiązkowe).
+ * Województwo (Otodom: Province. Pole obowiązkowe).
  *
  * <p>Otodom przyjmuje zarówno swój numer, jak i nazwę tekstową; trzymamy nazwę,
  * bo jest jednoznaczna i niezależna od ich numeracji. Powiat ({@code county})
- * został polem tekstowym celowo — słownik powiatów Otodom ma kilkaset pozycji,
+ * został polem tekstowym celowo. Słownik powiatów Otodom ma kilkaset pozycji,
  * bywa aktualizowany i zawiera nazwy powtarzające się między województwami
  * (jest powiat bielski w śląskim i w podlaskim). Para województwo + nazwa
  * powiatu rozstrzyga to jednoznacznie, a numer i tak trzeba by odświeżać z ich API.

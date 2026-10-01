@@ -5,7 +5,7 @@ import pl.delta.crm.property.dto.PropertySummary;
 
 import java.util.List;
 
-/** Oferta pasująca do poszukiwania — na kartę klienta. */
+/** Oferta pasująca do poszukiwania. Na kartę klienta. */
 public record PropertyMatchResponse(
         PropertySummary property,
         List<CriterionResult> criteria,

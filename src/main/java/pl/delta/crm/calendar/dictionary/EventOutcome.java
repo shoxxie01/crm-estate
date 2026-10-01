@@ -3,7 +3,7 @@ package pl.delta.crm.calendar.dictionary;
 import pl.delta.crm.property.dictionary.Dictionary;
 
 /**
- * Rezultat odbytego zdarzenia — wypełniany dopiero przy statusie
+ * Rezultat odbytego zdarzenia. Wypełniany dopiero przy statusie
  * {@code COMPLETED} (pilnuje tego serwis i CHECK w migracji V10).
  *
  * <p>To jedyne pole kalendarza, które niesie informację zwrotną o ofercie:

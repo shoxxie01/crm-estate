@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/** Skrzynka zgłoszeń z publicznego formularza — dla zalogowanych, w zakresie ich biura. */
+/** Skrzynka zgłoszeń z publicznego formularza. Dla zalogowanych, w zakresie ich biura. */
 @RestController
 @RequestMapping("/api/inquiries")
 public class InquiryController {
@@ -37,7 +37,7 @@ public class InquiryController {
         return inquiries.list(status, principal.user());
     }
 
-    /** Licznik nowych zgłoszeń do menu bocznego — lżejszy niż cała lista. */
+    /** Licznik nowych zgłoszeń do menu bocznego. Lżejszy niż cała lista. */
     @GetMapping("/count")
     public Map<String, Long> count(@AuthenticationPrincipal AppUserPrincipal principal) {
         return Map.of("new", inquiries.countNew(principal.user()));

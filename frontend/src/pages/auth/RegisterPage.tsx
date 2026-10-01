@@ -87,7 +87,7 @@ export function RegisterPage() {
   return (
     <AuthLayout
       title="Załóż konto biura"
-      subtitle="Utwórz konto administratora — współpracowników dodasz później."
+      subtitle="Utwórz konto administratora. Współpracowników dodasz później."
       footer={
         <>
           Masz już konto?{" "}
@@ -152,7 +152,7 @@ export function RegisterPage() {
             value={form.password}
             onChange={update("password")}
             error={fieldErrors.password}
-            hint="Minimum 8 znaków. Wielkie i małe litery oraz cyfra znacząco podnoszą siłę."
+            hint="Minimum 8 znaków."
             trailing={
               <button
                 type="button"

@@ -9,13 +9,13 @@ services:
     ports:
       # 5434, bo 5432 zajmuje Postgres zainstalowany natywnie na tej maszynie,
       # a 5433 kontener innego projektu (estatemanager-postgres). Na czystej
-      # maszynie możesz wrócić do "5432:5432" — pamiętaj wtedy o porcie
+      # maszynie możesz wrócić do "5432:5432". Pamiętaj wtedy o porcie
       # w spring.datasource.url.
       - "5434:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      # Aplikacja startuje szybciej niż baza — bez tego pierwsze połączenie potrafi
+      # Aplikacja startuje szybciej niż baza. Bez tego pierwsze połączenie potrafi
       # trafić w moment, gdy Postgres jeszcze przyjmuje tylko połączenia lokalne.
       test: ["CMD-SHELL", "pg_isready -U delta -d delta_crm"]
       interval: 5s
@@ -23,7 +23,7 @@ services:
       retries: 10
 
   # Storage zdjęć ofert. Gadamy z nim przez API S3, więc ten sam kod działa
-  # później na prawdziwym S3 — MinIO jest tu implementacją, nie zależnością.
+  # później na prawdziwym S3. MinIO jest tu implementacją, nie zależnością.
   minio:
     # Celowo bez pinowania wersji, w odróżnieniu od Postgresa: MinIO wydaje obrazy
     # znacznikiem RELEASE.<data>, a nie numerem, więc przypięcie postarza się
@@ -33,11 +33,11 @@ services:
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: delta
-      # Minimum 8 znaków — MinIO odmawia startu przy krótszym.
+      # Minimum 8 znaków. MinIO odmawia startu przy krótszym.
       MINIO_ROOT_PASSWORD: delta12345
     ports:
-      # 9000 — API S3 (tu chodzi backend i przeglądarka po podpisany URL),
-      # 9001 — konsola webowa do podejrzenia bucketa.
+      # 9000. API S3 (tu chodzi backend i przeglądarka po podpisany URL),
+      # 9001. Konsola webowa do podejrzenia bucketa.
       - "9000:9000"
       - "9001:9001"
     volumes:

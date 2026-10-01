@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   AlertTriangle,
+  ArrowRight,
   Building2,
   CalendarClock,
+  Kanban,
   Pencil,
   Phone,
   Trash2,
@@ -18,6 +20,7 @@ import {
   type EventDetail,
 } from "../../api/calendar";
 import { ApiError } from "../../api/client";
+import { changeDealStage } from "../../api/deals";
 import { Badge } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
 import { cn } from "../../lib/cn";
@@ -38,7 +41,7 @@ interface EventPanelProps {
  *
  * Poza podglądem robi jedną rzecz, o którą chodzi w kalendarzu CRM-u najbardziej:
  * pozwala domknąć termin dwoma kliknięciami. Rezultat wpisany zaraz po wizycie
- * jest wart tyle, ile cała reszta modułu — wpisany po tygodniu nie jest wart nic.
+ * jest wart tyle, ile cała reszta modułu. Wpisany po tygodniu nie jest wart nic.
  */
 export function EventPanel({
   eventId,
@@ -56,6 +59,9 @@ export function EventPanel({
   const [outcome, setOutcome] = useState("");
   const [outcomeNote, setOutcomeNote] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
+  /** Odrzucone propozycje. W obrębie panelu, żeby „Nie teraz" nie wracało przy każdej zmianie. */
+  const [dismissed, setDismissed] = useState<string | null>(null);
+  const [moving, setMoving] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -94,6 +100,26 @@ export function EventPanel({
       );
     } finally {
       setBusy(false);
+    }
+  }
+
+  /** Przeniesienie transakcji zgodnie z propozycją. Jedno kliknięcie z kalendarza. */
+  async function acceptSuggestion() {
+    const suggestion = event?.suggestion;
+    if (!suggestion) return;
+    setMoving(true);
+    setError(null);
+    try {
+      await changeDealStage(suggestion.dealId, { stage: suggestion.toStage });
+      // Odczyt od nowa: propozycja zniknie sama, bo karta jest już w tym etapie.
+      setEvent(await fetchEvent(eventId));
+      onChanged();
+    } catch (cause) {
+      setError(
+        cause instanceof ApiError ? cause.message : "Nie udało się przenieść transakcji.",
+      );
+    } finally {
+      setMoving(false);
     }
   }
 
@@ -170,7 +196,7 @@ export function EventPanel({
           <p className="text-[13px] text-ink-secondary">{summary.location}</p>
         )}
 
-        {/* Powiązania — sedno modułu: z terminu ma być jedno kliknięcie do oferty i klienta. */}
+        {/* Powiązania. Sedno modułu: z terminu ma być jedno kliknięcie do oferty i klienta. */}
         {summary.propertyId && (
           <Link
             to={`/nieruchomosci/${summary.propertyId}`}
@@ -195,6 +221,35 @@ export function EventPanel({
             <span className="truncate text-ink">{summary.clientName}</span>
             <span className="ml-auto shrink-0 text-[11px] text-ink-muted">właściciel</span>
           </Link>
+        )}
+
+        {summary.dealId && (
+          <Link
+            to={`/kanban?karta=${summary.dealId}`}
+            className="flex items-center gap-2 rounded-md border border-line px-2.5 py-2 text-[13px] transition-colors hover:border-line-strong hover:bg-subtle"
+          >
+            <Kanban className="size-4 shrink-0 text-ink-muted" strokeWidth={2} />
+            <span className="truncate text-ink">{summary.dealTitle}</span>
+            <span className="ml-auto shrink-0 text-[11px] text-ink-muted">transakcja</span>
+          </Link>
+        )}
+
+        {event.participants.length > 0 && (
+          <div className="rounded-md border border-line px-2.5 py-2">
+            <p className="text-[12px] font-medium text-ink">
+              Uczestnicy · {event.participants.length}
+            </p>
+            <ul className="mt-1 flex flex-col gap-0.5">
+              {event.participants.map((participant) => (
+                <li key={participant.id} className="flex items-center gap-2 text-[12px]">
+                  <span className="truncate text-ink">{participant.name}</span>
+                  <span className="ml-auto shrink-0 text-ink-muted">
+                    {label(participant.status)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
 
         {summary.counterpartyName && (
@@ -232,10 +287,40 @@ export function EventPanel({
           </div>
         )}
 
-        {/* Kolizje ostrzegają, nie blokują — decyzja należy do agenta. */}
+        {event.suggestion &&
+          dismissed !== `${event.suggestion.dealId}:${event.suggestion.toStage}` && (
+            <div className="rounded-md border border-accent-ring/60 bg-accent-subtle px-2.5 py-2">
+              <p className="text-[12px] text-ink-secondary">{event.suggestion.reason}</p>
+              <p className="mt-1 flex flex-wrap items-center gap-1 text-[12px] font-medium text-ink">
+                Przenieść „{event.suggestion.dealTitle}”:
+                <span className="whitespace-nowrap">
+                  {label(event.suggestion.fromStage)}{" "}
+                  <ArrowRight className="inline size-3" strokeWidth={2} />{" "}
+                  {label(event.suggestion.toStage)}
+                </span>
+              </p>
+              <div className="mt-2 flex gap-2">
+                <Button size="sm" onClick={acceptSuggestion} disabled={moving}>
+                  {moving ? "Przenoszenie…" : "Przenieś kartę"}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() =>
+                    setDismissed(`${event.suggestion!.dealId}:${event.suggestion!.toStage}`)
+                  }
+                  disabled={moving}
+                >
+                  Nie teraz
+                </Button>
+              </div>
+            </div>
+          )}
+
+        {/* Kolizje ostrzegają, nie blokują. Decyzja należy do agenta. */}
         {event.conflicts.length > 0 && (
           <div className="rounded-md border border-warning/40 bg-warning/12 px-2.5 py-2">
-            <p className="flex items-center gap-1.5 text-[12px] font-medium text-[#8a5c00]">
+            <p className="flex items-center gap-1.5 text-[12px] font-medium text-warning-ink">
               <AlertTriangle className="size-3.5" strokeWidth={2} />
               Nakłada się na {event.conflicts.length}{" "}
               {event.conflicts.length === 1 ? "inny termin" : "inne terminy"}
@@ -247,6 +332,9 @@ export function EventPanel({
                     {timeRange(conflict.startsAt, conflict.endsAt, conflict.allDay)}
                   </span>{" "}
                   · {conflict.title}
+                  {conflict.agentId !== summary.agentId && (
+                    <span className="text-ink-muted"> · {conflict.agentName}</span>
+                  )}
                 </li>
               ))}
             </ul>
@@ -276,7 +364,7 @@ export function EventPanel({
               onChange={(changed) => setOutcome(changed.target.value)}
               className="h-8 w-full rounded-md border border-line bg-surface px-2 text-[13px] text-ink"
             >
-              <option value="">— nie podano —</option>
+              <option value="">Nie podano</option>
               {dictionaries?.outcome.map((entry) => (
                 <option key={entry.value} value={entry.value}>
                   {entry.label}

@@ -2,7 +2,7 @@
 // Przy sześciu, siedmiu zerach bez grupowania łatwo o pomyłkę rzędu wielkości,
 // a w poszukiwaniu klienta grosze nie mają znaczenia.
 //
-// Karetkę odtwarzamy tak jak w kodzie pocztowym i telefonie — po liczbie cyfr.
+// Karetkę odtwarzamy tak jak w kodzie pocztowym i telefonie. Po liczbie cyfr.
 
 import { caretAfterDigit } from "./caret";
 
@@ -15,7 +15,7 @@ export function formatAmount(raw: string): string {
     .replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 }
 
-/** Maska pola kwoty — kontrakt jak `maskPhone`. */
+/** Maska pola kwoty. Kontrakt jak `maskPhone`. */
 export function maskAmount(
   raw: string,
   caret: number,
@@ -25,7 +25,7 @@ export function maskAmount(
   let digits = raw.replace(/\D/g, "").slice(0, MAX_DIGITS);
   let digitsBefore = (raw.slice(0, caret).match(/\d/g) ?? []).length;
 
-  // Skasowana sama spacja — kasujemy cyfrę obok, zgodnie z kierunkiem klawisza.
+  // Skasowana sama spacja. Kasujemy cyfrę obok, zgodnie z kierunkiem klawisza.
   if (raw.length < previous.length && formatAmount(digits) === previous) {
     if (deleteForward) {
       digits = digits.slice(0, digitsBefore) + digits.slice(digitsBefore + 1);

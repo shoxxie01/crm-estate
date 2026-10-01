@@ -12,7 +12,7 @@ import { formatDayMonth, formatTime, timeRange } from "./dates";
 import { badgeTone, eventIcon, statusTone, typeInk } from "./eventMeta";
 
 /**
- * Terminy związane z ofertą albo z klientem — sekcja „Terminy" na ich kartach.
+ * Terminy związane z ofertą albo z klientem. Sekcja „Terminy" na ich kartach.
  *
  * <p>To jest właściwe spięcie kalendarza z resztą CRM-u: z karty oferty widać
  * całą historię pokazów razem z rezultatami, więc rozmowa z właścicielem

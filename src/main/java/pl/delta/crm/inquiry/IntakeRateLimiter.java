@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Limit zgłoszeń z jednego adresu IP — druga, obok pola-pułapki, zapora przed
+ * Limit zgłoszeń z jednego adresu IP. Druga, obok pola-pułapki, zapora przed
  * zasypaniem skrzynki przez skrypt.
  *
  * <p>W pamięci procesu, bez zewnętrznego magazynu: przy jednej instancji
@@ -52,7 +52,7 @@ public class IntakeRateLimiter {
             recent.addLast(now);
         }
 
-        // Sprzątanie adresów, które dawno nic nie wysłały — inaczej mapa rośnie bez końca.
+        // Sprzątanie adresów, które dawno nic nie wysłały. Inaczej mapa rośnie bez końca.
         if (submissions.size() > 10_000) {
             submissions.entrySet().removeIf(entry -> {
                 synchronized (entry.getValue()) {

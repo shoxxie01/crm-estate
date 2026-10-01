@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Plus, Users } from "lucide-react";
 import {
   fetchClientDictionaries,
@@ -18,20 +18,28 @@ import { ClientIntent } from "./intent";
 
 export function ClientsPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [dictionaries, setDictionaries] = useState<ClientDictionaries | null>(
     null,
   );
   const [page, setPage] = useState<PageResponse<ClientSummary> | null>(null);
   const [status, setStatus] = useState("");
-  const [search, setSearch] = useState("");
+  // Fraza z adresu przychodzi z linku w wyszukiwarce w nagłówku.
+  const urlSearch = searchParams.get("szukaj") ?? "";
+  const [search, setSearch] = useState(urlSearch);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Strona zostaje zamontowana, gdy link z nagłówka podmienia frazę w adresie.
+  useEffect(() => {
+    setSearch(urlSearch);
+  }, [urlSearch]);
 
   useEffect(() => {
     fetchClientDictionaries().then(setDictionaries).catch(() => undefined);
   }, []);
 
-  // Odpytujemy dopiero po chwili od ostatniego znaku — bez tego każde wciśnięcie
+  // Odpytujemy dopiero po chwili od ostatniego znaku. Bez tego każde wciśnięcie
   // klawisza to osobne żądanie do backendu.
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -167,7 +175,7 @@ export function ClientsPage() {
                     <td className="px-4 py-2.5 text-ink-secondary">
                       {client.source
                         ? (sourceLabels.get(client.source) ?? client.source)
-                        : "—"}
+                        : "-"}
                     </td>
                     <td className="px-4 py-2.5">
                       <ClientIntent

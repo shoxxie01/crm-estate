@@ -90,7 +90,7 @@ export function ClientFormPage() {
     return e;
   }
 
-  // Wynik walidacji klienta liczony przy każdym renderze — zawsze świeży.
+  // Wynik walidacji klienta liczony przy każdym renderze. Zawsze świeży.
   const liveErrors = validate();
 
   // Błąd pokazujemy od razu po opuszczeniu pola (lub po próbie zapisu),
@@ -179,7 +179,7 @@ export function ClientFormPage() {
           </h2>
           <p className="mt-0.5 text-[12px] text-ink-muted">
             Rolę klienta wyznaczają powierzone oferty (sprzedający,
-            wynajmujący) i poszukiwania (kupujący, najemca) — dodasz je po
+            wynajmujący) i poszukiwania (kupujący, najemca). Dodasz je po
             zapisaniu, na karcie klienta.
           </p>
         </header>

@@ -3,7 +3,7 @@ package pl.delta.crm.property.dictionary;
 /**
  * Portale ogłoszeniowe, do których eksportujemy oferty.
  *
- * <p>Limity zdjęć różnią się między serwisami — trzymamy je przy portalu, żeby
+ * <p>Limity zdjęć różnią się między serwisami. Trzymamy je przy portalu, żeby
  * walidacja przed wysyłką miała się o co oprzeć. Dla Otodom limit wynosi 20
  * zdjęć, każde do 5 MB, min. 400×300 px, format JPEG lub GIF.
  */

@@ -8,7 +8,7 @@ const currency = new Intl.NumberFormat("pl-PL", {
 export const formatNumber = (value: number) => number.format(value);
 export const formatCurrency = (value: number) => currency.format(value);
 
-/** 4 250 000 -> "4,25 mln zł" — dla kafelków KPI, gdzie liczy się skanowalność. */
+/** 4 250 000 -> "4,25 mln zł". Dla kafelków KPI, gdzie liczy się skanowalność. */
 export function formatCompactPLN(value: number): string {
   if (Math.abs(value) >= 1_000_000) {
     return `${new Intl.NumberFormat("pl-PL", { maximumFractionDigits: 2 }).format(value / 1_000_000)} mln zł`;

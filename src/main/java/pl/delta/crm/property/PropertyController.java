@@ -29,7 +29,7 @@ import java.net.URI;
 import java.util.UUID;
 
 /**
- * Zakres widoczności bierze się wyłącznie z tokenu — identyfikator biura nie
+ * Zakres widoczności bierze się wyłącznie z tokenu. Identyfikator biura nie
  * jest parametrem żądania. Gdyby był, wystarczyłoby go podmienić, żeby zobaczyć
  * oferty konkurencji.
  */

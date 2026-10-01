@@ -8,7 +8,7 @@ import java.time.Duration;
  * Konfiguracja geokodowania (OpenStreetMap / Nominatim).
  *
  * @param nominatimUrl  adres instancji Nominatim bez końcowego ukośnika
- * @param userAgent     nagłówek {@code User-Agent} — polityka OSM wymaga, żeby
+ * @param userAgent     nagłówek {@code User-Agent}. Polityka OSM wymaga, żeby
  *                      jednoznacznie wskazywał aplikację i sposób kontaktu;
  *                      anonimowe żądania bywają blokowane
  * @param timeout       limit na połączenie i na odczyt

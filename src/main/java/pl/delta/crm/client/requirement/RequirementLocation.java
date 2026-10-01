@@ -3,7 +3,7 @@ package pl.delta.crm.client.requirement;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 
-/** Miejscowość z opcjonalną dzielnicą — ten sam podział co w adresie oferty. */
+/** Miejscowość z opcjonalną dzielnicą. Ten sam podział co w adresie oferty. */
 @Embeddable
 public class RequirementLocation {
 

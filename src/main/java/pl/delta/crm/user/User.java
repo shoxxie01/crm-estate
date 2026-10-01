@@ -23,7 +23,7 @@ public class User {
     @GeneratedValue
     private UUID id;
 
-    /** Login użytkownika. Trzymany małymi literami — porównanie jest wtedy proste i deterministyczne. */
+    /** Login użytkownika. Trzymany małymi literami. Porównanie jest wtedy proste i deterministyczne. */
     @Column(nullable = false, unique = true, length = 190)
     private String email;
 
@@ -37,7 +37,7 @@ public class User {
     private String lastName;
 
     /**
-     * Nazwa biura jako tekst — zostawiona wyłącznie dla zgodności wstecz.
+     * Nazwa biura jako tekst. Zostawiona wyłącznie dla zgodności wstecz.
      * Źródłem prawdy jest {@link #agency}; kolumna zniknie osobną migracją,
      * kiedy nic już jej nie czyta.
      */

@@ -22,11 +22,11 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * Klient biura — osoba prywatna po stronie podaży, popytu albo obu naraz.
+ * Klient biura. Osoba prywatna po stronie podaży, popytu albo obu naraz.
  *
  * <p>Rola celowo <b>nie jest polem</b> tej encji. „Sprzedający" / „wynajmujący"
  * wynika z {@code TransactionType} ofert, które klient powierzył biuru (patrz
- * {@code Property.owner}), a „kupujący" / „najemca" — z jego aktywnych
+ * {@code Property.owner}), a „kupujący" / „najemca". Z jego aktywnych
  * poszukiwań ({@code ClientRequirement}). Ta sama osoba potrafi sprzedawać
  * kawalerkę i jednocześnie szukać większego mieszkania, więc rola zapisana
  * na osobie byłaby zwyczajnie nieprawdziwa.
@@ -60,7 +60,7 @@ public class Client {
 
     /**
      * Telefon jest w praktyce podstawowym kanałem kontaktu na rynku
-     * nieruchomości, ale nie wymuszamy go twardo — część kontaktów przychodzi
+     * nieruchomości, ale nie wymuszamy go twardo. Część kontaktów przychodzi
      * mailem. Reguła „telefon albo e-mail" pilnowana jest w serwisie i przez
      * {@code CHECK} w migracji.
      */

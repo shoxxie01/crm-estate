@@ -52,14 +52,14 @@ export function PropertiesPage() {
     fetchDictionaries()
       .then(setDictionaries)
       .catch(() =>
-        // Bez słowników filtry byłyby puste i wyglądałyby na zepsute —
-        // lepiej powiedzieć wprost, że to one się nie wczytały.
-        setDictError("Nie udało się wczytać słowników — listy wyboru są puste."),
+        // Bez słowników filtry byłyby puste i wyglądałyby na zepsute.
+        // Lepiej powiedzieć wprost, że to one się nie wczytały.
+        setDictError("Nie udało się wczytać słowników. Listy wyboru są puste."),
       );
   }, []);
 
   // Wydzielone z efektu, bo po skasowaniu oferty trzeba pobrać listę jeszcze
-  // raz — inaczej rozjechałby się licznik „N ofert" w nagłówku.
+  // raz. Inaczej rozjechałby się licznik „N ofert" w nagłówku.
   const load = useCallback(() => {
     setLoading(true);
     return fetchProperties({
@@ -100,7 +100,7 @@ export function PropertiesPage() {
     }
   }
 
-  // Słowniki przychodzą jako listy {value,label} — mapa daje szybki podgląd etykiety.
+  // Słowniki przychodzą jako listy {value,label}. Mapa daje szybki podgląd etykiety.
   const labels = useMemo(() => {
     const map = new Map<string, string>();
     if (!dictionaries) return map;
@@ -117,7 +117,7 @@ export function PropertiesPage() {
 
   const label = (value: string) => labels.get(value) ?? value;
 
-  // Oferta wskazana koszem — okno potwierdzenia nazywa ją wprost, żeby przy
+  // Oferta wskazana koszem. Okno potwierdzenia nazywa ją wprost, żeby przy
   // sześciu podobnych wierszach było widać, którą się kasuje.
   const pendingDelete =
     page?.content.find((property) => property.id === confirmId) ?? null;
@@ -222,7 +222,7 @@ export function PropertiesPage() {
                     <td className="px-4 py-2.5">
                       <div className="flex items-center gap-2.5">
                         {/* Miniatura zdjęcia głównego. Pusty kafelek zamiast
-                            braku kolumny — inaczej wiersze bez zdjęcia
+                            braku kolumny. Inaczej wiersze bez zdjęcia
                             rozjeżdżałyby wyrównanie tytułów. */}
                         {property.coverThumbnailUrl ? (
                           <img
@@ -266,7 +266,7 @@ export function PropertiesPage() {
                     <td className="px-4 py-2.5 text-right tabular-nums text-ink-secondary">
                       {property.pricePerSquareMeter
                         ? formatNumber(Math.round(property.pricePerSquareMeter))
-                        : "—"}
+                        : "-"}
                     </td>
                     <td className="px-4 py-2.5">
                       <Badge tone={statusTones[property.status] ?? "neutral"}>
@@ -292,7 +292,7 @@ export function PropertiesPage() {
                     </td>
 
                     {/* Cały wiersz otwiera kartę oferty, więc kliknięcie kosza
-                        musi się tu zatrzymać — inaczej najpierw przeniosłoby
+                        musi się tu zatrzymać. Inaczej najpierw przeniosłoby
                         na kartę. Samo potwierdzenie jest w oknie modalnym,
                         żeby wiersz nie rozjeżdżał się przyciskami. */}
                     <td
@@ -323,10 +323,10 @@ export function PropertiesPage() {
           description={
             <>
               <span className="font-medium text-ink">
-                {pendingDelete.referenceNumber} — {pendingDelete.title}
+                {pendingDelete.referenceNumber}. {pendingDelete.title}
               </span>
               <br />
-              Operacji nie da się cofnąć — razem z ofertą znikną jej zdjęcia.
+              Operacji nie da się cofnąć. Razem z ofertą znikną jej zdjęcia.
             </>
           }
           busy={deletingId === pendingDelete.id}

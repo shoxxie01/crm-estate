@@ -13,7 +13,7 @@ import java.math.BigDecimal;
 /**
  * Parametry lokalu użytkowego i hali. Otodom trzyma je w dwóch osobnych tagach
  * (CommercialPropertyDetails, HallDetails), ale zbiory pól w dużej części się
- * pokrywają — rozdzielanie ich u siebie oznaczałoby dwie tabele o niemal
+ * pokrywają. Rozdzielanie ich u siebie oznaczałoby dwie tabele o niemal
  * identycznej treści.
  */
 @Embeddable
@@ -40,7 +40,7 @@ public class CommercialDetails {
     @Column(name = "has_loading_ramp")
     private Boolean loadingRamp;
 
-    /** Moc przyłącza energetycznego [kW] — istotna dla hal i magazynów. */
+    /** Moc przyłącza energetycznego [kW]. Istotna dla hal i magazynów. */
     @Column(name = "power_connection_kw", precision = 8, scale = 2)
     private BigDecimal powerConnectionKw;
 

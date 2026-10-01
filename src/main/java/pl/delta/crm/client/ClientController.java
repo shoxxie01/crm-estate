@@ -27,7 +27,7 @@ import java.net.URI;
 import java.util.UUID;
 
 /**
- * Zakres widoczności bierze się wyłącznie z tokenu — identyfikator biura nie
+ * Zakres widoczności bierze się wyłącznie z tokenu. Identyfikator biura nie
  * jest parametrem żądania, tak samo jak przy ofertach.
  */
 @RestController

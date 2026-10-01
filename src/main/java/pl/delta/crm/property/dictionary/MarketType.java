@@ -2,7 +2,7 @@ package pl.delta.crm.property.dictionary;
 
 /**
  * Rynek pierwotny / wtórny (Otodom: MarketType). Pole obowiązkowe przy imporcie
- * dla każdego typu obiektu — dlatego jest {@code NOT NULL} także u nas.
+ * dla każdego typu obiektu. Dlatego jest {@code NOT NULL} także u nas.
  */
 public enum MarketType implements Dictionary {
 

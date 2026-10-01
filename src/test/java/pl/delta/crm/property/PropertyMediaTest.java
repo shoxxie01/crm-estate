@@ -54,7 +54,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * siedzi w tym, że plik faktycznie ląduje w buckecie, że kasowanie go stamtąd
  * usuwa, a podpisany link daje się wygenerować. Kontener jest statyczny i
  * konfigurowany przez {@code @DynamicPropertySource}, bo Spring Boot nie ma dla
- * MinIO adnotacji {@code @ServiceConnection} — w przeciwieństwie do Postgresa.
+ * MinIO adnotacji {@code @ServiceConnection}. W przeciwieństwie do Postgresa.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -210,7 +210,7 @@ class PropertyMediaTest {
         mockMvc.perform(get("/api/properties/{id}/media", propertyId)
                         .header("Authorization", "Bearer " + token))
                 .andExpect(jsonPath("$.length()").value(2))
-                // Pozycje muszą zostać ciągiem od zera — inaczej „zdjęcie główne"
+                // Pozycje muszą zostać ciągiem od zera. Inaczej „zdjęcie główne"
                 // przestaje być pierwsze.
                 .andExpect(jsonPath("$[0].position").value(0))
                 .andExpect(jsonPath("$[0].fileName").value("b.jpg"))
@@ -266,7 +266,7 @@ class PropertyMediaTest {
         String token = tokenFor("anna@delta.pl", "Delta Nieruchomości");
         String propertyId = createFlat(token);
 
-        // Nagłówek mówi, że to JPEG — o formacie decyduje zawartość, nie deklaracja.
+        // Nagłówek mówi, że to JPEG. O formacie decyduje zawartość, nie deklaracja.
         MockMultipartFile fake = new MockMultipartFile("files", "wirus.jpg", "image/jpeg",
                 "MZ to nie jest obrazek".getBytes(StandardCharsets.UTF_8));
 
@@ -278,7 +278,7 @@ class PropertyMediaTest {
     }
 
     @Test
-    @DisplayName("zdjęcie poniżej 400×300 px jest odrzucane — portal go nie przyjmie")
+    @DisplayName("zdjęcie poniżej 400×300 px jest odrzucane. Portal go nie przyjmie")
     void rejectsTooSmallPhoto() throws Exception {
         String token = tokenFor("anna@delta.pl", "Delta Nieruchomości");
         String propertyId = createFlat(token);
@@ -291,7 +291,7 @@ class PropertyMediaTest {
     }
 
     @Test
-    @DisplayName("obce biuro nie doda zdjęcia do cudzej oferty — 404, nie 403")
+    @DisplayName("obce biuro nie doda zdjęcia do cudzej oferty. 404, nie 403")
     void isolatesAgencies() throws Exception {
         String ownerToken = tokenFor("anna@delta.pl", "Delta Nieruchomości");
         String propertyId = createFlat(ownerToken);
@@ -360,8 +360,8 @@ class PropertyMediaTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isNoContent());
 
-        // Wiersze znikają kaskadą bazy, ale kaskada nie wie nic o buckecie —
-        // bez jawnego sprzątania zostawałby tu komplet zdjęć skasowanej oferty.
+        // Wiersze znikają kaskadą bazy, ale kaskada nie wie nic o buckecie.
+        // Bez jawnego sprzątania zostawałby tu komplet zdjęć skasowanej oferty.
         for (String key : keys) {
             assertThatThrownBy(() -> s3.headObject(HeadObjectRequest.builder()
                     .bucket("test-media").key(key).build()))
@@ -372,7 +372,7 @@ class PropertyMediaTest {
     // --- narzędzia -----------------------------------------------------------
 
     /**
-     * JPEG generowany w locie zamiast pliku w repozytorium — test ma sam
+     * JPEG generowany w locie zamiast pliku w repozytorium. Test ma sam
      * decydować o wymiarach, a binaria w repo i tak nikt nie przegląda.
      */
     private static MockMultipartFile jpeg(String part, String name, int width, int height)

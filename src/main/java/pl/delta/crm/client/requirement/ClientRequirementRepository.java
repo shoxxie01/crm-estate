@@ -39,7 +39,7 @@ public interface ClientRequirementRepository extends JpaRepository<ClientRequire
 
     /**
      * Rozkład poszukiwań w danym stanie na typy transakcji, dla całej strony
-     * listy klientów jednym zapytaniem — odpowiednik
+     * listy klientów jednym zapytaniem. Odpowiednik
      * {@code PropertyRepository.countByTransactionForOwners}.
      */
     @Query("""

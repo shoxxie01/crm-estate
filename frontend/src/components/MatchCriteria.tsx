@@ -5,10 +5,10 @@ import { cn } from "../lib/cn";
 /**
  * Wyjaśnienie dopasowania: co się zgadza, co jest „prawie", czego oferta nie
  * mówi. Spełnione kryteria są krótkie (sama nazwa), a te wymagające uwagi
- * niosą uzasadnienie — to z nimi agent idzie do telefonu.
+ * niosą uzasadnienie. To z nimi agent idzie do telefonu.
  */
 export function MatchCriteria({ criteria }: { criteria: MatchCriterion[] }) {
-  // Rodzaj zgadza się zawsze (inaczej pozycji nie byłoby na liście) — nie zaśmiecamy nim.
+  // Rodzaj zgadza się zawsze (inaczej pozycji nie byłoby na liście). Nie zaśmiecamy nim.
   const shown = criteria.filter((c) => c.criterion !== "PROPERTY_TYPE");
   if (shown.length === 0) {
     return (
@@ -36,7 +36,7 @@ export function MatchCriteria({ criteria }: { criteria: MatchCriterion[] }) {
               c.verdict === "NEAR"
                 ? "Blisko, ale poza zakresem"
                 : c.verdict === "UNKNOWN"
-                  ? "Oferta nie ma danych — do dopytania"
+                  ? "Oferta nie ma danych. Do dopytania"
                   : undefined
             }
             className={cn(
@@ -44,9 +44,9 @@ export function MatchCriteria({ criteria }: { criteria: MatchCriterion[] }) {
               preferred
                 ? "border-dashed border-line-strong text-ink-secondary"
                 : c.verdict === "MET"
-                  ? "border-good/30 bg-good/8 text-[#0a7a0a]"
+                  ? "border-good/30 bg-good/8 text-good-ink"
                   : c.verdict === "NEAR"
-                    ? "border-warning/40 bg-warning/12 text-[#8a5c00]"
+                    ? "border-warning/40 bg-warning/12 text-warning-ink"
                     : "border-line bg-subtle text-ink-secondary",
             )}
           >

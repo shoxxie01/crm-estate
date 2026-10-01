@@ -3,7 +3,7 @@ package pl.delta.crm.property.dictionary;
 /**
  * Ogrzewanie. Wielowartościowe, bo dom potrafi mieć jednocześnie gazowe
  * i kominkowe (Otodom HouseDetails: HeatingMask). Dla mieszkania portal
- * przyjmuje pojedynczą wartość (Heating) — eksport wybiera wtedy pierwszą.
+ * przyjmuje pojedynczą wartość (Heating). Eksport wybiera wtedy pierwszą.
  */
 public enum HeatingType implements Dictionary {
 

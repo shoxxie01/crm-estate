@@ -104,7 +104,7 @@ export function RequirementHeadline({
         <MapPin className="mt-px size-3.5 shrink-0 text-ink-muted" strokeWidth={2} />
         {locations.length
           ? locations
-              .map((l) => (l.district ? `${l.city} — ${l.district}` : l.city))
+              .map((l) => (l.district ? `${l.city}. ${l.district}` : l.city))
               .join(" · ")
           : "Lokalizacja obojętna"}
       </p>
@@ -112,7 +112,7 @@ export function RequirementHeadline({
   );
 }
 
-/** Zakresy, rynek, finansowanie, termin i cechy — tylko to, co podano. */
+/** Zakresy, rynek, finansowanie, termin i cechy. Tylko to, co podano. */
 export function RequirementFacts({
   criteria: c,
   labels,

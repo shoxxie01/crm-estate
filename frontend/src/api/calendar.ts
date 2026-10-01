@@ -1,14 +1,15 @@
 import { apiFetch } from "./client";
 import type { DictionaryEntry } from "./properties";
+import type { InterestEntry } from "./deals";
 
 /**
  * Kontrakt modułu kalendarza.
  *
- * Wartości słownikowe (rodzaj, status, rezultat) są stringami — etykiety dają
+ * Wartości słownikowe (rodzaj, status, rezultat) są stringami. Etykiety dają
  * `GET /api/calendar/dictionaries`, jak w pozostałych modułach.
  *
  * Czas leci jako ISO-8601 w UTC (`Instant` po stronie Javy). Front zamienia go
- * na czas lokalny dopiero przy wyświetlaniu — dzięki temu terminy nie skaczą
+ * na czas lokalny dopiero przy wyświetlaniu. Dzięki temu terminy nie skaczą
  * przy zmianie czasu na letni ani przy pracy z innej strefy.
  */
 
@@ -35,6 +36,9 @@ export interface EventSummary {
   propertyTitle: string | null;
   clientId: string | null;
   clientName: string | null;
+  /** Transakcja z tablicy Kanban, której krokiem jest termin. */
+  dealId: string | null;
+  dealTitle: string | null;
   counterpartyName: string | null;
   counterpartyPhone: string | null;
 }
@@ -46,8 +50,26 @@ export interface EventDetail {
   createdByName: string;
   createdAt: string;
   updatedAt: string;
-  /** Inne terminy tego agenta zachodzące na ten zakres. Ostrzeżenie, nie błąd. */
+  /**
+   * Terminy zachodzące na ten zakres. Tego samego agenta albo w tej samej
+   * ofercie. Ostrzeżenie, nie błąd.
+   */
   conflicts: EventSummary[];
+  /** Zainteresowani z transakcji obecni na terminie. */
+  participants: InterestEntry[];
+  /**
+   * Propozycja przeniesienia powiązanej transakcji po rezultacie terminu.
+   * Serwer liczy ją przy każdym odczycie i niczego sam nie przesuwa.
+   */
+  suggestion?: StageSuggestion | null;
+}
+
+export interface StageSuggestion {
+  dealId: string;
+  dealTitle: string;
+  fromStage: string;
+  toStage: string;
+  reason: string;
 }
 
 export interface CreateEventPayload {
@@ -62,6 +84,9 @@ export interface CreateEventPayload {
   allDay?: boolean;
   propertyId?: string | null;
   clientId?: string | null;
+  dealId?: string | null;
+  /** Zainteresowani z transakcji, którzy będą na terminie. */
+  participantIds?: string[];
   counterpartyName?: string;
   counterpartyPhone?: string;
   agentId?: string;
@@ -81,7 +106,7 @@ export function fetchCalendarDictionaries() {
 }
 
 /**
- * Terminy przecinające zakres. Zakres jest zamknięty i obowiązkowy — kalendarz
+ * Terminy przecinające zakres. Zakres jest zamknięty i obowiązkowy. Kalendarz
  * nigdy nie pyta „o wszystko", a serwer i tak odrzuci okno szersze niż pół roku.
  */
 export function fetchEvents(from: Date, to: Date, filters: EventFilters = {}) {
@@ -115,7 +140,7 @@ export function updateEvent(id: string, payload: CreateEventPayload) {
   });
 }
 
-/** Domknięcie terminu jednym ruchem — status, rezultat i notatka. */
+/** Domknięcie terminu jednym ruchem. Status, rezultat i notatka. */
 export function updateEventStatus(
   id: string,
   payload: { status: string; outcome?: string | null; outcomeNote?: string },
@@ -130,7 +155,7 @@ export function deleteEvent(id: string) {
   return apiFetch<void>(`/calendar/events/${id}`, { method: "DELETE" });
 }
 
-/** Terminy powiązane z ofertą — sekcja „Terminy" na jej karcie. */
+/** Terminy powiązane z ofertą. Sekcja „Terminy" na jej karcie. */
 export function fetchPropertyEvents(propertyId: string) {
   return apiFetch<EventSummary[]>(`/properties/${propertyId}/events`);
 }

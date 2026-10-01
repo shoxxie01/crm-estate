@@ -8,7 +8,7 @@ export type { LatLng } from "./PropertyMap";
  *
  * MapLibre waży więcej niż cała reszta aplikacji razem wzięta (ok. 240 kB po
  * gzipie), a używają go dokładnie dwa ekrany: formularz oferty i jej karta.
- * Wpięty na sztywno wydłużałby pierwsze wejście do CRM-u — logowanie, dashboard
+ * Wpięty na sztywno wydłużałby pierwsze wejście do CRM-u. Logowanie, dashboard
  * i kalendarz czekałyby na bibliotekę, której nigdy nie zobaczą.
  */
 const PropertyMapImpl = lazy(() =>
@@ -21,7 +21,7 @@ export function LazyPropertyMap({ height = 320, ...props }: Props) {
   return (
     <Suspense
       fallback={
-        // Ta sama wysokość co mapa — inaczej formularz podskakuje w chwili,
+        // Ta sama wysokość co mapa. Inaczej formularz podskakuje w chwili,
         // gdy biblioteka dojedzie.
         <div className="flex flex-col gap-1.5">
           <div

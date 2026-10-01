@@ -12,7 +12,7 @@ import pl.delta.crm.inquiry.InquiryIntent;
 
 /**
  * Zgłoszenie wysłane z publicznego formularza: kupno (kryteria w kształcie
- * formularza poszukiwania agenta — te same pola i reguły) albo sprzedaż
+ * formularza poszukiwania agenta. Te same pola i reguły) albo sprzedaż
  * (opis nieruchomości).
  */
 public record PublicInquiryRequest(
@@ -35,7 +35,7 @@ public record PublicInquiryRequest(
         @Size(max = 190, message = "Adres e-mail jest zbyt długi.")
         String email,
 
-        /** Pusta = kupno — tak działał formularz, zanim doszła sprzedaż. */
+        /** Pusta = kupno. Tak działał formularz, zanim doszła sprzedaż. */
         InquiryIntent intent,
 
         /** Wymagane przy kupnie; przy sprzedaży musi być puste. Pilnuje serwis. */

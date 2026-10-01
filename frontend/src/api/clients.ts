@@ -8,11 +8,11 @@ import type {
 /**
  * Kontrakt modułu klientów.
  *
- * Wartości słownikowe (źródło, status) są stringami — listę etykiet daje
+ * Wartości słownikowe (źródło, status) są stringami. Listę etykiet daje
  * `GET /api/clients/dictionaries`, tak samo jak przy nieruchomościach.
  *
  * Role NIE są polami klienta: `sellCount` / `rentCount` to liczba powierzonych
- * ofert danego typu transakcji, a `buyerCount` / `tenantCount` — liczba
+ * ofert danego typu transakcji, a `buyerCount` / `tenantCount`. Liczba
  * aktywnych poszukiwań kupna i najmu.
  */
 

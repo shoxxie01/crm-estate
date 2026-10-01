@@ -11,14 +11,14 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Terminy widziane od strony oferty i od strony klienta — sekcja „Terminy" na
+ * Terminy widziane od strony oferty i od strony klienta. Sekcja „Terminy" na
  * ich kartach.
  *
  * <p>Ścieżki należą do tamtych zasobów, ale kontroler mieszka w module
  * kalendarza i to on jest ich właścicielem. Dzięki temu dołożenie kalendarza nie
  * wymagało dopisania pola do {@code PropertyResponse} ani {@code ClientResponse}:
  * karta oferty i tak dociąga terminy osobnym żądaniem (są pod zakładką), a
- * wpięcie ich w odpowiedź oferty obciążyłoby każdy jej odczyt — również te
+ * wpięcie ich w odpowiedź oferty obciążyłoby każdy jej odczyt. Również te
  * z listy i z eksportu, gdzie terminy nikogo nie interesują.
  */
 @RestController

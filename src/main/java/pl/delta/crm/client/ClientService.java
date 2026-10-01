@@ -20,6 +20,7 @@ import pl.delta.crm.property.OwnerTransactionCount;
 import pl.delta.crm.property.Property;
 import pl.delta.crm.property.PropertyRepository;
 import pl.delta.crm.property.dictionary.TransactionType;
+import pl.delta.crm.search.SearchTerms;
 import pl.delta.crm.user.User;
 import pl.delta.crm.user.UserRepository;
 
@@ -101,7 +102,7 @@ public class ClientService {
         Client client = clients.findByIdAndAgencyId(id, actor.getAgency().getId())
                 .orElseThrow(ClientNotFoundException::new);
 
-        // Powierzone oferty zostają w systemie, ale tracą właściciela — bez tego
+        // Powierzone oferty zostają w systemie, ale tracą właściciela. Bez tego
         // FK properties.owner_client_id zablokowałoby usunięcie klienta.
         for (Property property : properties.findByOwnerId(client.getId())) {
             property.setOwner(null);
@@ -111,8 +112,8 @@ public class ClientService {
         // Bez tego klienta, z którym cokolwiek umówiono, nie dało się usunąć.
         events.detachClient(id);
 
-        // Poszukiwania znikają razem z klientem (ON DELETE CASCADE w V13) —
-        // bez osoby, która szuka, nie mają żadnej wartości.
+        // Poszukiwania znikają razem z klientem (ON DELETE CASCADE w V13).
+        // Bez osoby, która szuka, nie mają żadnej wartości.
 
         clients.delete(client);
     }
@@ -124,7 +125,7 @@ public class ClientService {
         Page<Client> page;
         String term = trimToNull(search);
         if (term != null) {
-            page = clients.search(agencyId, "%" + term.toLowerCase(Locale.ROOT) + "%", pageable);
+            page = clients.search(agencyId, SearchTerms.like(term), SearchTerms.phoneLike(term), pageable);
         } else if (status != null) {
             page = clients.findByAgencyIdAndStatus(agencyId, status, pageable);
         } else {
@@ -156,7 +157,7 @@ public class ClientService {
 
     /**
      * Przypisuje ofertę do klienta jako jej właściciela. Obie strony muszą być
-     * z biura osoby wykonującej operację — inaczej dałoby się skojarzyć cudzą
+     * z biura osoby wykonującej operację. Inaczej dałoby się skojarzyć cudzą
      * ofertę albo cudzego klienta.
      */
     @Transactional
@@ -182,7 +183,7 @@ public class ClientService {
                 .orElseThrow(PropertyNotFoundException::new);
 
         // Odpięcie ma sens tylko wtedy, gdy oferta faktycznie należy do tego
-        // klienta — inaczej milcząco zmienialibyśmy powiązanie czyjejś oferty.
+        // klienta. Inaczej milcząco zmienialibyśmy powiązanie czyjejś oferty.
         if (property.getOwner() == null || !property.getOwner().getId().equals(clientId)) {
             throw new PropertyNotFoundException();
         }
@@ -191,13 +192,13 @@ public class ClientService {
         properties.save(property);
     }
 
-    /** Reguły dotyczące relacji między polami — poza zasięgiem Bean Validation. */
+    /** Reguły dotyczące relacji między polami. Poza zasięgiem Bean Validation. */
     private void validate(CreateClientRequest request) {
         boolean hasPhone = trimToNull(request.phone()) != null;
         boolean hasEmail = trimToNull(request.email()) != null;
         if (!hasPhone && !hasEmail) {
             throw new BusinessValidationException(
-                    Map.of("phone", "Podaj telefon lub e-mail — inaczej nie będzie jak skontaktować się z klientem."));
+                    Map.of("phone", "Podaj telefon lub e-mail. Inaczej nie będzie jak skontaktować się z klientem."));
         }
     }
 
@@ -227,7 +228,7 @@ public class ClientService {
                 ClientService::sum));
     }
 
-    /** Aktywne poszukiwania kupna/najmu per klient — tak samo jednym zapytaniem. */
+    /** Aktywne poszukiwania kupna/najmu per klient. Tak samo jednym zapytaniem. */
     private Map<UUID, long[]> requirementCountsFor(List<Client> page) {
         if (page.isEmpty()) {
             return Map.of();
@@ -241,7 +242,7 @@ public class ClientService {
                         ClientService::sum));
     }
 
-    /** [sprzedaż, wynajem] — z jednego wiersza grupowania. */
+    /** [sprzedaż, wynajem]. Z jednego wiersza grupowania. */
     private static long[] split(TransactionType type, long count) {
         long[] counts = new long[2];
         if (type == TransactionType.SALE) {

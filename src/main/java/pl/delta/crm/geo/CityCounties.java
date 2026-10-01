@@ -8,23 +8,23 @@ import java.util.Set;
 import static pl.delta.crm.property.dictionary.Voivodeship.*;
 
 /**
- * Miasta na prawach powiatu — 66 miast, dla których powiatem jest samo miasto.
+ * Miasta na prawach powiatu. 66 miast, dla których powiatem jest samo miasto.
  *
  * <p>Gminy ta lista nie dotyczy: brak gminy przy mieście obsługuje ogólniejsza
  * reguła w {@link GeoService} (gmina miejska nazywa się tak jak miasto),
  * a miasta na prawach powiatu są jej szczególnym przypadkiem.
  *
  * <p><b>Po co to jest.</b> OpenStreetMap nie zwraca dla nich ani powiatu, ani
- * gminy — i nie jest to luka w danych, tylko konsekwencja tego, jak wygląda
+ * gminy. I nie jest to luka w danych, tylko konsekwencja tego, jak wygląda
  * podział administracyjny: granica Warszawy <i>jest</i> jednostką poziomu
  * powiatu (admin_level 6), a Nominatim opisuje ten sam obiekt jako
- * {@code city}. Nie ma więc czego dopytać — żaden poziom {@code zoom}
+ * {@code city}. Nie ma więc czego dopytać. Żaden poziom {@code zoom}
  * w zapytaniu odwrotnym nie wyciągnie powiatu, bo nie istnieje osobny obiekt,
  * który by go niósł. Wiedza musi przyjść z naszej strony.
  *
  * <p><b>Dlaczego to boli.</b> Powiat jest wymagany przez Otodom i sprawdza go
  * {@code Property.readyForExport()}. Bez tej listy każda oferta w dużym mieście
- * — czyli większość ofert — wychodziła z pinezki z pustym powiatem i nie
+ * Czyli większość ofert wychodziła z pinezki z pustym powiatem i nie
  * nadawała się do wysyłki, dopóki agent nie dopisał go ręcznie.
  *
  * <p><b>Dlaczego lista, a nie słownik z zewnątrz.</b> Zbiór jest zamknięty

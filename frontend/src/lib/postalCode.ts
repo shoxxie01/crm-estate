@@ -3,11 +3,11 @@
 // zwykle nie ma pod ręką.
 //
 // Formatujemy w trakcie pisania: separator stoi zawsze w tym samym miejscu,
-// więc karetkę da się odtworzyć dokładnie — liczymy cyfry przed nią, a nie znaki.
+// więc karetkę da się odtworzyć dokładnie. Liczymy cyfry przed nią, a nie znaki.
 
 import { caretAfterDigit } from "./caret";
 
-/** Same cyfry, maks. 5, myślnik po drugiej. Bez efektów ubocznych — używalne też do testów. */
+/** Same cyfry, maks. 5, myślnik po drugiej. Bez efektów ubocznych. Używalne też do testów. */
 export function formatPostalCode(raw: string): string {
   const digits = raw.replace(/\D/g, "").slice(0, 5);
   if (digits.length <= 2) return digits;
@@ -17,8 +17,8 @@ export function formatPostalCode(raw: string): string {
 /**
  * Maska pola: zwraca wartość do zapisania i pozycję karetki do przywrócenia.
  *
- * `raw` to wartość już zmieniona przez przeglądarkę, `caret` — pozycja po tej
- * zmianie, `previous` — wartość sprzed niej (potrzebna, by rozpoznać backspace
+ * `raw` to wartość już zmieniona przez przeglądarkę, `caret`. Pozycja po tej
+ * zmianie, `previous`. Wartość sprzed niej (potrzebna, by rozpoznać backspace
  * na samym myślniku).
  */
 export function maskPostalCode(
@@ -30,7 +30,7 @@ export function maskPostalCode(
   let digitsBefore = (raw.slice(0, caret).match(/\d/g) ?? []).length;
 
   // Backspace na myślniku skasowałby znak, który maska natychmiast dopisze
-  // z powrotem — klawisz wyglądałby na zepsuty. Kasujemy więc cyfrę przed nim,
+  // z powrotem. Klawisz wyglądałby na zepsuty. Kasujemy więc cyfrę przed nim,
   // czyli to, co użytkownik faktycznie miał na myśli.
   if (
     raw.length < previous.length &&
@@ -41,7 +41,7 @@ export function maskPostalCode(
     digitsBefore -= 1;
   }
 
-  // Myślnik wpisany ręcznie po dwóch cyfrach zostaje — inaczej znikałby pod
+  // Myślnik wpisany ręcznie po dwóch cyfrach zostaje. Inaczej znikałby pod
   // palcami i wracał dopiero przy trzeciej cyfrze. Tylko przy dopisywaniu:
   // po skasowaniu trzeciej cyfry ma zniknąć razem z nią, a nie zostać wiszący.
   const value =

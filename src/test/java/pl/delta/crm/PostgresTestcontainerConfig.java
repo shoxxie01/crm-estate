@@ -6,11 +6,11 @@ import org.springframework.context.annotation.Bean;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 /**
- * Postgres w kontenerze na czas testów — ta sama wersja co w compose.yaml.
+ * Postgres w kontenerze na czas testów. Ta sama wersja co w compose.yaml.
  * {@code @ServiceConnection} podstawia URL, użytkownika i hasło pod
  * autokonfigurację, więc w test/resources/application.yml nie ma datasource'a.
  *
- * <p>Kontener jest zwykłym beanem, więc żyje tyle co kontekst Springa — przy
+ * <p>Kontener jest zwykłym beanem, więc żyje tyle co kontekst Springa. Przy
  * wielu klasach testowych startuje raz i jest współdzielony.
  */
 @TestConfiguration(proxyBeanMethods = false)

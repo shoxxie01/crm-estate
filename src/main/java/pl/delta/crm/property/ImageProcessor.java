@@ -19,7 +19,7 @@ import java.util.Map;
  * <p>Robimy to raz, na wejściu, a nie przy każdej wysyłce na portal: plik z
  * telefonu waży kilkanaście megabajtów i ma orientację zapisaną w EXIF-ie,
  * a portal chce JPEG-a do 5 MB. Przy okazji przekodowanie **usuwa całe EXIF**,
- * w tym współrzędne GPS — zdjęcie z sesji zdradzałoby dokładne położenie
+ * w tym współrzędne GPS. Zdjęcie z sesji zdradzałoby dokładne położenie
  * nieruchomości nawet wtedy, gdy oferta ma włączone ukrywanie adresu.
  */
 @Component
@@ -28,13 +28,13 @@ public class ImageProcessor {
     /** Dłuższy bok po normalizacji. Portale i tak nie pokazują większych. */
     private static final int MAX_EDGE_PX = 1920;
 
-    /** Dłuższy bok miniatury — galeria i wiersz listy ofert. */
+    /** Dłuższy bok miniatury. Galeria i wiersz listy ofert. */
     private static final int THUMBNAIL_EDGE_PX = 400;
 
     /** Kompromis rozmiar/jakość; powyżej 0,85 plik rośnie bez widocznego zysku. */
     private static final float JPEG_QUALITY = 0.82f;
 
-    /** Wszystko wychodzi jako JPEG — jeden format w storage i w paczce eksportu. */
+    /** Wszystko wychodzi jako JPEG. Jeden format w storage i w paczce eksportu. */
     public static final String OUTPUT_CONTENT_TYPE = "image/jpeg";
 
     public static final String OUTPUT_EXTENSION = ".jpg";
@@ -89,7 +89,7 @@ public class ImageProcessor {
                     .asBufferedImage();
         } catch (IOException | IllegalArgumentException | UnsupportedOperationException exception) {
             throw new BusinessValidationException(Map.of(field,
-                    "Nie udało się odczytać pliku — może być uszkodzony."));
+                    "Nie udało się odczytać pliku. Może być uszkodzony."));
         }
     }
 
@@ -142,7 +142,7 @@ public class ImageProcessor {
 
     /**
      * Rozpoznanie formatu po sygnaturze pliku, nie po nagłówku {@code Content-Type}
-     * ani rozszerzeniu — jedno i drugie pochodzi od klienta i da się podać dowolne.
+     * ani rozszerzeniu. Jedno i drugie pochodzi od klienta i da się podać dowolne.
      */
     private enum ImageFormat {
         JPEG, PNG, GIF, WEBP, HEIC;
@@ -160,7 +160,7 @@ public class ImageProcessor {
             if (starts(bytes, 0x47, 0x49, 0x46, 0x38)) {
                 return GIF;
             }
-            // RIFF....WEBP — rozmiar kontenera siedzi między jednym a drugim.
+            // RIFF....WEBP. Rozmiar kontenera siedzi między jednym a drugim.
             if (starts(bytes, 0x52, 0x49, 0x46, 0x46)
                     && bytes[8] == 'W' && bytes[9] == 'E' && bytes[10] == 'B' && bytes[11] == 'P') {
                 return WEBP;
@@ -186,7 +186,7 @@ public class ImageProcessor {
     }
 
     static {
-        // Czytamy i piszemy wyłącznie z pamięci — bez tego ImageIO zakłada pliki
+        // Czytamy i piszemy wyłącznie z pamięci. Bez tego ImageIO zakłada pliki
         // tymczasowe na dysku dla każdego większego obrazu.
         ImageIO.setUseCache(false);
     }

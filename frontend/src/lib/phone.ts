@@ -3,9 +3,9 @@
  *
  * CRM obsługuje polskie biuro, więc pole ma dwa tryby, wynikające z samej
  * wartości (bez osobnego przełącznika):
- * - krajowy (domyślny) — kierunkowy +48 stoi na stałe przy polu, agent wbija
+ * - krajowy (domyślny). Kierunkowy +48 stoi na stałe przy polu, agent wbija
  *   dziewięć cyfr, a spacje co trzy dopisuje maska w trakcie pisania,
- * - zagraniczny — wartość zaczyna się od „+" (albo „00"); tu maski nie ma,
+ * - zagraniczny. Wartość zaczyna się od „+" (albo „00"); tu maski nie ma,
  *   bo grupowanie cyfr różni się między krajami.
  *
  * Na serwer zawsze idzie numer z kierunkowym. Ostateczny kształt i tak narzuca
@@ -40,7 +40,7 @@ function stripPolishPrefix(digits: string): string | null {
 }
 
 /**
- * Maska pola — odpowiednik `maskPostalCode`: zwraca wartość do zapisania
+ * Maska pola. Odpowiednik `maskPostalCode`: zwraca wartość do zapisania
  * i pozycję karetki. `deleteForward` odróżnia klawisz Delete od Backspace,
  * gdy skasowana została sama spacja.
  */
@@ -53,7 +53,7 @@ export function maskPhone(
   const allDigits = raw.replace(/\D/g, "");
 
   // Wklejony (albo podpowiedziany przez przeglądarkę) polski numer
-  // z kierunkowym wraca do trybu krajowego — +48 i tak stoi przy polu.
+  // z kierunkowym wraca do trybu krajowego. +48 i tak stoi przy polu.
   const polish = stripPolishPrefix(allDigits);
   if (polish && (isInternational(raw) || allDigits.length > NATIONAL_DIGITS)) {
     const value = formatNational(polish);
@@ -61,7 +61,7 @@ export function maskPhone(
   }
 
   // Polski numer krajowy nie zaczyna się od zera, więc „00" to na pewno
-  // prefiks wyjścia międzynarodowego — zamieniamy go na plus.
+  // prefiks wyjścia międzynarodowego. Zamieniamy go na plus.
   if (!isInternational(raw) && raw.trimStart().startsWith("00")) {
     const trimmed = raw.trimStart();
     const shift = raw.length - trimmed.length + 1;
@@ -73,7 +73,7 @@ export function maskPhone(
   let digits = allDigits;
   let digitsBefore = (raw.slice(0, caret).match(/\d/g) ?? []).length;
 
-  // Numer jest już pełny — cyfra dopisana w środku wypchnęłaby ostatnią,
+  // Numer jest już pełny. Cyfra dopisana w środku wypchnęłaby ostatnią,
   // więc ją odrzucamy i zostawiamy karetkę tam, gdzie była.
   const previousDigits = previous.replace(/\D/g, "").length;
   if (digits.length > NATIONAL_DIGITS && previousDigits === NATIONAL_DIGITS) {
@@ -85,7 +85,7 @@ export function maskPhone(
   }
 
   // Skasowana sama spacja wróciłaby natychmiast z maski i klawisz wyglądałby
-  // na zepsuty — kasujemy więc cyfrę obok niej, zgodnie z kierunkiem klawisza.
+  // na zepsuty. Kasujemy więc cyfrę obok niej, zgodnie z kierunkiem klawisza.
   if (raw.length < previous.length && formatNational(digits) === previous) {
     if (deleteForward) {
       digits = digits.slice(0, digitsBefore) + digits.slice(digitsBefore + 1);
@@ -95,7 +95,7 @@ export function maskPhone(
     }
   }
 
-  // Spacja wpisana ręcznie po pełnej trójce zostaje — inaczej znikałaby pod
+  // Spacja wpisana ręcznie po pełnej trójce zostaje. Inaczej znikałaby pod
   // palcami i wracała dopiero z następną cyfrą.
   const typedSeparator =
     raw.length > previous.length &&

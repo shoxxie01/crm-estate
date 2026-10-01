@@ -6,7 +6,7 @@ public enum MatchVerdict {
     MET,
 
     /**
-     * Blisko, ale poza zakresem — np. cena do 10% ponad budżet. Klienci
+     * Blisko, ale poza zakresem. Np. cena do 10% ponad budżet. Klienci
      * regularnie kupują trochę drożej, niż deklarowali, więc takiej oferty
      * nie ukrywamy, tylko ją oznaczamy.
      */

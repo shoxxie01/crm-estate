@@ -2,7 +2,7 @@ target/
 !.mvn/wrapper/maven-wrapper.jar
 
 ### Delta CRM ###
-# Pozostałość po H2 (baza jest teraz w kontenerze — katalog można skasować)
+# Pozostałość po H2 (baza jest teraz w kontenerze. Katalog można skasować)
 data/
 *.mv.db
 *.trace.db

@@ -9,7 +9,7 @@ import pl.delta.crm.property.dictionary.RoadAccess;
 
 /**
  * Parametry działki. Wypełniane dla {@code PLOT}, ale sensowne także przy
- * domu z dużą działką — dlatego siedzą w tej samej tabeli, a nie w osobnej
+ * domu z dużą działką. Dlatego siedzą w tej samej tabeli, a nie w osobnej
  * tabeli podpiętej tylko pod jeden typ.
  */
 @Embeddable
@@ -19,7 +19,7 @@ public class LandDetails {
     @Column(name = "plot_type", length = 30)
     private PlotType plotType;
 
-    /** Wymiary jako tekst „szer x dł" — Otodom przyjmuje dokładnie taki string. */
+    /** Wymiary jako tekst „szer x dł". Otodom przyjmuje dokładnie taki string. */
     @Column(name = "plot_dimensions", length = 32)
     private String dimensions;
 

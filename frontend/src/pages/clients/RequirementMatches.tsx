@@ -7,14 +7,14 @@ import { MatchCriteria } from "../../components/MatchCriteria";
 import { cn } from "../../lib/cn";
 import { formatCurrency, formatNumber } from "../../lib/format";
 
-/** Oferty niegotowe do pokazania na portalach — agent musi wiedzieć, zanim zadzwoni. */
+/** Oferty niegotowe do pokazania na portalach. Agent musi wiedzieć, zanim zadzwoni. */
 const STATUS_NOTE: Record<string, { label: string; tone: "neutral" | "warning" }> = {
   DRAFT: { label: "Robocza", tone: "neutral" },
   RESERVED: { label: "Zarezerwowana", tone: "warning" },
 };
 
 /**
- * „Co mamy dla tego klienta" — oferty biura pasujące do jednego poszukiwania.
+ * „Co mamy dla tego klienta". Oferty biura pasujące do jednego poszukiwania.
  * `version` (np. updatedAt poszukiwania) wymusza ponowne liczenie po edycji.
  */
 export function RequirementMatches({

@@ -8,7 +8,20 @@ import {
   type ReactNode,
 } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Banknote,
+  Building2,
+  ClipboardCheck,
+  FileText,
+  Home,
+  Images,
+  ListChecks,
+  MapPin,
+  Ruler,
+  type LucideIcon,
+} from "lucide-react";
 import {
   createProperty,
   fetchDictionaries,
@@ -36,8 +49,9 @@ import { Input } from "../../components/ui/Input";
 import { Select } from "../../components/ui/Select";
 import { Textarea } from "../../components/ui/Textarea";
 import { maskPostalCode } from "../../lib/postalCode";
+import { PropertyFormStepper, type StepState } from "./PropertyFormStepper";
 
-/** Wszystkie pola tekstowe trzymamy jako stringi — konwersja dopiero przy wysyłce. */
+/** Wszystkie pola tekstowe trzymamy jako stringi. Konwersja dopiero przy wysyłce. */
 type Fields = Record<string, string>;
 
 const INITIAL: Fields = {
@@ -115,7 +129,7 @@ const geoQueryOf = (fields: Fields): Partial<GeoQuery> => ({
 });
 
 /**
- * Odcisk adresu — po nim poznajemy, czy pinezka wciąż odpowiada temu, co jest
+ * Odcisk adresu. Po nim poznajemy, czy pinezka wciąż odpowiada temu, co jest
  * w polach. Bez tego uzupełnienie pól z mapy wyglądałoby jak ręczna zmiana
  * adresu i natychmiast odesłałoby pinezkę do geokodera, w kółko.
  */
@@ -133,6 +147,38 @@ const signatureOf = (query: Partial<GeoQuery>): string =>
   ]
     .map((value) => (value ?? "").trim().toLowerCase())
     .join("|");
+
+/** Etapy kreatora. Kolejność taka, w jakiej agent zbiera dane od właściciela. */
+type StepId =
+  | "basic"
+  | "area"
+  | "location"
+  | "price"
+  | "details"
+  | "features"
+  | "media"
+  | "description"
+  | "summary";
+
+interface StepDef {
+  id: StepId;
+  title: string;
+  description?: string;
+  icon: LucideIcon;
+}
+
+/**
+ * Do którego etapu należy błąd o danym kluczu (klucze jak w Bean Validation).
+ * Po nieudanym zapisie przenosimy agenta na pierwszy etap z błędem.
+ */
+const stepOfKey = (key: string): StepId => {
+  if (key.startsWith("pricing.")) return "price";
+  if (key.startsWith("area.")) return "area";
+  if (key.startsWith("address.")) return "location";
+  if (/^(building|land|commercial|energy)\./.test(key)) return "details";
+  if (key === "title" || key === "description") return "description";
+  return "basic";
+};
 
 export function PropertyFormPage() {
   const navigate = useNavigate();
@@ -158,23 +204,23 @@ export function PropertyFormPage() {
   });
 
   // `errors` trzyma wyłącznie błędy z backendu (ApiError). Błędy walidacji
-  // klienta liczymy na żywo z fields — patrz liveErrors/errorFor niżej.
+  // klienta liczymy na żywo z fields. Patrz liveErrors/errorFor niżej.
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Set<string>>(new Set());
   const [submitted, setSubmitted] = useState(false);
-  // Rośnie przy każdej nieudanej próbie zapisu — wyzwala przewinięcie do błędu.
+  // Rośnie przy każdej nieudanej próbie zapisu. Wyzwala przewinięcie do błędu.
   const [errorSignal, setErrorSignal] = useState(0);
   // Które pole steruje przeliczeniem: „price" = cena wpisana ręcznie (liczymy m²),
   // „ppm2" = cena za m² wpisana ręcznie (liczymy cenę). Zmiana powierzchni
   // przelicza to drugie zgodnie z ostatnim wyborem użytkownika.
   const [priceDriver, setPriceDriver] = useState<"price" | "ppm2">("price");
-  // Przy edycji galeria żyje obok formularza — jej operacje idą osobnymi
+  // Przy edycji galeria żyje obok formularza. Jej operacje idą osobnymi
   // żądaniami i nie czekają na „Zapisz".
   const [media, setMedia] = useState<PropertyMedia[]>([]);
   // Przy nowej ofercie nie ma jeszcze do czego przypiąć zdjęć, więc czekają
   // w pamięci i lecą zaraz po tym, jak serwer nada ofercie identyfikator.
   const [draftFiles, setDraftFiles] = useState<File[]>([]);
-  // Oferta zapisana, ale zdjęcia nie przeszły — wchodzimy tu z jej edycji
+  // Oferta zapisana, ale zdjęcia nie przeszły. Wchodzimy tu z jej edycji
   // z komunikatem, żeby nie wyglądało to na udany zapis kompletu.
   const mediaError = (location.state as { mediaError?: string } | null)
     ?.mediaError;
@@ -182,18 +228,29 @@ export function PropertyFormPage() {
   const [dictError, setDictError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
+  // --- kreator ---------------------------------------------------------------
+  const [stepId, setStepId] = useState<StepId>("basic");
+  // Etapy, do których agent już doszedł. Tylko do nich wolno skakać z listy.
+  // W edycji oferta jest kompletna, więc od razu wszystkie są dostępne.
+  const [visited, setVisited] = useState<Set<StepId>>(new Set(["basic"]));
+  // Etapy, z których agent próbował pójść dalej. Od tej chwili pokazujemy
+  // w nich także braki w polach wymaganych.
+  const [attempted, setAttempted] = useState<Set<StepId>>(new Set());
+  const topRef = useRef<HTMLDivElement>(null);
+  const firstStepRender = useRef(true);
+
   // --- mapa ------------------------------------------------------------------
   const [coords, setCoords] = useState<LatLng | null>(null);
   const [geoBusy, setGeoBusy] = useState(false);
-  // Adres spod pinezki albo powód, dla którego go nie ma — linia pod mapą.
+  // Adres spod pinezki albo powód, dla którego go nie ma. Linia pod mapą.
   const [geoNote, setGeoNote] = useState<string | null>(null);
   const [geoError, setGeoError] = useState<string | null>(null);
   // Odcisk adresu, do którego pasuje obecna pinezka. Równy bieżącemu znaczy
-  // „pola i pinezka są zgodne" — nie ma czego szukać.
+  // „pola i pinezka są zgodne". Nie ma czego szukać.
   const pinnedSignature = useRef<string | null>(null);
   // Miejscowość, dla której pinezka ostatnio stanęła. Zmiana miejscowości
-  // unieważnia wszystko, co z niej wynika — powiat, gminę, dzielnicę i kod
-  // pocztowy — więc wtedy wolno je nadpisać mimo że nie są puste.
+  // unieważnia wszystko, co z niej wynika. Powiat, gminę, dzielnicę i kod
+  // pocztowy. Więc wtedy wolno je nadpisać mimo że nie są puste.
   const pinnedCity = useRef<string | null>(null);
   // Bieżące pola widziane z wnętrza asynchronicznych wywołań zwrotnych.
   const fieldsRef = useRef(fields);
@@ -207,16 +264,26 @@ export function PropertyFormPage() {
         // Bez słowników każda lista wyboru jest pusta. Cichy błąd wygląda wtedy
         // jak zepsuty formularz, więc mówimy wprost, co się stało.
         setDictError(
-          "Nie udało się wczytać słowników — listy wyboru pozostaną puste.",
+          "Nie udało się wczytać słowników. Listy wyboru pozostaną puste.",
         ),
       );
   };
 
   useEffect(loadDictionaries, []);
 
+  // Nowy etap zaczyna się od góry strony, a nie tam, gdzie skończył poprzedni.
+  // Efekt stoi przed przewijaniem do błędu, żeby tamto miało ostatnie słowo.
+  useEffect(() => {
+    if (firstStepRender.current) {
+      firstStepRender.current = false;
+      return;
+    }
+    topRef.current?.scrollIntoView({ block: "start" });
+  }, [stepId]);
+
   // Po nieudanym zapisie przewiń do pierwszego błędnego pola i ustaw na nim
   // kursor. `aria-invalid` mają tylko pola z błędem, a querySelector zwraca
-  // pierwsze w kolejności DOM — czyli najwyżej na stronie.
+  // pierwsze w kolejności DOM. Czyli najwyżej na stronie.
   useEffect(() => {
     if (errorSignal === 0) return;
     const invalid = document.querySelector<HTMLElement>('[aria-invalid="true"]');
@@ -307,9 +374,22 @@ export function PropertyFormPage() {
           exportable: p.exportable,
         });
         setMedia(p.media);
+        setVisited(
+          new Set<StepId>([
+            "basic",
+            "area",
+            "location",
+            "price",
+            "details",
+            "features",
+            "media",
+            "description",
+            "summary",
+          ]),
+        );
 
         // Zapisana pinezka opisuje zapisany adres, więc wchodząc w edycję nie
-        // mamy czego szukać — dopiero zmiana pola albo ruch pinezką coś zmienia.
+        // mamy czego szukać. Dopiero zmiana pola albo ruch pinezką coś zmienia.
         if (p.address.latitude != null && p.address.longitude != null) {
           setCoords({ lat: p.address.latitude, lng: p.address.longitude });
           pinnedSignature.current = signatureOf({
@@ -329,7 +409,7 @@ export function PropertyFormPage() {
   const set = (name: string) => (event: { target: { value: string } }) =>
     setFields((current) => ({ ...current, [name]: event.target.value }));
 
-  // Pola całkowite (pokoje, łazienki, piętro, liczba pięter, rok) — przepuszczamy
+  // Pola całkowite (pokoje, łazienki, piętro, liczba pięter, rok). Przepuszczamy
   // wyłącznie cyfry. `allowNegative` dla piętra (-1 = suterena): minus tylko na początku.
   const setInt =
     (name: string, allowNegative = false) =>
@@ -343,7 +423,7 @@ export function PropertyFormPage() {
       }));
     };
 
-  // Kod pocztowy — myślnik dopisuje maska. Wartość i karetkę ustawiamy na
+  // Kod pocztowy. Myślnik dopisuje maska. Wartość i karetkę ustawiamy na
   // elemencie od razu, przed setState: gdy DOM ma już to, co React zaraz
   // wyrenderuje, React nie tknie pola i karetka nie ucieka na koniec przy
   // poprawianiu cyfry w środku.
@@ -371,12 +451,12 @@ export function PropertyFormPage() {
     reverseGeocode(lat, lng)
       .then((found) => {
         if (!found) {
-          setGeoNote("W tym punkcie nie ma adresu — pola zostawiam bez zmian.");
+          setGeoNote("W tym punkcie nie ma adresu. Pola zostawiam bez zmian.");
           return;
         }
 
         const current = fieldsRef.current;
-        // Czego OSM nie zna dla tego punktu, tego nie ma — pole zostaje puste.
+        // Czego OSM nie zna dla tego punktu, tego nie ma. Pole zostaje puste.
         // Zachowanie starej wartości obok nowej pinezki dawało adres zszyty
         // z dwóch miejsc: powiat pruszkowski przy krakowskiej ulicy wyglądał
         // na wpisany świadomie, a był resztką po poprzednim kliknięciu.
@@ -427,7 +507,7 @@ export function PropertyFormPage() {
 
   useEffect(() => {
     if (!addressGeocodable) return;
-    // Te pola sami wpisaliśmy z mapy — pinezka już tam stoi.
+    // Te pola sami wpisaliśmy z mapy. Pinezka już tam stoi.
     if (addressSignature === pinnedSignature.current) return;
 
     const timer = setTimeout(() => {
@@ -442,7 +522,7 @@ export function PropertyFormPage() {
           const best = found[0];
           if (!best) {
             setGeoNote(
-              "Nie znaleziono tego adresu na mapie — pinezkę można postawić ręcznie.",
+              "Nie znaleziono tego adresu na mapie. Pinezkę można postawić ręcznie.",
             );
             // Zapamiętujemy mimo braku wyniku, żeby nie pytać o to samo w kółko.
             pinnedSignature.current = addressSignature;
@@ -455,13 +535,13 @@ export function PropertyFormPage() {
           const current = fieldsRef.current;
 
           // Powiat, gmina, dzielnica i kod pocztowy wynikają z miejscowości.
-          // Dopóki miejscowość się nie zmieniła, tylko uzupełniamy puste pola —
-          // agent zna adres z rozmowy z właścicielem i nie ma powodu poprawiać
+          // Dopóki miejscowość się nie zmieniła, tylko uzupełniamy puste pola.
+          // Agent zna adres z rozmowy z właścicielem i nie ma powodu poprawiać
           // mu tego, co wpisał świadomie. Gdy miejscowość się zmieniła, stare
           // wartości opisują już inne miejsce i zostają zastąpione: inaczej
           // oferta w Krakowie zostawałaby z powiatem pruszkowskim.
-          // Pierwsze szukanie w tym formularzu to nie jest „przeprowadzka" —
-          // nie ma jeszcze poprzedniej miejscowości, więc nic nie zdezaktualizowało
+          // Pierwsze szukanie w tym formularzu to nie jest „przeprowadzka".
+          // Nie ma jeszcze poprzedniej miejscowości, więc nic nie zdezaktualizowało
           // tego, co agent zdążył wpisać.
           const moved =
             pinnedCity.current !== null &&
@@ -545,7 +625,7 @@ export function PropertyFormPage() {
     });
   };
 
-  // Oznacza pole jako „dotknięte" (opuszczone) — od tej chwili jego błąd jest
+  // Oznacza pole jako „dotknięte" (opuszczone). Od tej chwili jego błąd jest
   // widoczny i aktualizuje się na żywo przy każdej zmianie.
   const markTouched = (key: string) => () =>
     setTouched((current) =>
@@ -553,7 +633,7 @@ export function PropertyFormPage() {
     );
 
   // Nazwy własne (miejscowość, ulica…) porządkujemy przy opuszczeniu pola:
-  // każde słowo z wielkiej litery, reszta mała — także po myślniku (Bielsko-Biała).
+  // każde słowo z wielkiej litery, reszta mała. Także po myślniku (Bielsko-Biała).
   // Robimy to na blur, a nie przy każdym znaku, żeby nie przeszkadzać w pisaniu.
   const capitalizeOnBlur =
     (name: string, errorKey?: string) => () => {
@@ -564,7 +644,7 @@ export function PropertyFormPage() {
       if (errorKey) markTouched(errorKey)();
     };
 
-  // Numer budynku — polska konwencja to wielka litera dodatkowa (12A, nie 12a),
+  // Numer budynku. Polska konwencja to wielka litera dodatkowa (12A, nie 12a),
   // a że litera stoi po cyfrze, Title Case by jej nie podniósł. Stąd pełne wielkie.
   const upperCaseOnBlur =
     (name: string, errorKey?: string) => () => {
@@ -669,7 +749,7 @@ export function PropertyFormPage() {
     [dict],
   );
 
-  // Cechy przefiltrowane pod wybrany typ obiektu — pokazujemy tylko te, które
+  // Cechy przefiltrowane pod wybrany typ obiektu. Pokazujemy tylko te, które
   // dla niego mają sens, i pomijamy kategorie, które po filtrze są puste.
   const featureGroups = useMemo(() => {
     if (!dict) return [];
@@ -681,13 +761,13 @@ export function PropertyFormPage() {
       .filter((g) => g.features.length > 0);
   }, [dict, type]);
 
-  // Wartości cech dozwolonych dla bieżącego typu — do przycięcia wyboru przy zapisie.
+  // Wartości cech dozwolonych dla bieżącego typu. Do przycięcia wyboru przy zapisie.
   const allowedFeatureValues = useMemo(
     () => new Set(featureGroups.flatMap((g) => g.features.map((f) => f.value))),
     [featureGroups],
   );
 
-  // Walidacja realnych zakresów — Bean Validation na backendzie pilnuje reszty,
+  // Walidacja realnych zakresów. Bean Validation na backendzie pilnuje reszty,
   // ale sensowne granice („piętro do 154", „rok budowy nie z przyszłości") lepiej
   // pokazać od razu przy polu, zanim żądanie w ogóle poleci.
   // `forSubmit` = true dopiero po kliknięciu „Zapisz". Tylko wtedy zgłaszamy
@@ -720,7 +800,7 @@ export function PropertyFormPage() {
         ["postalCode", "address.postalCode", true],
         // Ulica jest opcjonalna: we wsiach bez nazw ulic adres to sama
         // miejscowość i numer („Nowa Wieś 12"). Backend jej nie wymaga,
-        // a `readyForExport()` też nie — formularz był tu surowszy niż
+        // a `readyForExport()` też nie. Formularz był tu surowszy niż
         // reszta systemu i wypychał takie oferty do notatnika.
         ["buildingNumber", "address.buildingNumber", true],
       ];
@@ -856,19 +936,186 @@ export function PropertyFormPage() {
     return e;
   }
 
-  // Wynik walidacji klienta liczony przy każdym renderze — zawsze świeży.
-  // Po próbie zapisu dokładamy błędy pól wymaganych; w trakcie pisania ich nie ma.
-  const liveErrors = validate(submitted);
+  // Wynik walidacji klienta liczony przy każdym renderze. Zawsze świeży.
+  // `strictErrors` zawiera też braki w polach wymaganych; `softErrors` tylko
+  // błędy wartości, które pokazujemy w trakcie pisania.
+  const strictErrors = validate(true);
+  const softErrors = validate(false);
 
-  // Błąd pokazujemy, gdy: backend go zwrócił, albo formularz był już wysłany,
-  // albo użytkownik opuścił to pole. Dzięki temu komunikat pojawia się od razu,
-  // a nie dopiero po kliknięciu „Zapisz".
+  // Błąd pokazujemy, gdy: backend go zwrócił, albo agent próbował już zapisać
+  // ofertę lub przejść dalej z tego etapu (wtedy też braki w wymaganych),
+  // albo opuścił to pole. Komunikat pojawia się od razu, nie dopiero przy zapisie.
   const errorFor = (key: string): string | undefined =>
     errors[key] ??
-    (submitted || touched.has(key) ? liveErrors[key] : undefined);
+    (submitted || attempted.has(stepOfKey(key))
+      ? strictErrors[key]
+      : touched.has(key)
+        ? softErrors[key]
+        : undefined);
 
-  async function submit(event: React.FormEvent) {
+  // --- etapy -----------------------------------------------------------------
+  const detailsTitle = isDzialka
+    ? "Szczegóły działki"
+    : isGaraz || isPokoj
+      ? "Szczegóły"
+      : "Budynek i wyposażenie";
+
+  const steps: StepDef[] = [
+    {
+      id: "basic",
+      title: "Informacje podstawowe",
+      icon: Home,
+    },
+    { id: "area", title: "Powierzchnia i układ", icon: Ruler },
+    {
+      id: "location",
+      title: "Lokalizacja",
+      description:
+        "Do zapisu wystarczą województwo i miejscowość. Powiat jest potrzebny dopiero do wysyłki na portal.",
+      icon: MapPin,
+    },
+    {
+      id: "price",
+      title: "Cena nieruchomości",
+      description:
+        "Podaj cenę albo cenę za m². Drugą wartość policzymy z powierzchni.",
+      icon: Banknote,
+    },
+    { id: "details", title: detailsTitle, icon: Building2 },
+    // Bez słowników (albo dla typu bez cech) etap byłby pusty. Pomijamy go.
+    ...(featureGroups.length > 0
+      ? [{ id: "features" as const, title: "Cechy", icon: ListChecks }]
+      : []),
+    { id: "media", title: "Zdjęcia i multimedia", icon: Images },
+    {
+      id: "description",
+      title: "Opis ogłoszenia",
+      icon: FileText,
+    },
+    {
+      id: "summary",
+      title: "Podgląd i zapis",
+      icon: ClipboardCheck,
+    },
+  ];
+
+  // Etap mógł zniknąć (np. „Cechy" po zmianie rodzaju). Wracamy wtedy na
+  // pierwszy, zamiast renderować pustkę.
+  const stepIndex = Math.max(
+    0,
+    steps.findIndex((s) => s.id === stepId),
+  );
+  const step = steps[stepIndex];
+  const isLastStep = stepIndex === steps.length - 1;
+  const StepIcon = step.icon;
+
+  const stepHasErrors = (id: StepId): boolean =>
+    Object.keys(strictErrors).some((k) => stepOfKey(k) === id) ||
+    Object.keys(errors).some((k) => stepOfKey(k) === id);
+
+  const stateOf = (id: StepId): StepState => {
+    if (id === step.id) return "current";
+    if ((submitted || attempted.has(id)) && stepHasErrors(id)) return "error";
+    if (visited.has(id)) return stepHasErrors(id) ? "todo" : "done";
+    return "todo";
+  };
+
+  const goTo = (id: StepId) => {
+    setStepId(id);
+    setVisited((current) =>
+      current.has(id) ? current : new Set(current).add(id),
+    );
+  };
+
+  // „Dalej" puszcza tylko wtedy, gdy bieżący etap jest poprawny. Inaczej
+  // pokazujemy braki i ustawiamy kursor na pierwszym z nich.
+  // Błędy z backendu nie blokują. Znikają dopiero przy kolejnym zapisie,
+  // więc po ich poprawieniu agent utknąłby na etapie.
+  const goNext = () => {
+    if (Object.keys(strictErrors).some((k) => stepOfKey(k) === step.id)) {
+      setAttempted((current) => new Set(current).add(step.id));
+      setErrorSignal((s) => s + 1);
+      return;
+    }
+    const next = steps[stepIndex + 1];
+    if (next) goTo(next.id);
+  };
+
+  const goBack = () => {
+    const previous = steps[stepIndex - 1];
+    if (previous) setStepId(previous.id);
+  };
+
+  /** Przenosi na pierwszy (w kolejności kreatora) etap z błędem. */
+  const jumpToFirstError = (keys: string[]) => {
+    const bad = new Set(keys.map(stepOfKey));
+    const first = steps.find((s) => bad.has(s.id));
+    if (first) goTo(first.id);
+    // Wyzwól przewinięcie i ustawienie kursora na pierwszym błędnym polu.
+    setErrorSignal((s) => s + 1);
+  };
+
+  // --- podgląd ---------------------------------------------------------------
+  const labelOf = (list: { value: string; label: string }[], value: string) =>
+    value === "" ? "" : (list.find((o) => o.value === value)?.label ?? value);
+  const amount = (value: string, unit: string) => {
+    const parsed = num(value);
+    return parsed == null || Number.isNaN(parsed)
+      ? ""
+      : `${parsed.toLocaleString("pl-PL")} ${unit}`;
+  };
+  const photosCount = isEdit ? media.length : draftFiles.length;
+
+  const summaryRows: SummaryRow[] = [
+    { label: "Rodzaj nieruchomości", value: labelOf(options.propertyType, fields.propertyType), step: "basic" },
+    { label: "Transakcja", value: labelOf(options.transactionType, fields.transactionType), step: "basic" },
+    { label: "Rynek", value: labelOf(options.marketType, fields.marketType), step: "basic" },
+    { label: "Status", value: labelOf(options.status, fields.status), step: "basic" },
+    { label: "Powierzchnia", value: amount(fields.totalArea, "m²"), step: "area" },
+    ...(showRooms
+      ? [{ label: roomsLabel, value: fields.roomsCount, step: "area" as const }]
+      : []),
+    {
+      label: "Adres",
+      value: [
+        [fields.street, fields.buildingNumber].filter(Boolean).join(" "),
+        [fields.postalCode, fields.city].filter(Boolean).join(" "),
+      ]
+        .filter(Boolean)
+        .join(", "),
+      step: "location",
+    },
+    { label: "Cena", value: amount(fields.price, fields.priceCurrency), step: "price" },
+    ...(showPricePerM2
+      ? [
+          {
+            label: "Cena za m²",
+            value: amount(fields.pricePerM2, `${fields.priceCurrency}/m²`),
+            step: "price" as const,
+          },
+        ]
+      : []),
+    {
+      label: "Zdjęcia",
+      value: photosCount > 0 ? String(photosCount) : "",
+      step: "media",
+    },
+    { label: "Tytuł ogłoszenia", value: fields.title, step: "description" },
+  ];
+
+  // Etapy z brakami. Na podglądzie podajemy je wprost, z linkiem do poprawki.
+  const incompleteSteps = steps
+    .filter((s) => s.id !== "summary" && stepHasErrors(s.id))
+    .map((s) => ({ id: s.id, title: s.title }));
+
+  // Enter w polu tekstowym wysyła formularz. W środku kreatora znaczy „Dalej".
+  function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+    if (isLastStep) void save();
+    else goNext();
+  }
+
+  async function save() {
     setSubmitted(true);
     setErrors({});
     setFormError(null);
@@ -876,8 +1123,7 @@ export function PropertyFormPage() {
     const fieldErrors = validate(true);
     if (Object.keys(fieldErrors).length > 0) {
       setFormError("Popraw zaznaczone pola formularza.");
-      // Wyzwól przewinięcie i ustawienie kursora na pierwszym błędnym polu.
-      setErrorSignal((s) => s + 1);
+      jumpToFirstError(Object.keys(fieldErrors));
       return;
     }
 
@@ -899,12 +1145,12 @@ export function PropertyFormPage() {
           priceIncludesRent: flags.priceIncludesRent,
           deposit: num(fields.deposit),
           commissionPercent: num(fields.commissionPercent),
-          // Garaż i pokój nie mają ceny za m² — wtedy null (backend nie wymaga).
+          // Garaż i pokój nie mają ceny za m². Wtedy null (backend nie wymaga).
           pricePerM2: showPricePerM2 ? num(fields.pricePerM2) : null,
         },
         area: {
           totalArea: num(fields.totalArea) ?? 0,
-          // Pola widoczne tylko dla części typów — dla pozostałych wysyłamy null,
+          // Pola widoczne tylko dla części typów. Dla pozostałych wysyłamy null,
           // żeby po zmianie rodzaju nie zostały „osierocone" wartości.
           usableArea: showUsableArea ? num(fields.usableArea) : null,
           plotArea: showPlotArea ? num(fields.plotArea) : null,
@@ -998,7 +1244,7 @@ export function PropertyFormPage() {
           await uploadPropertyMedia(saved.id, draftFiles);
         } catch (cause) {
           // Oferta jest już zapisana i nie wolno jej zgubić przez zdjęcia.
-          // Zamiast wracać do listy, zostajemy przy niej w edycji — pliki są
+          // Zamiast wracać do listy, zostajemy przy niej w edycji. Pliki są
           // wciąż wybrane w oknie wyboru, a agent widzi, czego brakuje.
           setDraftFiles([]);
           navigate(`/nieruchomosci/${saved.id}/edytuj`, {
@@ -1016,8 +1262,11 @@ export function PropertyFormPage() {
       navigate("/nieruchomosci", { state: { saved: saved.id } });
     } catch (cause) {
       if (cause instanceof ApiError) {
-        setErrors(cause.fieldErrors ?? {});
+        const backendErrors = cause.fieldErrors ?? {};
+        setErrors(backendErrors);
         setFormError(cause.message);
+        if (Object.keys(backendErrors).length > 0)
+          jumpToFirstError(Object.keys(backendErrors));
       } else {
         setFormError("Nie udało się zapisać oferty.");
       }
@@ -1027,7 +1276,8 @@ export function PropertyFormPage() {
   }
 
   return (
-    <form onSubmit={submit} noValidate className="flex flex-col gap-4 pb-10">
+    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4 pb-10">
+      <div ref={topRef} className="scroll-mt-6" aria-hidden="true" />
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Button
@@ -1044,9 +1294,13 @@ export function PropertyFormPage() {
           </h1>
         </div>
 
-        <Button type="submit" disabled={saving}>
-          {saving ? "Zapisywanie…" : "Zapisz ofertę"}
-        </Button>
+        {/* W edycji oferta jest już kompletna. Zapis bez przechodzenia
+            przez wszystkie etapy. */}
+        {isEdit && (
+          <Button type="button" disabled={saving} onClick={() => void save()}>
+            {saving ? "Zapisywanie…" : "Zapisz ofertę"}
+          </Button>
+        )}
       </header>
 
       {formError && (
@@ -1076,804 +1330,903 @@ export function PropertyFormPage() {
         </p>
       )}
 
-      <Section
-        title="Podstawowe"
-        description="Pola wymagane przez portale ogłoszeniowe przy każdym rodzaju oferty."
-      >
-        <Select
-          label="Rodzaj nieruchomości"
-          options={options.propertyType}
-          value={fields.propertyType}
-          onChange={set("propertyType")}
-          error={errors.propertyType}
-        />
-        <Select
-          label="Typ transakcji"
-          options={options.transactionType}
-          value={fields.transactionType}
-          onChange={set("transactionType")}
-          error={errors.transactionType}
-        />
-        <Select
-          label="Rynek"
-          options={options.marketType}
-          value={fields.marketType}
-          onChange={set("marketType")}
-          error={errors.marketType}
-          hint="Wymagane przez Otodom."
-        />
-        <Select
-          label="Status"
-          options={options.status}
-          value={fields.status}
-          onChange={set("status")}
-        />
-        <div className="md:col-span-3">
-          <Input
-            label="Tytuł ogłoszenia"
-            value={fields.title}
-            onChange={set("title")}
-            onBlur={markTouched("title")}
-            error={errorFor("title")}
-            hint="Do 50 znaków — dłuższy zostanie obcięty przez portal."
-            maxLength={50}
-            required
+      <div className="grid items-start gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
+        <aside className="lg:sticky lg:top-6">
+          <PropertyFormStepper
+            steps={steps.map((s) => ({
+              id: s.id,
+              title: s.title,
+              icon: s.icon,
+              state: stateOf(s.id),
+              reachable: visited.has(s.id),
+            }))}
+            onSelect={(target) => goTo(target as StepId)}
           />
-        </div>
-        <div className="md:col-span-3">
-          <Textarea
-            label="Opis"
-            rows={6}
-            value={fields.description}
-            onChange={set("description")}
-            onBlur={markTouched("description")}
-            error={errorFor("description")}
-            counter={{ value: fields.description.length, max: 20000 }}
-            required
-          />
-        </div>
-      </Section>
+        </aside>
 
-      <Section title="Powierzchnia i układ">
-        <Input
-          label={totalAreaLabel}
-          type="number"
-          inputMode="decimal"
-          step="0.01"
-          min={0}
-          value={fields.totalArea}
-          onChange={onTotalAreaChange}
-          onBlur={markTouched("area.totalArea")}
-          error={errorFor("area.totalArea")}
-          required
-        />
-        {showUsableArea && (
-          <Input
-            label="Powierzchnia użytkowa (m²)"
-            type="number"
-            inputMode="decimal"
-            step="0.01"
-            min={0}
-            value={fields.usableArea}
-            onChange={set("usableArea")}
-            onBlur={markTouched("area.usableArea")}
-            error={errorFor("area.usableArea")}
-          />
-        )}
-        {showPlotArea && (
-          <Input
-            label="Powierzchnia działki (m²)"
-            type="number"
-            inputMode="decimal"
-            step="0.01"
-            min={0}
-            value={fields.plotArea}
-            onChange={set("plotArea")}
-            onBlur={markTouched("area.plotArea")}
-            error={errorFor("area.plotArea")}
-          />
-        )}
-        {isGaraz && (
-          <Select
-            label="Typ"
-            options={options.garageType}
-            value={fields.garageType}
-            onChange={set("garageType")}
-            placeholder="Wybierz…"
-          />
-        )}
-        {showRooms && (
-          <Input
-            label={roomsLabel}
-            type="text"
-            inputMode="numeric"
-            value={fields.roomsCount}
-            onChange={setInt("roomsCount")}
-            onBlur={markTouched("area.roomsCount")}
-            error={errorFor("area.roomsCount")}
-            hint={
-              roomsRequired
-                ? "Wymagana — bez niej portal odrzuci ofertę."
-                : undefined
-            }
-            required={roomsRequired}
-          />
-        )}
-        {showBaths && (
-          <Input
-            label="Liczba łazienek"
-            type="text"
-            inputMode="numeric"
-            value={fields.bathroomsCount}
-            onChange={setInt("bathroomsCount")}
-            onBlur={markTouched("area.bathroomsCount")}
-            error={errorFor("area.bathroomsCount")}
-            required={bathsRequired}
-          />
-        )}
-        {isPokoj && (
-          <Input
-            label="Dla ilu osób"
-            type="text"
-            inputMode="numeric"
-            value={fields.occupants}
-            onChange={setInt("occupants")}
-            hint="Liczba współlokatorów."
-          />
-        )}
-        {isPokoj && (
-          <Select
-            label="Łazienka"
-            options={options.roomBathroom}
-            value={fields.roomBathroom}
-            onChange={set("roomBathroom")}
-            placeholder="Nie podano"
-          />
-        )}
-        {showFloor && (
-          <Input
-            label={floorLabel}
-            type="text"
-            inputMode="numeric"
-            value={fields.floorNo}
-            onChange={setInt("floorNo", true)}
-            onBlur={markTouched("area.floorNo")}
-            error={errorFor("area.floorNo")}
-            hint="-1 = suterena/podziemie, 0 = parter."
-            required={floorRequired}
-          />
-        )}
-        {showBuildingFloors && (
-          <Input
-            label="Liczba pięter w budynku"
-            type="text"
-            inputMode="numeric"
-            value={fields.buildingFloorsCount}
-            onChange={setInt("buildingFloorsCount")}
-            onBlur={markTouched("area.buildingFloorsCount")}
-            error={errorFor("area.buildingFloorsCount")}
-            required={buildingFloorsRequired}
-          />
-        )}
-        {showCeiling && (
-          <Input
-            label="Wysokość pomieszczeń (m)"
-            type="number"
-            inputMode="decimal"
-            step="0.01"
-            min={1}
-            max={50}
-            value={fields.ceilingHeight}
-            onChange={set("ceilingHeight")}
-            onBlur={markTouched("area.ceilingHeight")}
-            error={errorFor("area.ceilingHeight")}
-          />
-        )}
-      </Section>
-
-      <Section
-        title="Cena"
-        description="Podaj cenę albo cenę za m² — drugą wartość policzymy z powierzchni. Cena liczona z ceny za m² jest zaokrąglana do pełnych złotych."
-      >
-        <Input
-          label="Cena"
-          type="number"
-          inputMode="decimal"
-          step="0.01"
-          min={0}
-          value={fields.price}
-          onChange={onPriceChange}
-          onBlur={markTouched("pricing.price")}
-          error={errorFor("pricing.price")}
-          required
-        />
-        {showPricePerM2 && (
-          <Input
-            label="Cena za m²"
-            type="number"
-            inputMode="decimal"
-            step="0.01"
-            min={0}
-            value={fields.pricePerM2}
-            onChange={onPricePerM2Change}
-            onBlur={markTouched("pricing.pricePerM2")}
-            error={errorFor("pricing.pricePerM2")}
-            required
-          />
-        )}
-        <Select
-          label="Waluta"
-          options={options.currency}
-          value={fields.priceCurrency}
-          onChange={set("priceCurrency")}
-        />
-        <Input
-          label="Prowizja biura (%)"
-          type="number"
-          inputMode="decimal"
-          step="0.01"
-          min={0}
-          max={100}
-          value={fields.commissionPercent}
-          onChange={set("commissionPercent")}
-          onBlur={markTouched("pricing.commissionPercent")}
-          error={errorFor("pricing.commissionPercent")}
-          hint="Nie trafia do ogłoszenia."
-        />
-        <Input
-          label="Czynsz administracyjny"
-          type="number"
-          inputMode="decimal"
-          step="0.01"
-          min={0}
-          value={fields.rent}
-          onChange={set("rent")}
-          onBlur={markTouched("pricing.rent")}
-          error={errorFor("pricing.rent")}
-        />
-        {isRent && (
-          <Input
-            label="Kaucja"
-            type="number"
-            inputMode="decimal"
-            step="0.01"
-            min={0}
-            value={fields.deposit}
-            onChange={set("deposit")}
-            onBlur={markTouched("pricing.deposit")}
-            error={errorFor("pricing.deposit")}
-          />
-        )}
-        <div className="flex flex-col justify-end gap-2 pb-1">
-          <Check
-            label="Cena do negocjacji"
-            checked={flags.priceNegotiable}
-            onChange={(value) =>
-              setFlags((f) => ({ ...f, priceNegotiable: value }))
-            }
-          />
-          {isRent && (
-            <Check
-              label="Cena zawiera czynsz"
-              checked={flags.priceIncludesRent}
-              onChange={(value) =>
-                setFlags((f) => ({ ...f, priceIncludesRent: value }))
-              }
-            />
-          )}
-        </div>
-      </Section>
-
-      <Section
-        title="Lokalizacja"
-        description="Do zapisu wystarczą województwo i miejscowość. Powiat jest potrzebny dopiero do wysyłki na portal."
-      >
-        <Select
-          label="Województwo"
-          options={options.voivodeship}
-          value={fields.voivodeship}
-          onChange={set("voivodeship")}
-          error={errors["address.voivodeship"]}
-          placeholder="Wybierz…"
-          required
-        />
-        <Input
-          label="Powiat"
-          value={fields.county}
-          onChange={set("county")}
-          onBlur={capitalizeOnBlur("county")}
-          error={errors["address.county"]}
-          hint="Wymagany dopiero przy wysyłce na portal."
-        />
-        <Input
-          label="Gmina"
-          value={fields.commune}
-          onChange={set("commune")}
-          onBlur={capitalizeOnBlur("commune")}
-        />
-        <Input
-          label="Miejscowość"
-          value={fields.city}
-          onChange={set("city")}
-          onBlur={capitalizeOnBlur("city", "address.city")}
-          error={errorFor("address.city")}
-          required
-        />
-        <Input
-          label="Dzielnica"
-          value={fields.district}
-          onChange={set("district")}
-          onBlur={capitalizeOnBlur("district")}
-        />
-        <Input
-          label="Kod pocztowy"
-          value={fields.postalCode}
-          onChange={setPostalCode}
-          onBlur={markTouched("address.postalCode")}
-          error={errorFor("address.postalCode")}
-          placeholder="00-000"
-          inputMode="numeric"
-          maxLength={6}
-          required
-        />
-        <Input
-          label="Ulica"
-          value={fields.street}
-          onChange={set("street")}
-          onBlur={capitalizeOnBlur("street", "address.street")}
-          error={errorFor("address.street")}
-          hint="Wieś bez nazw ulic — zostaw puste."
-        />
-        <Input
-          label="Numer budynku"
-          value={fields.buildingNumber}
-          onChange={set("buildingNumber")}
-          onBlur={upperCaseOnBlur("buildingNumber", "address.buildingNumber")}
-          error={errorFor("address.buildingNumber")}
-          required
-        />
-        <div className="flex items-end pb-2">
-          <Check
-            label="Ukryj dokładny adres w ogłoszeniu"
-            checked={flags.hideExactAddress}
-            onChange={(value) =>
-              setFlags((f) => ({ ...f, hideExactAddress: value }))
-            }
-          />
-        </div>
-
-        {/* Mapa na całą szerokość sekcji i na jej dole — pod polami, które
-            uzupełnia, a nie obok nich. */}
-        <div className="md:col-span-3">
-          <LazyPropertyMap
-            position={coords}
-            onPick={handlePick}
-            height={340}
-            busy={geoBusy}
-            footer={
-              <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                <p
-                  className={
-                    geoError
-                      ? "text-[12px] text-critical"
-                      : "text-[12px] text-ink-muted"
-                  }
-                >
-                  {geoError ??
-                    geoNote ??
-                    "Kliknij w mapę lub przeciągnij pinezkę, żeby uzupełnić adres. Wpisany ręcznie adres (wystarczy województwo i miejscowość) sam ustawi pinezkę. Zoom: Ctrl + / Ctrl −, gdy kursor jest nad mapą."}
+        <div className="card">
+          <header className="flex flex-col items-center gap-3 border-b border-line px-5 py-6 text-center">
+            <span className="flex size-14 items-center justify-center rounded-full bg-accent-subtle text-accent">
+              <StepIcon className="size-6" strokeWidth={1.75} />
+            </span>
+            <div>
+              <p className="text-[11px] font-medium tracking-wide text-ink-muted uppercase">
+                Krok {stepIndex + 1} z {steps.length}
+              </p>
+              <h2 className="mt-0.5 text-lg font-semibold tracking-tight text-ink">
+                {step.title}
+              </h2>
+              {step.description && (
+                <p className="mx-auto mt-1 max-w-xl text-[12px] text-ink-muted">
+                  {step.description}
                 </p>
-                {coords && (
-                  <div className="flex items-baseline gap-3">
-                    <span className="text-[12px] tabular-nums text-ink-muted">
-                      {coords.lat.toFixed(6)}, {coords.lng.toFixed(6)}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={clearPin}
-                      className="text-[12px] text-accent hover:underline"
-                    >
-                      Usuń pinezkę
-                    </button>
-                  </div>
-                )}
-              </div>
-            }
-          />
-        </div>
-      </Section>
-
-      {showBuildingSection && (
-        <Section title={buildingTitle}>
-          {showBuildYear && (
-            <Input
-              label="Rok budowy"
-              type="text"
-              inputMode="numeric"
-              maxLength={4}
-              value={fields.buildYear}
-              onChange={setInt("buildYear")}
-              onBlur={markTouched("building.buildYear")}
-              error={errorFor("building.buildYear")}
-            />
-          )}
-          {buildingFull && (
-            <Select
-              label="Rodzaj zabudowy"
-              options={options.buildingType}
-              value={fields.buildingType}
-              onChange={set("buildingType")}
-              placeholder="Nie podano"
-            />
-          )}
-          {buildingFull && (
-            <Select
-              label="Materiał budowy"
-              options={options.buildingMaterial}
-              value={fields.buildingMaterial}
-              onChange={set("buildingMaterial")}
-              placeholder="Nie podano"
-            />
-          )}
-          {showConstructionStatus && (
-            <Select
-              label="Stan wykończenia"
-              options={options.constructionStatus}
-              value={fields.constructionStatus}
-              onChange={set("constructionStatus")}
-              placeholder="Nie podano"
-            />
-          )}
-          {showOwnershipForm && (
-            <Select
-              label="Forma własności"
-              options={options.ownershipForm}
-              value={fields.ownershipForm}
-              onChange={set("ownershipForm")}
-              placeholder="Nie podano"
-            />
-          )}
-          {buildingFull && (
-            <Select
-              label="Okna"
-              options={options.windowsType}
-              value={fields.windowsType}
-              onChange={set("windowsType")}
-              placeholder="Nie podano"
-            />
-          )}
-          {buildingFull && (
-            <Select
-              label="Położenie"
-              options={options.surroundings}
-              value={fields.surroundings}
-              onChange={set("surroundings")}
-              placeholder="Nie podano"
-            />
-          )}
-          {showAvailableFrom && (
-            <Input
-              label="Dostępne od"
-              type="date"
-              value={fields.availableFrom}
-              onChange={set("availableFrom")}
-            />
-          )}
-          {showFurnished && (
-            <div className="flex items-end pb-2">
-              <Check
-                label="Umeblowane"
-                checked={flags.furnished}
-                onChange={(value) => setFlags((f) => ({ ...f, furnished: value }))}
-              />
+              )}
             </div>
-          )}
-        </Section>
-      )}
+          </header>
 
-      {showLandSection && (
-        <Section title="Działka">
-          <Select
-            label="Typ działki"
-            options={options.plotType}
-            value={fields.plotType}
-            onChange={set("plotType")}
-            placeholder="Nie podano"
-          />
-          <Input
-            label="Wymiary"
-            value={fields.plotDimensions}
-            onChange={set("plotDimensions")}
-            placeholder="np. 25x40"
-            maxLength={32}
-          />
-          <Select
-            label="Dojazd"
-            options={options.roadAccess}
-            value={fields.roadAccess}
-            onChange={set("roadAccess")}
-            placeholder="Nie podano"
-          />
-          <div className="md:col-span-2">
-            <Input
-              label="Przeznaczenie w planie miejscowym"
-              value={fields.zoningPlan}
-              onChange={set("zoningPlan")}
+          {step.id === "basic" && (
+            <>
+          <Section>
+            <Select
+              label="Rodzaj nieruchomości"
+              options={options.propertyType}
+              value={fields.propertyType}
+              onChange={set("propertyType")}
+              error={errors.propertyType}
             />
-          </div>
-          <div className="flex items-end pb-2">
-            <Check
-              label="Ogrodzona"
-              checked={flags.plotFenced}
-              onChange={(value) => setFlags((f) => ({ ...f, plotFenced: value }))}
+            <Select
+              label="Typ transakcji"
+              options={options.transactionType}
+              value={fields.transactionType}
+              onChange={set("transactionType")}
+              error={errors.transactionType}
             />
-          </div>
-        </Section>
-      )}
+            <Select
+              label="Rynek"
+              options={options.marketType}
+              value={fields.marketType}
+              onChange={set("marketType")}
+              error={errors.marketType}
+              hint="Wymagane przez Otodom."
+            />
+            <Select
+              label="Status"
+              options={options.status}
+              value={fields.status}
+              onChange={set("status")}
+            />
+          </Section>
+            </>
+          )}
 
-      {showCommercialSection && (
-        <Section title={isHala ? "Hala / magazyn" : "Lokal użytkowy"}>
-          {isHala && (
-            <Select
-              label="Konstrukcja"
-              options={options.hallStructure}
-              value={fields.hallStructure}
-              onChange={set("hallStructure")}
-              placeholder="Nie podano"
-            />
-          )}
-          {isHala && (
-            <Select
-              label="Posadzka"
-              options={options.flooring}
-              value={fields.flooring}
-              onChange={set("flooring")}
-              placeholder="Nie podano"
-            />
-          )}
-          <Select
-            label="Parking"
-            options={options.parkingType}
-            value={fields.parkingType}
-            onChange={set("parkingType")}
-            placeholder="Nie podano"
-          />
-          {isHala && (
+          {step.id === "area" && (
+            <>
+          <Section>
             <Input
-              label="Moc przyłącza (kW)"
+              label={totalAreaLabel}
               type="number"
               inputMode="decimal"
               step="0.01"
               min={0}
-              value={fields.powerConnectionKw}
-              onChange={set("powerConnectionKw")}
-              onBlur={markTouched("commercial.powerConnectionKw")}
-              error={errorFor("commercial.powerConnectionKw")}
+              value={fields.totalArea}
+              onChange={onTotalAreaChange}
+              onBlur={markTouched("area.totalArea")}
+              error={errorFor("area.totalArea")}
+              required
             />
-          )}
-          {isHala && (
-            <Input
-              label="Nośność posadzki (t/m²)"
-              type="number"
-              inputMode="decimal"
-              step="0.01"
-              min={0}
-              value={fields.floorLoadPerM2}
-              onChange={set("floorLoadPerM2")}
-              onBlur={markTouched("commercial.floorLoadPerM2")}
-              error={errorFor("commercial.floorLoadPerM2")}
-            />
-          )}
-          {isHala && (
-            <Input
-              label="Liczba bram / doków"
-              type="text"
-              inputMode="numeric"
-              value={fields.loadingDocksCount}
-              onChange={setInt("loadingDocksCount")}
-            />
-          )}
-          <div className="flex flex-col justify-end gap-2 pb-1">
-            <Check
-              label="Pomieszczenia biurowe"
-              checked={flags.officeSpace}
-              onChange={(value) => setFlags((f) => ({ ...f, officeSpace: value }))}
-            />
-            <Check
-              label="Zaplecze socjalne"
-              checked={flags.socialFacilities}
-              onChange={(value) =>
-                setFlags((f) => ({ ...f, socialFacilities: value }))
-              }
-            />
-            {isHala && (
-              <Check
-                label="Rampa"
-                checked={flags.loadingRamp}
-                onChange={(value) => setFlags((f) => ({ ...f, loadingRamp: value }))}
+            {showUsableArea && (
+              <Input
+                label="Powierzchnia użytkowa (m²)"
+                type="number"
+                inputMode="decimal"
+                step="0.01"
+                min={0}
+                value={fields.usableArea}
+                onChange={set("usableArea")}
+                onBlur={markTouched("area.usableArea")}
+                error={errorFor("area.usableArea")}
               />
             )}
-          </div>
-          {dict && (
-            <div className="md:col-span-3">
-              <CheckGroup
-                title="Przeznaczenie"
-                entries={dict.commercialUse}
-                selected={uses}
-                onToggle={(value) => toggle(uses, setUses, value)}
+            {showPlotArea && (
+              <Input
+                label="Powierzchnia działki (m²)"
+                type="number"
+                inputMode="decimal"
+                step="0.01"
+                min={0}
+                value={fields.plotArea}
+                onChange={set("plotArea")}
+                onBlur={markTouched("area.plotArea")}
+                error={errorFor("area.plotArea")}
+              />
+            )}
+            {isGaraz && (
+              <Select
+                label="Typ"
+                options={options.garageType}
+                value={fields.garageType}
+                onChange={set("garageType")}
+                placeholder="Wybierz…"
+              />
+            )}
+            {showRooms && (
+              <Input
+                label={roomsLabel}
+                type="text"
+                inputMode="numeric"
+                value={fields.roomsCount}
+                onChange={setInt("roomsCount")}
+                onBlur={markTouched("area.roomsCount")}
+                error={errorFor("area.roomsCount")}
+                hint={
+                  roomsRequired
+                    ? "Wymagana. Bez niej portal odrzuci ofertę."
+                    : undefined
+                }
+                required={roomsRequired}
+              />
+            )}
+            {showBaths && (
+              <Input
+                label="Liczba łazienek"
+                type="text"
+                inputMode="numeric"
+                value={fields.bathroomsCount}
+                onChange={setInt("bathroomsCount")}
+                onBlur={markTouched("area.bathroomsCount")}
+                error={errorFor("area.bathroomsCount")}
+                required={bathsRequired}
+              />
+            )}
+            {isPokoj && (
+              <Input
+                label="Dla ilu osób"
+                type="text"
+                inputMode="numeric"
+                value={fields.occupants}
+                onChange={setInt("occupants")}
+              />
+            )}
+            {isPokoj && (
+              <Select
+                label="Łazienka"
+                options={options.roomBathroom}
+                value={fields.roomBathroom}
+                onChange={set("roomBathroom")}
+                placeholder="Nie podano"
+              />
+            )}
+            {showFloor && (
+              <Input
+                label={floorLabel}
+                type="text"
+                inputMode="numeric"
+                value={fields.floorNo}
+                onChange={setInt("floorNo", true)}
+                onBlur={markTouched("area.floorNo")}
+                error={errorFor("area.floorNo")}
+                hint="-1 = suterena/podziemie, 0 = parter."
+                required={floorRequired}
+              />
+            )}
+            {showBuildingFloors && (
+              <Input
+                label="Liczba pięter w budynku"
+                type="text"
+                inputMode="numeric"
+                value={fields.buildingFloorsCount}
+                onChange={setInt("buildingFloorsCount")}
+                onBlur={markTouched("area.buildingFloorsCount")}
+                error={errorFor("area.buildingFloorsCount")}
+                required={buildingFloorsRequired}
+              />
+            )}
+            {showCeiling && (
+              <Input
+                label="Wysokość pomieszczeń (m)"
+                type="number"
+                inputMode="decimal"
+                step="0.01"
+                min={1}
+                max={50}
+                value={fields.ceilingHeight}
+                onChange={set("ceilingHeight")}
+                onBlur={markTouched("area.ceilingHeight")}
+                error={errorFor("area.ceilingHeight")}
+              />
+            )}
+          </Section>
+
+            </>
+          )}
+
+          {step.id === "location" && (
+            <>
+          <Section>
+            <Select
+              label="Województwo"
+              options={options.voivodeship}
+              value={fields.voivodeship}
+              onChange={set("voivodeship")}
+              error={errors["address.voivodeship"]}
+              placeholder="Wybierz…"
+              required
+            />
+            <Input
+              label="Powiat"
+              value={fields.county}
+              onChange={set("county")}
+              onBlur={capitalizeOnBlur("county")}
+              error={errors["address.county"]}
+            />
+            <Input
+              label="Gmina"
+              value={fields.commune}
+              onChange={set("commune")}
+              onBlur={capitalizeOnBlur("commune")}
+            />
+            <Input
+              label="Miejscowość"
+              value={fields.city}
+              onChange={set("city")}
+              onBlur={capitalizeOnBlur("city", "address.city")}
+              error={errorFor("address.city")}
+              required
+            />
+            <Input
+              label="Dzielnica"
+              value={fields.district}
+              onChange={set("district")}
+              onBlur={capitalizeOnBlur("district")}
+            />
+            <Input
+              label="Kod pocztowy"
+              value={fields.postalCode}
+              onChange={setPostalCode}
+              onBlur={markTouched("address.postalCode")}
+              error={errorFor("address.postalCode")}
+              placeholder="00-000"
+              inputMode="numeric"
+              maxLength={6}
+              required
+            />
+            <Input
+              label="Ulica"
+              value={fields.street}
+              onChange={set("street")}
+              onBlur={capitalizeOnBlur("street", "address.street")}
+              error={errorFor("address.street")}
+              hint="Wieś bez nazw ulic. Zostaw puste."
+            />
+            <Input
+              label="Numer budynku"
+              value={fields.buildingNumber}
+              onChange={set("buildingNumber")}
+              onBlur={upperCaseOnBlur("buildingNumber", "address.buildingNumber")}
+              error={errorFor("address.buildingNumber")}
+              required
+            />
+            <div className="flex items-end pb-2">
+              <Check
+                label="Ukryj dokładny adres w ogłoszeniu"
+                checked={flags.hideExactAddress}
+                onChange={(value) =>
+                  setFlags((f) => ({ ...f, hideExactAddress: value }))
+                }
               />
             </div>
-          )}
-        </Section>
-      )}
 
-      {showHeating && dict && (
-        <Section title="Ogrzewanie">
-          <div className="md:col-span-3">
-            <CheckGroup
-              title="Rodzaj ogrzewania"
-              entries={dict.heatingType}
-              selected={heating}
-              onToggle={(value) => toggle(heating, setHeating, value)}
-            />
-          </div>
-        </Section>
-      )}
-
-      {showEnergy && (
-        <Section
-          title="Świadectwo charakterystyki energetycznej"
-          description="Obowiązkowe przy sprzedaży i najmie od 28.04.2023. Wskaźnik EP musi znaleźć się w ogłoszeniu."
-        >
-        <div className="md:col-span-3">
-          <Check
-            label="Budynek zwolniony z obowiązku posiadania świadectwa"
-            checked={flags.energyExempt}
-            onChange={(value) => setFlags((f) => ({ ...f, energyExempt: value }))}
-          />
-        </div>
-
-        {flags.energyExempt ? (
-          <div className="md:col-span-3">
-            <Input
-              label="Podstawa zwolnienia"
-              value={fields.energyExemptNote}
-              onChange={set("energyExemptNote")}
-              error={errors["energy.exemptNote"]}
-              hint="np. zabytek wpisany do rejestru, budynek do 50 m², obiekt sakralny."
-            />
-          </div>
-        ) : (
-          <>
-            <Input
-              label="EP — energia pierwotna"
-              type="number"
-              inputMode="decimal"
-              step="0.01"
-              min={0}
-              value={fields.energyPrimary}
-              onChange={set("energyPrimary")}
-              onBlur={markTouched("energy.energyPrimary")}
-              error={errorFor("energy.energyPrimary")}
-              hint="kWh/(m²·rok)"
-            />
-            <Input
-              label="EK — energia końcowa"
-              type="number"
-              inputMode="decimal"
-              step="0.01"
-              min={0}
-              value={fields.energyFinal}
-              onChange={set("energyFinal")}
-              onBlur={markTouched("energy.energyFinal")}
-              error={errorFor("energy.energyFinal")}
-              hint="kWh/(m²·rok)"
-            />
-            <Select
-              label="Klasa energetyczna"
-              options={options.energyClass}
-              value={fields.energyClass}
-              onChange={set("energyClass")}
-              placeholder="Nie podano"
-            />
-            <Input
-              label="Numer świadectwa"
-              value={fields.energyCertNumber}
-              onChange={set("energyCertNumber")}
-            />
-          </>
-        )}
-        </Section>
-      )}
-
-      {featureGroups.length > 0 && (
-        <Section title="Cechy">
-          <div className="flex flex-col gap-5 md:col-span-3">
-            {featureGroups.map((group) => (
-              <CheckGroup
-                key={group.category}
-                title={group.label}
-                entries={group.features}
-                selected={features}
-                onToggle={(value) => toggle(features, setFeatures, value)}
+            {/* Mapa na całą szerokość sekcji i na jej dole. Pod polami, które
+                uzupełnia, a nie obok nich. */}
+            <div className="md:col-span-3">
+              <LazyPropertyMap
+                position={coords}
+                onPick={handlePick}
+                height={340}
+                busy={geoBusy}
+                footer={
+                  <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                    <p
+                      className={
+                        geoError
+                          ? "text-[12px] text-critical"
+                          : "text-[12px] text-ink-muted"
+                      }
+                    >
+                      {geoError ??
+                        geoNote ??
+                        "Kliknij w mapę lub przeciągnij pinezkę, żeby uzupełnić adres. Wpisany ręcznie adres (wystarczy województwo i miejscowość) sam ustawi pinezkę. Zoom: Ctrl + / Ctrl −, gdy kursor jest nad mapą."}
+                    </p>
+                    {coords && (
+                      <div className="flex items-baseline gap-3">
+                        <span className="text-[12px] tabular-nums text-ink-muted">
+                          {coords.lat.toFixed(6)}, {coords.lng.toFixed(6)}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={clearPin}
+                          className="text-[12px] text-accent hover:underline"
+                        >
+                          Usuń pinezkę
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                }
               />
-            ))}
-          </div>
-        </Section>
-      )}
+            </div>
+          </Section>
 
-      <Section title="Materiały i notatki">
-        <Input
-          label="Link do filmu (YouTube)"
-          value={fields.videoUrl}
-          onChange={set("videoUrl")}
-        />
-        <Input
-          label="Link do wirtualnego spaceru"
-          value={fields.panoramaUrl}
-          onChange={set("panoramaUrl")}
-        />
-        <Input
-          label="Klucze"
-          value={fields.keysInfo}
-          onChange={set("keysInfo")}
-          hint="Dane wewnętrzne — nie trafiają do ogłoszenia."
-        />
-        <div className="md:col-span-3">
-          <Textarea
-            label="Notatki wewnętrzne"
-            rows={3}
-            value={fields.privateNotes}
-            onChange={set("privateNotes")}
-          />
-        </div>
-        <div className="md:col-span-3">
-          <Check
-            label="Pozwól eksportować tę ofertę na portale"
-            checked={flags.exportable}
-            onChange={(value) => setFlags((f) => ({ ...f, exportable: value }))}
-          />
-        </div>
-      </Section>
+            </>
+          )}
 
-      {isEdit && id ? (
-        <Section
-          title="Zdjęcia"
-          description="Galeria zapisuje się od razu, niezależnie od przycisku „Zapisz ofertę”."
-        >
-          <div className="md:col-span-3">
-            <PropertyGallery
-              propertyId={id}
-              media={media}
-              onChange={setMedia}
+          {step.id === "price" && (
+            <>
+          <Section>
+            <Input
+              label="Cena"
+              type="number"
+              inputMode="decimal"
+              step="0.01"
+              min={0}
+              value={fields.price}
+              onChange={onPriceChange}
+              onBlur={markTouched("pricing.price")}
+              error={errorFor("pricing.price")}
+              required
             />
-          </div>
-        </Section>
-      ) : (
-        <Section
-          title="Zdjęcia"
-          description="Wgrają się razem z ofertą. Bez co najmniej jednego zdjęcia oferta nie będzie gotowa do eksportu."
-        >
-          <div className="md:col-span-3">
-            <PropertyGalleryDraft
-              files={draftFiles}
-              onChange={setDraftFiles}
+            {showPricePerM2 && (
+              <Input
+                label="Cena za m²"
+                type="number"
+                inputMode="decimal"
+                step="0.01"
+                min={0}
+                value={fields.pricePerM2}
+                onChange={onPricePerM2Change}
+                onBlur={markTouched("pricing.pricePerM2")}
+                error={errorFor("pricing.pricePerM2")}
+                required
+              />
+            )}
+            <Select
+              label="Waluta"
+              options={options.currency}
+              value={fields.priceCurrency}
+              onChange={set("priceCurrency")}
             />
-          </div>
-        </Section>
-      )}
+            <Input
+              label="Prowizja biura (%)"
+              type="number"
+              inputMode="decimal"
+              step="0.01"
+              min={0}
+              max={100}
+              value={fields.commissionPercent}
+              onChange={set("commissionPercent")}
+              onBlur={markTouched("pricing.commissionPercent")}
+              error={errorFor("pricing.commissionPercent")}
+              hint="Nie trafia do ogłoszenia."
+            />
+            <Input
+              label="Czynsz administracyjny"
+              type="number"
+              inputMode="decimal"
+              step="0.01"
+              min={0}
+              value={fields.rent}
+              onChange={set("rent")}
+              onBlur={markTouched("pricing.rent")}
+              error={errorFor("pricing.rent")}
+            />
+            {isRent && (
+              <Input
+                label="Kaucja"
+                type="number"
+                inputMode="decimal"
+                step="0.01"
+                min={0}
+                value={fields.deposit}
+                onChange={set("deposit")}
+                onBlur={markTouched("pricing.deposit")}
+                error={errorFor("pricing.deposit")}
+              />
+            )}
+            <div className="flex flex-col justify-end gap-2 pb-1">
+              <Check
+                label="Cena do negocjacji"
+                checked={flags.priceNegotiable}
+                onChange={(value) =>
+                  setFlags((f) => ({ ...f, priceNegotiable: value }))
+                }
+              />
+              {isRent && (
+                <Check
+                  label="Cena zawiera czynsz"
+                  checked={flags.priceIncludesRent}
+                  onChange={(value) =>
+                    setFlags((f) => ({ ...f, priceIncludesRent: value }))
+                  }
+                />
+              )}
+            </div>
+          </Section>
 
-      <div className="flex justify-end gap-2">
-        <Button
-          type="button"
-          variant="secondary"
-          onClick={() => navigate("/nieruchomosci")}
-        >
-          Anuluj
-        </Button>
-        <Button type="submit" disabled={saving}>
-          {saving ? "Zapisywanie…" : "Zapisz ofertę"}
-        </Button>
+            </>
+          )}
+
+          {step.id === "details" && (
+            <>
+          {showBuildingSection && (
+            <Section title={buildingTitle}>
+              {showBuildYear && (
+                <Input
+                  label="Rok budowy"
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={4}
+                  value={fields.buildYear}
+                  onChange={setInt("buildYear")}
+                  onBlur={markTouched("building.buildYear")}
+                  error={errorFor("building.buildYear")}
+                />
+              )}
+              {buildingFull && (
+                <Select
+                  label="Rodzaj zabudowy"
+                  options={options.buildingType}
+                  value={fields.buildingType}
+                  onChange={set("buildingType")}
+                  placeholder="Nie podano"
+                />
+              )}
+              {buildingFull && (
+                <Select
+                  label="Materiał budowy"
+                  options={options.buildingMaterial}
+                  value={fields.buildingMaterial}
+                  onChange={set("buildingMaterial")}
+                  placeholder="Nie podano"
+                />
+              )}
+              {showConstructionStatus && (
+                <Select
+                  label="Stan wykończenia"
+                  options={options.constructionStatus}
+                  value={fields.constructionStatus}
+                  onChange={set("constructionStatus")}
+                  placeholder="Nie podano"
+                />
+              )}
+              {showOwnershipForm && (
+                <Select
+                  label="Forma własności"
+                  options={options.ownershipForm}
+                  value={fields.ownershipForm}
+                  onChange={set("ownershipForm")}
+                  placeholder="Nie podano"
+                />
+              )}
+              {buildingFull && (
+                <Select
+                  label="Okna"
+                  options={options.windowsType}
+                  value={fields.windowsType}
+                  onChange={set("windowsType")}
+                  placeholder="Nie podano"
+                />
+              )}
+              {buildingFull && (
+                <Select
+                  label="Położenie"
+                  options={options.surroundings}
+                  value={fields.surroundings}
+                  onChange={set("surroundings")}
+                  placeholder="Nie podano"
+                />
+              )}
+              {showAvailableFrom && (
+                <Input
+                  label="Dostępne od"
+                  type="date"
+                  value={fields.availableFrom}
+                  onChange={set("availableFrom")}
+                />
+              )}
+              {showFurnished && (
+                <div className="flex items-end pb-2">
+                  <Check
+                    label="Umeblowane"
+                    checked={flags.furnished}
+                    onChange={(value) => setFlags((f) => ({ ...f, furnished: value }))}
+                  />
+                </div>
+              )}
+            </Section>
+          )}
+
+          {showLandSection && (
+            <Section title="Działka">
+              <Select
+                label="Typ działki"
+                options={options.plotType}
+                value={fields.plotType}
+                onChange={set("plotType")}
+                placeholder="Nie podano"
+              />
+              <Input
+                label="Wymiary"
+                value={fields.plotDimensions}
+                onChange={set("plotDimensions")}
+                placeholder="np. 25x40"
+                maxLength={32}
+              />
+              <Select
+                label="Dojazd"
+                options={options.roadAccess}
+                value={fields.roadAccess}
+                onChange={set("roadAccess")}
+                placeholder="Nie podano"
+              />
+              <div className="md:col-span-2">
+                <Input
+                  label="Przeznaczenie w planie miejscowym"
+                  value={fields.zoningPlan}
+                  onChange={set("zoningPlan")}
+                />
+              </div>
+              <div className="flex items-end pb-2">
+                <Check
+                  label="Ogrodzona"
+                  checked={flags.plotFenced}
+                  onChange={(value) => setFlags((f) => ({ ...f, plotFenced: value }))}
+                />
+              </div>
+            </Section>
+          )}
+
+          {showCommercialSection && (
+            <Section title={isHala ? "Hala / magazyn" : "Lokal użytkowy"}>
+              {isHala && (
+                <Select
+                  label="Konstrukcja"
+                  options={options.hallStructure}
+                  value={fields.hallStructure}
+                  onChange={set("hallStructure")}
+                  placeholder="Nie podano"
+                />
+              )}
+              {isHala && (
+                <Select
+                  label="Posadzka"
+                  options={options.flooring}
+                  value={fields.flooring}
+                  onChange={set("flooring")}
+                  placeholder="Nie podano"
+                />
+              )}
+              <Select
+                label="Parking"
+                options={options.parkingType}
+                value={fields.parkingType}
+                onChange={set("parkingType")}
+                placeholder="Nie podano"
+              />
+              {isHala && (
+                <Input
+                  label="Moc przyłącza (kW)"
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
+                  min={0}
+                  value={fields.powerConnectionKw}
+                  onChange={set("powerConnectionKw")}
+                  onBlur={markTouched("commercial.powerConnectionKw")}
+                  error={errorFor("commercial.powerConnectionKw")}
+                />
+              )}
+              {isHala && (
+                <Input
+                  label="Nośność posadzki (t/m²)"
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
+                  min={0}
+                  value={fields.floorLoadPerM2}
+                  onChange={set("floorLoadPerM2")}
+                  onBlur={markTouched("commercial.floorLoadPerM2")}
+                  error={errorFor("commercial.floorLoadPerM2")}
+                />
+              )}
+              {isHala && (
+                <Input
+                  label="Liczba bram / doków"
+                  type="text"
+                  inputMode="numeric"
+                  value={fields.loadingDocksCount}
+                  onChange={setInt("loadingDocksCount")}
+                />
+              )}
+              <div className="flex flex-col justify-end gap-2 pb-1">
+                <Check
+                  label="Pomieszczenia biurowe"
+                  checked={flags.officeSpace}
+                  onChange={(value) => setFlags((f) => ({ ...f, officeSpace: value }))}
+                />
+                <Check
+                  label="Zaplecze socjalne"
+                  checked={flags.socialFacilities}
+                  onChange={(value) =>
+                    setFlags((f) => ({ ...f, socialFacilities: value }))
+                  }
+                />
+                {isHala && (
+                  <Check
+                    label="Rampa"
+                    checked={flags.loadingRamp}
+                    onChange={(value) => setFlags((f) => ({ ...f, loadingRamp: value }))}
+                  />
+                )}
+              </div>
+              {dict && (
+                <div className="md:col-span-3">
+                  <CheckGroup
+                    title="Przeznaczenie"
+                    entries={dict.commercialUse}
+                    selected={uses}
+                    onToggle={(value) => toggle(uses, setUses, value)}
+                  />
+                </div>
+              )}
+            </Section>
+          )}
+
+          {showHeating && dict && (
+            <Section title="Ogrzewanie">
+              <div className="md:col-span-3">
+                <CheckGroup
+                  title="Rodzaj ogrzewania"
+                  entries={dict.heatingType}
+                  selected={heating}
+                  onToggle={(value) => toggle(heating, setHeating, value)}
+                />
+              </div>
+            </Section>
+          )}
+
+          {showEnergy && (
+            <Section
+              title="Świadectwo charakterystyki energetycznej"
+              description="Obowiązkowe przy sprzedaży i najmie od 28.04.2023. Wskaźnik EP musi znaleźć się w ogłoszeniu."
+            >
+            <div className="md:col-span-3">
+              <Check
+                label="Budynek zwolniony z obowiązku posiadania świadectwa"
+                checked={flags.energyExempt}
+                onChange={(value) => setFlags((f) => ({ ...f, energyExempt: value }))}
+              />
+            </div>
+
+            {flags.energyExempt ? (
+              <div className="md:col-span-3">
+                <Input
+                  label="Podstawa zwolnienia"
+                  value={fields.energyExemptNote}
+                  onChange={set("energyExemptNote")}
+                  error={errors["energy.exemptNote"]}
+                  hint="np. zabytek wpisany do rejestru, budynek do 50 m², obiekt sakralny."
+                />
+              </div>
+            ) : (
+              <>
+                <Input
+                  label="EP. Energia pierwotna"
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
+                  min={0}
+                  value={fields.energyPrimary}
+                  onChange={set("energyPrimary")}
+                  onBlur={markTouched("energy.energyPrimary")}
+                  error={errorFor("energy.energyPrimary")}
+                  hint="kWh/(m²·rok)"
+                />
+                <Input
+                  label="EK. Energia końcowa"
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
+                  min={0}
+                  value={fields.energyFinal}
+                  onChange={set("energyFinal")}
+                  onBlur={markTouched("energy.energyFinal")}
+                  error={errorFor("energy.energyFinal")}
+                  hint="kWh/(m²·rok)"
+                />
+                <Select
+                  label="Klasa energetyczna"
+                  options={options.energyClass}
+                  value={fields.energyClass}
+                  onChange={set("energyClass")}
+                  placeholder="Nie podano"
+                />
+                <Input
+                  label="Numer świadectwa"
+                  value={fields.energyCertNumber}
+                  onChange={set("energyCertNumber")}
+                />
+              </>
+            )}
+            </Section>
+          )}
+
+            </>
+          )}
+
+          {step.id === "features" && (
+            <>
+          {featureGroups.length > 0 && (
+            <Section>
+              <div className="flex flex-col gap-5 md:col-span-3">
+                {featureGroups.map((group) => (
+                  <CheckGroup
+                    key={group.category}
+                    title={group.label}
+                    entries={group.features}
+                    selected={features}
+                    onToggle={(value) => toggle(features, setFeatures, value)}
+                  />
+                ))}
+              </div>
+            </Section>
+          )}
+
+            </>
+          )}
+
+          {step.id === "media" && (
+            <>
+          {isEdit && id ? (
+            <Section
+              title="Zdjęcia"
+              description="Galeria zapisuje się od razu, niezależnie od przycisku „Zapisz ofertę”."
+            >
+              <div className="md:col-span-3">
+                <PropertyGallery
+                  propertyId={id}
+                  media={media}
+                  onChange={setMedia}
+                />
+              </div>
+            </Section>
+          ) : (
+            <Section
+              title="Zdjęcia"
+              description="Bez co najmniej jednego zdjęcia oferta nie będzie gotowa do eksportu."
+            >
+              <div className="md:col-span-3">
+                <PropertyGalleryDraft
+                  files={draftFiles}
+                  onChange={setDraftFiles}
+                />
+              </div>
+            </Section>
+          )}
+
+          <Section title="Multimedia">
+            <Input
+              label="Link do filmu (YouTube)"
+              value={fields.videoUrl}
+              onChange={set("videoUrl")}
+            />
+            <Input
+              label="Link do wirtualnego spaceru"
+              value={fields.panoramaUrl}
+              onChange={set("panoramaUrl")}
+            />
+          </Section>
+            </>
+          )}
+
+          {step.id === "description" && (
+            <>
+          <Section>
+            <div className="md:col-span-3">
+              <Input
+                label="Tytuł ogłoszenia"
+                value={fields.title}
+                onChange={set("title")}
+                onBlur={markTouched("title")}
+                error={errorFor("title")}
+                hint="Do 50 znaków."
+                maxLength={50}
+                required
+              />
+            </div>
+            <div className="md:col-span-3">
+              <Textarea
+                label="Opis"
+                rows={6}
+                value={fields.description}
+                onChange={set("description")}
+                onBlur={markTouched("description")}
+                error={errorFor("description")}
+                counter={{ value: fields.description.length, max: 20000 }}
+                required
+              />
+            </div>
+          </Section>
+
+            </>
+          )}
+
+          {step.id === "summary" && (
+            <>
+              <Section>
+                <div className="md:col-span-3">
+                  <PropertySummary
+                    rows={summaryRows}
+                    incomplete={incompleteSteps}
+                    onEdit={goTo}
+                  />
+                </div>
+              </Section>
+          <Section
+            title="Informacje wewnętrzne"
+            description="Nie trafiają do ogłoszenia."
+          >
+            <Input
+              label="Klucze"
+              value={fields.keysInfo}
+              onChange={set("keysInfo")}
+            />
+            <div className="md:col-span-3">
+              <Textarea
+                label="Notatki wewnętrzne"
+                rows={3}
+                value={fields.privateNotes}
+                onChange={set("privateNotes")}
+              />
+            </div>
+            <div className="md:col-span-3">
+              <Check
+                label="Pozwól eksportować tę ofertę na portale"
+                checked={flags.exportable}
+                onChange={(value) => setFlags((f) => ({ ...f, exportable: value }))}
+              />
+            </div>
+          </Section>
+
+            </>
+          )}
+
+          <footer className="flex items-center justify-between gap-2 border-t border-line px-5 py-4">
+            {stepIndex > 0 ? (
+              <Button type="button" variant="secondary" onClick={goBack}>
+                <ArrowLeft className="size-4" strokeWidth={2} />
+                Wstecz
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => navigate("/nieruchomosci")}
+              >
+                Anuluj
+              </Button>
+            )}
+            {isLastStep ? (
+              <Button type="submit" disabled={saving}>
+                {saving ? "Zapisywanie…" : "Zapisz ofertę"}
+              </Button>
+            ) : (
+              <Button type="button" onClick={goNext}>
+                Dalej
+                <ArrowRight className="size-4" strokeWidth={2} />
+              </Button>
+            )}
+          </footer>
+        </div>
       </div>
     </form>
   );
@@ -1884,22 +2237,96 @@ function Section({
   description,
   children,
 }: {
-  title: string;
+  title?: string;
   description?: string;
   children: ReactNode;
 }) {
+  // Sekcja to fragment karty etapu. Kolejne oddziela kreska, bez własnej ramki.
   return (
-    <section className="card">
-      <header className="border-b border-line px-4 py-3">
-        <h2 className="text-[13px] font-semibold tracking-tight text-ink">
-          {title}
-        </h2>
-        {description && (
-          <p className="mt-0.5 text-[12px] text-ink-muted">{description}</p>
-        )}
-      </header>
-      <div className="grid gap-4 p-4 md:grid-cols-3">{children}</div>
+    <section className="border-t border-line first-of-type:border-t-0">
+      {title && (
+        <header className="px-5 pt-4">
+          <h3 className="text-[13px] font-semibold tracking-tight text-ink">
+            {title}
+          </h3>
+          {description && (
+            <p className="mt-0.5 text-[12px] text-ink-muted">{description}</p>
+          )}
+        </header>
+      )}
+      <div className="grid gap-4 p-5 md:grid-cols-3">{children}</div>
     </section>
+  );
+}
+
+interface SummaryRow {
+  label: string;
+  value: string;
+  step: StepId;
+}
+
+/** Podgląd przed zapisem: najważniejsze dane z odnośnikiem do ich etapu. */
+function PropertySummary({
+  rows,
+  incomplete,
+  onEdit,
+}: {
+  rows: SummaryRow[];
+  incomplete: { id: StepId; title: string }[];
+  onEdit: (step: StepId) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-4">
+      {incomplete.length > 0 ? (
+        <div className="rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-[13px] text-ink">
+          Brakuje danych w etapach:{" "}
+          {incomplete.map((s, index) => (
+            <span key={s.id}>
+              {index > 0 && ", "}
+              <button
+                type="button"
+                onClick={() => onEdit(s.id)}
+                className="font-medium text-accent hover:underline"
+              >
+                {s.title}
+              </button>
+            </span>
+          ))}
+          .
+        </div>
+      ) : (
+        <div className="rounded-md border border-good/30 bg-good/8 px-3 py-2 text-[13px] text-ink">
+          Wszystkie wymagane pola są uzupełnione. Ofertę można zapisać.
+        </div>
+      )}
+
+      <dl className="divide-y divide-line rounded-md border border-line">
+        {rows.map((row) => (
+          <div
+            key={row.label}
+            className="grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)_auto] items-baseline gap-3 px-3 py-2"
+          >
+            <dt className="text-[12px] text-ink-muted">{row.label}</dt>
+            <dd
+              className={
+                row.value
+                  ? "truncate text-[13px] text-ink"
+                  : "text-[13px] text-ink-muted"
+              }
+            >
+              {row.value || "-"}
+            </dd>
+            <button
+              type="button"
+              onClick={() => onEdit(row.step)}
+              className="text-[12px] text-accent hover:underline"
+            >
+              Zmień
+            </button>
+          </div>
+        ))}
+      </dl>
+    </div>
   );
 }
 
@@ -1956,7 +2383,7 @@ function CheckGroup({
 }
 
 // Przecinek jako separator dziesiętny (polska konwencja) sprowadzamy do kropki
-// przed parsowaniem — inaczej Number("2,5") to NaN.
+// przed parsowaniem. Inaczej Number("2,5") to NaN.
 const num = (value: string): number | null => {
   const trimmed = value.trim().replace(",", ".");
   return trimmed === "" ? null : Number(trimmed);

@@ -1,7 +1,7 @@
 package pl.delta.crm.property.dictionary;
 
 /**
- * Przeznaczenie lokalu lub hali. Wielowartościowe — jeden lokal bywa
+ * Przeznaczenie lokalu lub hali. Wielowartościowe. Jeden lokal bywa
  * jednocześnie handlowy i usługowy (Otodom: PropertyUseMask, HallDetails: UseMask).
  */
 public enum CommercialUse implements Dictionary {

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import {
   fetchCalendarDictionaries,
@@ -8,6 +9,12 @@ import {
   type EventSummary,
 } from "../../api/calendar";
 import { fetchClients, type ClientSummary } from "../../api/clients";
+import {
+  fetchCalendarDeadlines,
+  fetchDealDictionaries,
+  type CalendarDeadline,
+  type DealDictionaries,
+} from "../../api/deals";
 import { fetchProperties, type PropertySummary } from "../../api/properties";
 import { ApiError } from "../../api/client";
 import { Button } from "../../components/ui/Button";
@@ -16,7 +23,7 @@ import { cn } from "../../lib/cn";
 import { CalendarGrid } from "./CalendarGrid";
 import { EventForm } from "./EventForm";
 import { EventPanel } from "./EventPanel";
-import { periodLabel, rangeFor, shift, startOfDay, type CalendarView } from "./dates";
+import { periodLabel, rangeFor, shift, startOfDay, toDateInput, type CalendarView } from "./dates";
 import { typeDot } from "./eventMeta";
 
 const VIEWS: { value: CalendarView; label: string }[] = [
@@ -36,10 +43,13 @@ export function CalendarPage() {
   const [type, setType] = useState("");
   const [status, setStatus] = useState("");
 
+  const navigate = useNavigate();
   const [events, setEvents] = useState<EventSummary[]>([]);
+  const [deadlines, setDeadlines] = useState<CalendarDeadline[]>([]);
   const [dictionaries, setDictionaries] = useState<CalendarDictionaries | null>(null);
   const [properties, setProperties] = useState<PropertySummary[]>([]);
   const [clients, setClients] = useState<ClientSummary[]>([]);
+  const [dealDictionaries, setDealDictionaries] = useState<DealDictionaries | null>(null);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editing, setEditing] = useState<EventDetail | null>(null);
@@ -69,21 +79,41 @@ export function CalendarPage() {
     reload();
   }, [reload]);
 
-  // Słowniki i listy do formularza — raz na wejście w moduł.
+  // Terminy umowne to osobna warstwa z modułu transakcji. Filtry rodzaju
+  // i statusu dotyczą spotkań, więc przy nich warstwę chowamy. Inaczej
+  // „tylko prezentacje" pokazywałoby też koniec umowy pośrednictwa.
+  const showDeadlines = !type && !status;
+  useEffect(() => {
+    if (!showDeadlines) {
+      setDeadlines([]);
+      return;
+    }
+    fetchCalendarDeadlines(toDateInput(from), toDateInput(to), mine)
+      .then(setDeadlines)
+      .catch(() => setDeadlines([]));
+  }, [from, to, mine, showDeadlines]);
+
+  // Słowniki i listy do formularza. Raz na wejście w moduł.
   useEffect(() => {
     fetchCalendarDictionaries().then(setDictionaries).catch(() => undefined);
     fetchProperties().then((page) => setProperties(page.content)).catch(() => undefined);
     fetchClients().then((page) => setClients(page.content)).catch(() => undefined);
+    // Statusy uczestników terminu (zainteresowanych z transakcji).
+    fetchDealDictionaries().then(setDealDictionaries).catch(() => undefined);
   }, []);
 
   const labels = useMemo(() => {
     const map = new Map<string, string>();
     if (!dictionaries) return map;
-    for (const group of [dictionaries.type, dictionaries.status, dictionaries.outcome]) {
+    const groups = [dictionaries.type, dictionaries.status, dictionaries.outcome];
+    if (dealDictionaries) {
+      groups.push(dealDictionaries.interestStatus, dealDictionaries.stage, dealDictionaries.deadlineType);
+    }
+    for (const group of groups) {
       for (const entry of group) map.set(entry.value, entry.label);
     }
     return map;
-  }, [dictionaries]);
+  }, [dictionaries, dealDictionaries]);
 
   const label = (value: string) => labels.get(value) ?? value;
 
@@ -184,8 +214,8 @@ export function CalendarPage() {
 
       {/*
         Legenda kolorów rodzaju. Etykiety biorą się ze słownika z backendu, więc
-        dołożenie rodzaju po stronie serwera nie wymaga ruszania tej listy —
-        nowa pozycja dostanie kolor „Inne", dopóki nie dopiszemy jej do palety.
+        dołożenie rodzaju po stronie serwera nie wymaga ruszania tej listy.
+        Nowa pozycja dostanie kolor „Inne", dopóki nie dopiszemy jej do palety.
       */}
       {dictionaries && (
         <ul className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[12px] text-ink-secondary">
@@ -221,6 +251,9 @@ export function CalendarPage() {
             selectedId={selectedId}
             onSelect={(event) => setSelectedId(event.id)}
             onCreateAt={openNewEvent}
+            deadlines={deadlines}
+            onOpenDeadline={(deadline) => navigate(`/kanban?karta=${deadline.dealId}`)}
+            label={label}
           />
         </div>
 
@@ -246,10 +279,13 @@ export function CalendarPage() {
           defaultDay={formDay}
           properties={properties}
           clients={clients}
-          onSaved={() => {
+          onSaved={(saved) => {
             setFormDay(null);
             setEditing(null);
             reload();
+            // Termin zamknięty z formularza też może podpowiadać etap transakcji.
+            // Pokazujemy go w panelu, żeby propozycja nie przepadła po zapisie.
+            if (saved.suggestion) setSelectedId(saved.summary.id);
           }}
           onClose={() => {
             setFormDay(null);

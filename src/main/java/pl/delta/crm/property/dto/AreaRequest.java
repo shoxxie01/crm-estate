@@ -30,7 +30,7 @@ public record AreaRequest(
         @Min(0) @Max(50)
         Short bathroomsCount,
 
-        /* -1 = suterena, 0 = parter, dalej numer piętra. Górny limit 160 — powyżej
+        /* -1 = suterena, 0 = parter, dalej numer piętra. Górny limit 160. Powyżej
            najwyższych zamieszkałych budynków świata (Burj Khalifa). */
         @Min(value = -1, message = "Najniższa dopuszczalna wartość to -1 (suterena).")
         @Max(value = 160, message = "Piętro nie może być wyższe niż 160.")

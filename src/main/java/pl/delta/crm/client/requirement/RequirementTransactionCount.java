@@ -4,7 +4,7 @@ import pl.delta.crm.property.dictionary.TransactionType;
 
 import java.util.UUID;
 
-/** Ile poszukiwań danego typu transakcji ma klient — pod etykietę „kupujący / najemca". */
+/** Ile poszukiwań danego typu transakcji ma klient. Pod etykietę „kupujący / najemca". */
 public interface RequirementTransactionCount {
 
     UUID getClientId();

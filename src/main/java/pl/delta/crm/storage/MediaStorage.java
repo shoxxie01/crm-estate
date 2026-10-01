@@ -2,7 +2,7 @@ package pl.delta.crm.storage;
 
 /**
  * Warstwa plików widziana przez resztę aplikacji. Celowo wąska i bez śladu S3
- * w sygnaturach — moduł ofert ma wiedzieć, że plik da się zapisać, skasować
+ * w sygnaturach. Moduł ofert ma wiedzieć, że plik da się zapisać, skasować
  * i pokazać, a nie czym to jest zaimplementowane.
  *
  * <p>Klucz obiektu jest jedynym identyfikatorem pliku i trafia do kolumny
@@ -17,7 +17,7 @@ public interface MediaStorage {
     void put(String key, byte[] content, String contentType);
 
     /**
-     * Kasuje obiekt. Brak obiektu nie jest błędem — wiersz w bazie bez pliku psuje
+     * Kasuje obiekt. Brak obiektu nie jest błędem. Wiersz w bazie bez pliku psuje
      * galerię, plik bez wiersza jest tylko zajętym miejscem, więc kasowanie ma
      * prawo być bezszelestne.
      */
@@ -25,7 +25,7 @@ public interface MediaStorage {
 
     /**
      * Czasowy, podpisany link do odczytu. Działa bez tokenu aplikacji, dlatego
-     * ma krótki TTL — to on, a nie autoryzacja, ogranicza czas życia dostępu.
+     * ma krótki TTL. To on, a nie autoryzacja, ogranicza czas życia dostępu.
      */
     String url(String key);
 }

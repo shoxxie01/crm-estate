@@ -1,11 +1,11 @@
 package pl.delta.crm.property.dictionary;
 
 /**
- * Rodzaj zabudowy — suma zbiorów trzech osobnych słowników Otodom.
+ * Rodzaj zabudowy. Suma zbiorów trzech osobnych słowników Otodom.
  *
  * <p>To najlepszy przykład tego, dlaczego kody portalowe nie mogą trafić do bazy:
- * Otodom ma trzy różne słowniki {@code BuildingType} — dla mieszkania, dla domu
- * i dla lokalu użytkowego — i ta sama liczba znaczy w nich co innego
+ * Otodom ma trzy różne słowniki {@code BuildingType}. Dla mieszkania, dla domu
+ * i dla lokalu użytkowego. I ta sama liczba znaczy w nich co innego
  * ({@code 2} to „dom wolnostojący" przy mieszkaniu, „szeregowiec" przy domu
  * i „w bloku" przy lokalu). Trzymamy więc jeden zbiór jednoznacznych nazw,
  * a eksport wybiera właściwy słownik na podstawie {@link PropertyType}.

@@ -13,7 +13,7 @@ import java.util.UUID;
 
 /**
  * Biuro nieruchomości. Wszystkie dane domenowe (oferty, klienci, umowy) należą
- * do agencji, nie do pojedynczego użytkownika — to po niej filtrujemy dostęp.
+ * do agencji, nie do pojedynczego użytkownika. To po niej filtrujemy dostęp.
  */
 @Entity
 @Table(name = "agencies")
@@ -26,7 +26,7 @@ public class Agency {
     @Column(nullable = false, length = 150)
     private String name;
 
-    /** E-mail konta biura w portalu — Otodom rozpoznaje po nim nadawcę paczki. */
+    /** E-mail konta biura w portalu. Otodom rozpoznaje po nim nadawcę paczki. */
     @Column(length = 190)
     private String contactEmail;
 
@@ -38,7 +38,7 @@ public class Agency {
 
     /**
      * Klucz w adresie publicznego formularza zgłoszeniowego. Losowy, żeby nie
-     * dało się zgadywać formularzy innych biur, i wymienialny — patrz
+     * dało się zgadywać formularzy innych biur, i wymienialny. Patrz
      * {@link #regenerateIntakeToken()}.
      */
     @Column(name = "intake_token", nullable = false, unique = true, length = 40)
@@ -56,7 +56,7 @@ public class Agency {
         this.contactEmail = contactEmail;
     }
 
-    /** Stary link przestaje działać od razu — na wypadek, gdy wyciekł do spamerów. */
+    /** Stary link przestaje działać od razu. Na wypadek, gdy wyciekł do spamerów. */
     public void regenerateIntakeToken() {
         this.intakeToken = newIntakeToken();
     }

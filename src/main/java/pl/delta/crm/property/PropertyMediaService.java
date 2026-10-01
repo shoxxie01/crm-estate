@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
  * <p><b>Kolejność zapisu jest asymetryczna i to jest celowe.</b> Przy dodawaniu
  * najpierw leci plik do storage'u, potem wiersz do bazy; przy kasowaniu najpierw
  * znika wiersz, a plik dopiero po commicie. W obu wypadkach awaria w połowie
- * zostawia najwyżej plik bez wiersza — czyli zajęte miejsce. Odwrotna kolejność
+ * zostawia najwyżej plik bez wiersza. Czyli zajęte miejsce. Odwrotna kolejność
  * zostawiałaby wiersz bez pliku, a to już dziura w galerii i oferta, której
  * eksport nie ma z czego złożyć paczki.
  */
@@ -64,7 +64,7 @@ public class PropertyMediaService {
         int already = property.getMedia().size();
         if (already + files.size() > PropertyMedia.MAX_PER_PROPERTY) {
             throw new BusinessValidationException(Map.of("files",
-                    "Oferta może mieć najwyżej %d zdjęć — dodano już %d."
+                    "Oferta może mieć najwyżej %d zdjęć. Dodano już %d."
                             .formatted(PropertyMedia.MAX_PER_PROPERTY, already)));
         }
 
@@ -74,7 +74,7 @@ public class PropertyMediaService {
         }
 
         // Sam flush, bez save(): oferta jest już zarządzana, a save() na takiej
-        // encji robi merge, który nowe zdjęcia *kopiuje* — do bazy trafiłyby
+        // encji robi merge, który nowe zdjęcia *kopiuje*. Do bazy trafiłyby
         // kopie, a obiekty z `added` zostałyby bez identyfikatorów i odpowiedź
         // wróciłaby z `id: null`. Flush jest tu potrzebny, bo identyfikatory
         // powstają dopiero przy zapisie, a front musi mieć czym zaadresować
@@ -84,7 +84,7 @@ public class PropertyMediaService {
     }
 
     /**
-     * Podmiana pliku pod istniejącym wpisem — pozycja, podpis i identyfikator
+     * Podmiana pliku pod istniejącym wpisem. Pozycja, podpis i identyfikator
      * zostają. Nowy plik ląduje pod tym samym kluczem, więc stara wersja znika
      * bezpowrotnie; galeria pokazuje ją jeszcze przez czas życia podpisanego
      * linku, bo przeglądarka ma ją w cache'u.
@@ -102,7 +102,7 @@ public class PropertyMediaService {
         item.replaceFile(fileName(file), ImageProcessor.OUTPUT_CONTENT_TYPE,
                 processed.full().length, processed.widthPx(), processed.heightPx());
 
-        // Bez save() — encja jest zarządzana, zmianę zapisze dirty checking.
+        // Bez save(). Encja jest zarządzana, zmianę zapisze dirty checking.
         return MediaResponse.from(item, storage::url);
     }
 
@@ -125,7 +125,7 @@ public class PropertyMediaService {
 
     /**
      * Nowa kolejność galerii. Wymagamy kompletu identyfikatorów, bo lista krótsza
-     * od galerii nie mówi, gdzie mają wylądować pominięte zdjęcia — a zgadywanie
+     * od galerii nie mówi, gdzie mają wylądować pominięte zdjęcia. A zgadywanie
      * kończyłoby się przestawieniem czegoś, czego użytkownik nie ruszał.
      */
     @Transactional
@@ -182,7 +182,7 @@ public class PropertyMediaService {
      * Pliki oferty kasowanej w całości.
      *
      * <p>Wiersze {@code property_media} znikają kaskadą (JPA + {@code ON DELETE
-     * CASCADE} w V3), ale kaskada bazy nie wie nic o storage'u — bez tego każde
+     * CASCADE} w V3), ale kaskada bazy nie wie nic o storage'u. Bez tego każde
      * skasowanie oferty zostawiałoby komplet jej zdjęć jako sieroty. Wołane
      * z {@link PropertyService#delete}, w jego transakcji.
      */
@@ -225,7 +225,7 @@ public class PropertyMediaService {
                 .orElseThrow(PropertyNotFoundException::new);
     }
 
-    /** Materiał szukany w obrębie oferty — obcy identyfikator daje 404, nie 403. */
+    /** Materiał szukany w obrębie oferty. Obcy identyfikator daje 404, nie 403. */
     private PropertyMedia find(Property property, UUID mediaId) {
         return property.getMedia().stream()
                 .filter(item -> item.getId().equals(mediaId))
@@ -247,7 +247,7 @@ public class PropertyMediaService {
         }
         if (type == MediaType.DOCUMENT) {
             throw new BusinessValidationException(
-                    Map.of("type", "Tą drogą wgrywa się wyłącznie obrazy — zdjęcia i rzuty."));
+                    Map.of("type", "Tą drogą wgrywa się wyłącznie obrazy. Zdjęcia i rzuty."));
         }
         return type;
     }
@@ -265,7 +265,7 @@ public class PropertyMediaService {
 
     /**
      * Nazwa do pokazania i do paczki eksportu. Bierzemy samą nazwę pliku bez
-     * ścieżki — niektóre przeglądarki wysyłają pełną — i przycinamy do długości
+     * ścieżki Niektóre przeglądarki wysyłają pełną i przycinamy do długości
      * kolumny.
      */
     private String fileName(MultipartFile file) {

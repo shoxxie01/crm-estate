@@ -38,7 +38,7 @@ export function Sparkline({ points, width = 88, height = 28 }: SparklineProps) {
       <path
         d={path}
         fill="none"
-        stroke="#b4b7bd"
+        stroke="var(--color-sparkline)"
         strokeWidth={2}
         strokeLinecap="round"
         strokeLinejoin="round"

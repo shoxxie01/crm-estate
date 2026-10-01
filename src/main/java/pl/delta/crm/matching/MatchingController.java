@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Dopasowania jako osobne zasoby pod ofertą i pod poszukiwaniem — nie są
+ * Dopasowania jako osobne zasoby pod ofertą i pod poszukiwaniem. Nie są
  * doklejane do ich odpowiedzi, bo liczą się dłużej niż zwykły odczyt, a lista
  * ofert czy klientów ich nie potrzebuje.
  */

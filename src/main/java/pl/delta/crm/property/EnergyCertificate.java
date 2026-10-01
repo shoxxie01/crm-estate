@@ -14,23 +14,23 @@ import java.time.LocalDate;
  *
  * <p>Od 28 kwietnia 2023 r. świadectwo jest w Polsce obowiązkowe przy sprzedaży
  * i wynajmie, a wskaźnik EP musi znaleźć się w treści ogłoszenia. Specyfikacja
- * Otodom Import pochodzi z 2017 r. i tych pól nie zna — obowiązek prawny
+ * Otodom Import pochodzi z 2017 r. i tych pól nie zna. Obowiązek prawny
  * istnieje jednak niezależnie od formatu XML, a nowsze integracje portali już
  * je przyjmują. Trzymanie ich od początku jest tańsze niż dopisywanie kolumn
  * do tabeli pełnej ofert.
  *
  * <p>Część budynków jest z obowiązku zwolniona (m.in. zabytki wpisane do
- * rejestru, obiekty sakralne, budynki do 50 m²) — stąd {@code exempt} razem
+ * rejestru, obiekty sakralne, budynki do 50 m²). Stąd {@code exempt} razem
  * z uzasadnieniem, zamiast pustych wskaźników bez wyjaśnienia.
  */
 @Embeddable
 public class EnergyCertificate {
 
-    /** EP — zapotrzebowanie na nieodnawialną energię pierwotną, kWh/(m²·rok). */
+    /** EP. Zapotrzebowanie na nieodnawialną energię pierwotną, kWh/(m²·rok). */
     @Column(name = "energy_ep", precision = 7, scale = 2)
     private BigDecimal energyPrimary;
 
-    /** EK — zapotrzebowanie na energię końcową, kWh/(m²·rok). */
+    /** EK. Zapotrzebowanie na energię końcową, kWh/(m²·rok). */
     @Column(name = "energy_ek", precision = 7, scale = 2)
     private BigDecimal energyFinal;
 
@@ -54,7 +54,7 @@ public class EnergyCertificate {
     private String exemptNote;
 
     public EnergyCertificate() {
-        // świadectwa może jeszcze nie być — pusty obiekt jest poprawnym stanem
+        // świadectwa może jeszcze nie być. Pusty obiekt jest poprawnym stanem
     }
 
     /** Czy ofertę wolno opublikować od strony obowiązku energetycznego. */

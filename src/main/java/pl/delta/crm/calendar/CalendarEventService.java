@@ -12,9 +12,16 @@ import pl.delta.crm.calendar.dto.UpdateEventStatusRequest;
 import pl.delta.crm.client.Client;
 import pl.delta.crm.client.ClientRepository;
 import pl.delta.crm.contact.PhoneNumber;
+import pl.delta.crm.deal.Deal;
+import pl.delta.crm.deal.DealInterest;
+import pl.delta.crm.deal.DealInterestRepository;
+import pl.delta.crm.deal.dictionary.InterestStatus;
+import pl.delta.crm.deal.DealRepository;
 import pl.delta.crm.error.BusinessValidationException;
 import pl.delta.crm.error.CalendarEventNotFoundException;
 import pl.delta.crm.error.ClientNotFoundException;
+import pl.delta.crm.error.DealNotFoundException;
+import pl.delta.crm.error.InterestNotFoundException;
 import pl.delta.crm.error.PropertyNotFoundException;
 import pl.delta.crm.property.Property;
 import pl.delta.crm.property.PropertyRepository;
@@ -23,9 +30,13 @@ import pl.delta.crm.user.UserRepository;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.EnumSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -38,18 +49,30 @@ public class CalendarEventService {
      */
     private static final Duration MAX_RANGE = Duration.ofDays(200);
 
+    /**
+     * Rodzaje terminów, po których zainteresowany na pewno widział ofertę.
+     * Odbyta prezentacja przestawia jego status z „zgłosił się" na „oglądał".
+     */
+    private static final Set<EventType> VIEWINGS = EnumSet.of(EventType.PRESENTATION, EventType.OPEN_HOUSE);
+
     private final CalendarEventRepository events;
     private final PropertyRepository properties;
     private final ClientRepository clients;
+    private final DealRepository deals;
+    private final DealInterestRepository interests;
     private final UserRepository users;
 
     public CalendarEventService(CalendarEventRepository events,
                                 PropertyRepository properties,
                                 ClientRepository clients,
+                                DealRepository deals,
+                                DealInterestRepository interests,
                                 UserRepository users) {
         this.events = events;
         this.properties = properties;
         this.clients = clients;
+        this.deals = deals;
+        this.interests = interests;
         this.users = users;
     }
 
@@ -61,6 +84,7 @@ public class CalendarEventService {
         UUID agencyId = author.getAgency().getId();
         Property property = resolveProperty(request.propertyId(), agencyId);
         Client client = resolveClient(request.clientId(), agencyId);
+        Deal deal = resolveDeal(request.dealId(), agencyId);
         User agent = resolveAgent(request.agentId(), author);
 
         CalendarEvent event = new CalendarEvent(
@@ -72,7 +96,7 @@ public class CalendarEventService {
                 request.startsAt(),
                 request.endsAt());
 
-        apply(event, request, property, client);
+        apply(event, request, property, client, deal);
 
         CalendarEvent saved = events.save(event);
         return EventResponse.from(saved, conflictsFor(saved));
@@ -89,6 +113,7 @@ public class CalendarEventService {
 
         Property property = resolveProperty(request.propertyId(), agencyId);
         Client client = resolveClient(request.clientId(), agencyId);
+        Deal deal = resolveDeal(request.dealId(), agencyId);
 
         event.setType(request.type());
         event.setTitle(resolveTitle(request, property, client));
@@ -100,13 +125,13 @@ public class CalendarEventService {
             event.setAgent(resolveAgent(request.agentId(), actor));
         }
 
-        apply(event, request, property, client);
+        apply(event, request, property, client, deal);
 
         CalendarEvent saved = events.save(event);
         return EventResponse.from(saved, conflictsFor(saved));
     }
 
-    /** Domknięcie terminu: status, rezultat i notatka — bez ruszania reszty wpisu. */
+    /** Domknięcie terminu: status, rezultat i notatka. Bez ruszania reszty wpisu. */
     @Transactional
     public EventResponse changeStatus(UUID id, UpdateEventStatusRequest request, User actor) {
         CalendarEvent event = events.findByIdAndAgencyId(id, actor.getAgency().getId())
@@ -115,11 +140,14 @@ public class CalendarEventService {
         validateOutcome(request.status(), request.outcome());
 
         event.setStatus(request.status());
-        // Rezultat i notatka mają sens tylko przy odbytym terminie — przy każdym
+        // Rezultat i notatka mają sens tylko przy odbytym terminie. Przy każdym
         // innym statusie czyścimy je, żeby nie zostały po cofniętym „odbyło się".
         boolean happened = request.status() == EventStatus.COMPLETED;
         event.setOutcome(happened ? request.outcome() : null);
         event.setOutcomeNote(happened ? trimToNull(request.outcomeNote()) : null);
+        if (happened) {
+            markViewed(event);
+        }
 
         CalendarEvent saved = events.save(event);
         return EventResponse.from(saved, conflictsFor(saved));
@@ -140,7 +168,7 @@ public class CalendarEventService {
     }
 
     /**
-     * Terminy biura w zakresie dat. Kalendarz jest wspólny — każdy w biurze widzi
+     * Terminy biura w zakresie dat. Kalendarz jest wspólny. Każdy w biurze widzi
      * wszystkie wpisy, a zawężenie do siebie to filtr, nie uprawnienie. Inaczej
      * nie dałoby się umówić zastępstwa ani sprawdzić, czy ktoś już nie jedzie
      * pod ten adres.
@@ -163,7 +191,7 @@ public class CalendarEventService {
                 .toList();
     }
 
-    /** Historia i plany dotyczące jednej oferty — sekcja „Terminy" na jej karcie. */
+    /** Historia i plany dotyczące jednej oferty. Sekcja „Terminy" na jej karcie. */
     @Transactional(readOnly = true)
     public List<EventSummary> forProperty(UUID propertyId, User viewer) {
         UUID agencyId = viewer.getAgency().getId();
@@ -175,7 +203,7 @@ public class CalendarEventService {
                 .toList();
     }
 
-    /** To samo dla klienta — co się z nim działo i co jest umówione. */
+    /** To samo dla klienta. Co się z nim działo i co jest umówione. */
     @Transactional(readOnly = true)
     public List<EventSummary> forClient(UUID clientId, User viewer) {
         UUID agencyId = viewer.getAgency().getId();
@@ -191,18 +219,20 @@ public class CalendarEventService {
 
     /** Pola wspólne dla dodawania i edycji. */
     private void apply(CalendarEvent event, CreateEventRequest request,
-                       Property property, Client client) {
+                       Property property, Client client, Deal deal) {
 
         event.setStatus(orDefault(request.status(), EventStatus.PLANNED));
         event.setDescription(trimToNull(request.description()));
         event.setAllDay(Boolean.TRUE.equals(request.allDay()));
         event.setProperty(property);
         event.setClient(client);
+        event.setDeal(deal);
+        event.setParticipants(resolveParticipants(request.participantIds(), deal));
         event.setCounterpartyName(trimToNull(request.counterpartyName()));
         event.setCounterpartyPhone(PhoneNumber.normalize(request.counterpartyPhone()));
 
         // Miejsce przepisane ręcznie, gdy jest identyczne z adresem oferty, tylko
-        // rozjedzie się przy korekcie tej oferty — w takim wypadku zostawiamy puste
+        // rozjedzie się przy korekcie tej oferty. W takim wypadku zostawiamy puste
         // i pokazujemy adres z powiązania (EventSummary#displayLocation).
         String location = trimToNull(request.location());
         if (property != null && location != null
@@ -214,11 +244,46 @@ public class CalendarEventService {
         boolean happened = event.getStatus() == EventStatus.COMPLETED;
         event.setOutcome(happened ? request.outcome() : null);
         event.setOutcomeNote(happened ? trimToNull(request.outcomeNote()) : null);
+        if (happened) {
+            markViewed(event);
+        }
     }
 
     /**
-     * Tytuł jest opcjonalny — pusty składamy z rodzaju i kontekstu, bo „Prezentacja
-     * — Grzybowska 41" to dokładnie to, co agent i tak by wpisał. Ucinamy do
+     * Odbyta prezentacja przesuwa uczestników ze „zgłosił się" na „oglądał".
+     * Tylko w przód: kogoś, kto już złożył ofertę albo odpadł, nie cofamy.
+     */
+    private void markViewed(CalendarEvent event) {
+        if (!VIEWINGS.contains(event.getType())) {
+            return;
+        }
+        for (DealInterest participant : event.getParticipants()) {
+            if (participant.getStatus() == InterestStatus.NEW) {
+                participant.setStatus(InterestStatus.VIEWED);
+            }
+        }
+    }
+
+    /** Uczestnicy muszą należeć do transakcji, której krokiem jest termin. */
+    private Set<DealInterest> resolveParticipants(List<UUID> ids, Deal deal) {
+        Set<DealInterest> result = new LinkedHashSet<>();
+        if (ids == null || ids.isEmpty()) {
+            return result;
+        }
+        if (deal == null) {
+            throw new BusinessValidationException(
+                    Map.of("participantIds", "Uczestników można wybrać tylko przy terminie powiązanym z transakcją."));
+        }
+        for (UUID id : ids) {
+            result.add(interests.findByIdAndDealId(id, deal.getId())
+                    .orElseThrow(InterestNotFoundException::new));
+        }
+        return result;
+    }
+
+    /**
+     * Tytuł jest opcjonalny. Pusty składamy z rodzaju i kontekstu, bo „Prezentacja
+     *. Grzybowska 41" to dokładnie to, co agent i tak by wpisał. Ucinamy do
      * długości kolumny; ucięcie dotyczy wyłącznie tytułu wygenerowanego, bo
      * wpisany ręcznie pilnuje już walidacja @Size.
      */
@@ -241,12 +306,12 @@ public class CalendarEventService {
         }
 
         String label = request.type().label();
-        String title = context == null ? label : label + " — " + context;
+        String title = context == null ? label : label + ". " + context;
         return title.length() <= 120 ? title : title.substring(0, 120);
     }
 
     /**
-     * Kolizje w kalendarzu agenta. Nie blokują zapisu — patrz komentarz przy
+     * Kolizje w kalendarzu agenta i w tej samej ofercie. Nie blokują zapisu. Patrz komentarz przy
      * {@link EventResponse}. Zdarzenia całodniowe są z tego wyłączone: urlop albo
      * dzień otwarty nakładałby się wtedy na każdy termin tego dnia i ostrzeżenie
      * przestałoby cokolwiek znaczyć.
@@ -256,9 +321,21 @@ public class CalendarEventService {
             return List.of();
         }
 
-        return events.findOverlappingForAgent(
-                        event.getAgent().getId(), event.getStartsAt(), event.getEndsAt(), EventStatus.CANCELLED)
-                .stream()
+        // Mapa po identyfikatorze: termin tego samego agenta w tej samej ofercie
+        // wpadłby do obu list, a ostrzeżenie ma go pokazać raz.
+        Map<UUID, CalendarEvent> found = new LinkedHashMap<>();
+        for (CalendarEvent other : events.findOverlappingForAgent(
+                event.getAgent().getId(), event.getStartsAt(), event.getEndsAt(), EventStatus.CANCELLED)) {
+            found.putIfAbsent(other.getId(), other);
+        }
+        if (event.getProperty() != null) {
+            for (CalendarEvent other : events.findOverlappingForProperty(
+                    event.getProperty().getId(), event.getStartsAt(), event.getEndsAt(), EventStatus.CANCELLED)) {
+                found.putIfAbsent(other.getId(), other);
+            }
+        }
+
+        return found.values().stream()
                 .filter(other -> !other.getId().equals(event.getId()))
                 .filter(other -> !other.isAllDay())
                 .map(EventSummary::from)
@@ -279,11 +356,11 @@ public class CalendarEventService {
         }
         if (Duration.between(from, to).compareTo(MAX_RANGE) > 0) {
             throw new BusinessValidationException(
-                    Map.of("to", "Zakres jest zbyt szeroki — pytaj najwyżej o pół roku naraz."));
+                    Map.of("to", "Zakres jest zbyt szeroki. Pytaj najwyżej o pół roku naraz."));
         }
     }
 
-    /** Rezultat bez odbytego terminu byłby wróżeniem — pilnuje tego też CHECK w V10. */
+    /** Rezultat bez odbytego terminu byłby wróżeniem. Pilnuje tego też CHECK w V10. */
     private void validateOutcome(EventStatus status, EventOutcome outcome) {
         if (outcome != null && status != EventStatus.COMPLETED) {
             throw new BusinessValidationException(
@@ -305,6 +382,14 @@ public class CalendarEventService {
         }
         return clients.findByIdAndAgencyId(clientId, agencyId)
                 .orElseThrow(ClientNotFoundException::new);
+    }
+
+    private Deal resolveDeal(UUID dealId, UUID agencyId) {
+        if (dealId == null) {
+            return null;
+        }
+        return deals.findByIdAndAgencyId(dealId, agencyId)
+                .orElseThrow(DealNotFoundException::new);
     }
 
     /** Termin można wpisać koledze z biura, ale tylko z tego samego biura. */

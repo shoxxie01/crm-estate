@@ -5,14 +5,14 @@ import pl.delta.crm.property.dictionary.Dictionary;
 /**
  * Stan terminu. Rozróżnienie {@link #CANCELLED} od {@link #NO_SHOW} nie jest
  * kosmetyczne: pierwsze to termin, który nie odbył się z ustaleniem obu stron,
- * drugie to strata czasu agenta — i tylko drugie warto zliczać przy ocenie
+ * drugie to strata czasu agenta. I tylko drugie warto zliczać przy ocenie
  * jakości leadów.
  */
 public enum EventStatus implements Dictionary {
 
     PLANNED("Planowane"),
 
-    /** Druga strona potwierdziła — termin jest pewny. */
+    /** Druga strona potwierdziła. Termin jest pewny. */
     CONFIRMED("Potwierdzone"),
 
     COMPLETED("Odbyło się"),
@@ -33,7 +33,7 @@ public enum EventStatus implements Dictionary {
         return label;
     }
 
-    /** Terminy, które nadal zajmują agentowi czas — tylko te liczą się do kolizji. */
+    /** Terminy, które nadal zajmują agentowi czas. Tylko te liczą się do kolizji. */
     public boolean blocksTime() {
         return this != CANCELLED;
     }

@@ -10,7 +10,7 @@ import pl.delta.crm.agency.Agency;
  * trzymał własną kopię, zmiana po jednej stronie rozjechałaby to, co klient
  * widział, z tym, co mamy w bazie.
  *
- * <p>Przed produkcją treść powinien zatwierdzić prawnik biura — to wersja
+ * <p>Przed produkcją treść powinien zatwierdzić prawnik biura. To wersja
  * robocza, zgodna z duchem RODO, ale nie porada prawna.
  */
 public final class IntakeConsent {
@@ -34,6 +34,6 @@ public final class IntakeConsent {
         String contact = agency.getContactEmail() == null ? "" : " (" + agency.getContactEmail() + ")";
         return "Administratorem danych jest " + agency.getName() + contact
                 + ". Zgodę możesz w każdej chwili wycofać, a także zażądać wglądu w swoje dane,"
-                + " ich poprawienia lub usunięcia — wystarczy wiadomość do biura.";
+                + " ich poprawienia lub usunięcia. Wystarczy wiadomość do biura.";
     }
 }

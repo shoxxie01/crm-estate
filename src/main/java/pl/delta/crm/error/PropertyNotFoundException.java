@@ -1,7 +1,7 @@
 package pl.delta.crm.error;
 
 /**
- * Oferta nie istnieje albo należy do innego biura — celowo nie rozróżniamy tych
+ * Oferta nie istnieje albo należy do innego biura. Celowo nie rozróżniamy tych
  * dwóch przypadków, żeby po samym kodzie odpowiedzi nie dało się sprawdzać,
  * czy dany identyfikator istnieje u konkurencji.
  */

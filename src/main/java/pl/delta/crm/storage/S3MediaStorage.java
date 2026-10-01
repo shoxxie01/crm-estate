@@ -17,7 +17,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 
-/** Implementacja {@link MediaStorage} na API S3 — w dev obsługiwana przez MinIO. */
+/** Implementacja {@link MediaStorage} na API S3. W dev obsługiwana przez MinIO. */
 @Component
 public class S3MediaStorage implements MediaStorage {
 
@@ -35,7 +35,7 @@ public class S3MediaStorage implements MediaStorage {
 
     /**
      * Bucket zakładamy sami, żeby postawienie projektu było jednym
-     * {@code docker compose up} — bez ręcznego klikania w konsoli MinIO.
+     * {@code docker compose up}. Bez ręcznego klikania w konsoli MinIO.
      *
      * <p>Niepowodzenie nie przerywa startu: storage bywa niedostępny, kiedy ktoś
      * pracuje nad samym frontem, a wtedy ma nie działać galeria, a nie cała
@@ -46,7 +46,7 @@ public class S3MediaStorage implements MediaStorage {
         try {
             createBucketIfMissing();
         } catch (RuntimeException exception) {
-            log.warn("Storage niedostępny pod {} — wgrywanie zdjęć nie zadziała, "
+            log.warn("Storage niedostępny pod {}. Wgrywanie zdjęć nie zadziała, "
                             + "dopóki nie wstanie MinIO (docker compose up -d). Powód: {}",
                     properties.endpoint(), exception.getMessage());
         }
@@ -83,7 +83,7 @@ public class S3MediaStorage implements MediaStorage {
                     .key(key)
                     .build());
         } catch (RuntimeException exception) {
-            // Kasowanie leci po commicie transakcji — rzucenie tutaj nie cofnęłoby
+            // Kasowanie leci po commicie transakcji. Rzucenie tutaj nie cofnęłoby
             // już usunięcia wiersza, a wywróciłoby odpowiedź dla operacji, która
             // z punktu widzenia użytkownika się udała.
             log.warn("Nie udało się skasować obiektu {}: {}", key, exception.getMessage());

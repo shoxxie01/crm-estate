@@ -2,7 +2,7 @@ package pl.delta.crm.property.dto;
 
 import java.util.List;
 
-/** Cechy pogrupowane kategorią — front rysuje z tego sekcje formularza. */
+/** Cechy pogrupowane kategorią. Front rysuje z tego sekcje formularza. */
 public record FeatureGroup(String category, String label, List<FeatureView> features) {
 
     /**

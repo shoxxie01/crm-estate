@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="light" />
     <title>Delta CRM</title>
+    <script>
+      // Motyw ustawiony przed pierwszym malowaniem, żeby ciemny nie mrugał jasnym.
+      try {
+        if (localStorage.getItem("delta.theme") === "dark") {
+          document.documentElement.dataset.theme = "dark";
+        }
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -1,7 +1,7 @@
 package pl.delta.crm.property.dictionary;
 
 /**
- * Kategoria cechy. Portale nie mają jednej listy udogodnień — rozbijają je na
+ * Kategoria cechy. Portale nie mają jednej listy udogodnień. Rozbijają je na
  * osobne maski w XML-u (Otodom: ExtrasMask, SecurityMask, MediaMask,
  * EquipmentMask, VicinityMask, FenceMask). U nas cechy leżą w jednym zbiorze,
  * a kategoria pozwala eksportowi rozłożyć je z powrotem na właściwe tagi.

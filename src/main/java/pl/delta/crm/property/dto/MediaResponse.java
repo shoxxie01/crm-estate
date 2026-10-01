@@ -9,12 +9,12 @@ import java.util.function.UnaryOperator;
 /**
  * Materiał oferty widziany przez front.
  *
- * <p>Nie ma tu {@code storageKey} — front nie ma powodu znać układu bucketa,
+ * <p>Nie ma tu {@code storageKey}. Front nie ma powodu znać układu bucketa,
  * a znając go, mógłby próbować zgadywać klucze cudzych ofert. Zamiast tego
  * dostaje gotowe, czasowe linki: pełny do podglądu i miniaturę do siatki.
  *
- * @param meetsPortalRequirements czy zdjęcie przejdzie walidację portalu —
- *                                lepiej pokazać to przy kafelku niż dowiedzieć
+ * @param meetsPortalRequirements czy zdjęcie przejdzie walidację portalu.
+ *                                Lepiej pokazać to przy kafelku niż dowiedzieć
  *                                się z raportu importu godzinę po wysyłce
  */
 public record MediaResponse(

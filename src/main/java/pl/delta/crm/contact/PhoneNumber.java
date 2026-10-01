@@ -2,7 +2,7 @@ package pl.delta.crm.contact;
 
 public final class PhoneNumber {
 
-    /** CRM obsługuje polskie biuro — numer bez kodu kraju jest krajowy. */
+    /** CRM obsługuje polskie biuro. Numer bez kodu kraju jest krajowy. */
     private static final String DEFAULT_COUNTRY_CODE = "48";
 
     private static final int NATIONAL_DIGITS = 9;

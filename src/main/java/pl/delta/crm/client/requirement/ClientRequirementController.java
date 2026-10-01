@@ -21,7 +21,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
-/** Poszukiwania zawsze w kontekście klienta — nie istnieją bez osoby, która szuka. */
+/** Poszukiwania zawsze w kontekście klienta. Nie istnieją bez osoby, która szuka. */
 @RestController
 @RequestMapping("/api/clients/{clientId}/requirements")
 public class ClientRequirementController {

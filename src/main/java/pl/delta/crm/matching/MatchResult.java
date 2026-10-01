@@ -5,7 +5,7 @@ import java.util.List;
 /**
  * Wynik porównania poszukiwania z ofertą.
  *
- * @param preferredHits ile cech „mile widzianych" oferta ma — służy do kolejności
+ * @param preferredHits ile cech „mile widzianych" oferta ma. Służy do kolejności
  */
 public record MatchResult(List<CriterionResult> criteria, int preferredHits) {
 

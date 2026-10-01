@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { INQUIRIES_CHANGED, fetchNewInquiryCount } from "../../api/inquiries";
-import { LifeBuoy, Settings, X } from "lucide-react";
+import { LifeBuoy, Menu, Settings, X } from "lucide-react";
 import { Logo } from "../ui/Logo";
 import { primaryNav } from "./navigation";
 import { cn } from "../../lib/cn";
@@ -11,7 +11,7 @@ const linkBase =
 
 /**
  * Liczba nowych zgłoszeń z formularza. Odświeżana przy zmianie strony, po
- * zmianie w skrzynce i co minutę — zgłoszenia przychodzą z zewnątrz, więc
+ * zmianie w skrzynce i co minutę. Zgłoszenia przychodzą z zewnątrz, więc
  * inaczej agent nie zobaczyłby nowego, dopóki sam nie wejdzie do skrzynki.
  */
 function useNewInquiryCount() {
@@ -38,7 +38,13 @@ function useNewInquiryCount() {
   return count;
 }
 
-function NavItems({ onNavigate }: { onNavigate?: () => void }) {
+function NavItems({
+  onNavigate,
+  collapsed = false,
+}: {
+  onNavigate?: () => void;
+  collapsed?: boolean;
+}) {
   const newInquiries = useNewInquiryCount();
 
   return (
@@ -52,9 +58,12 @@ function NavItems({ onNavigate }: { onNavigate?: () => void }) {
           to={to}
           end={to === "/"}
           onClick={onNavigate}
+          title={collapsed ? label : undefined}
+          aria-label={collapsed ? label : undefined}
           className={({ isActive }) =>
             cn(
               linkBase,
+              collapsed && "relative justify-center px-0",
               isActive
                 ? "bg-accent-subtle font-medium text-accent"
                 : "text-ink-secondary hover:bg-subtle hover:text-ink",
@@ -70,8 +79,20 @@ function NavItems({ onNavigate }: { onNavigate?: () => void }) {
                 )}
                 strokeWidth={1.75}
               />
-              <span className="truncate">{label}</span>
-              {badge && (
+              {/* Zwinięty pasek: zamiast plakietki kropka na ikonie. Liczba
+                  i tak by się nie zmieściła, a sygnał „coś nowego" zostaje. */}
+              {collapsed ? (
+                badge &&
+                to === "/zgloszenia" && (
+                  <span
+                    className="absolute top-1 right-2.5 size-2 rounded-full bg-accent ring-2 ring-surface"
+                    aria-hidden="true"
+                  />
+                )
+              ) : (
+                <span className="truncate">{label}</span>
+              )}
+              {!collapsed && badge && (
                 <span
                   className={cn(
                     "ml-auto rounded px-1.5 py-px text-[11px] font-medium tabular-nums ring-1",
@@ -92,29 +113,68 @@ function NavItems({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
+export function SidebarContent({
+  onNavigate,
+  collapsed = false,
+  onToggleCollapsed,
+}: {
+  onNavigate?: () => void;
+  collapsed?: boolean;
+  /** Tylko na desktopie. W szufladzie mobilnej zwijanie nie ma sensu. */
+  onToggleCollapsed?: () => void;
+}) {
+  const secondary = cn(
+    linkBase,
+    "text-ink-secondary hover:bg-subtle hover:text-ink",
+    collapsed && "justify-center px-0",
+  );
+
   return (
     <div className="flex h-full flex-col">
-      <div className="flex h-14 items-center px-4">
-        <Logo />
+      {/* Przycisk zwijania stoi w wierszu logo, przy prawej krawędzi. Po
+          zwinięciu zostaje sam, bo obok niego nie zmieści się już logo. */}
+      <div
+        className={cn(
+          "flex h-14 items-center",
+          collapsed ? "justify-center" : "justify-between pr-3 pl-4",
+        )}
+      >
+        {!collapsed && <Logo />}
+        {onToggleCollapsed && (
+          <button
+            type="button"
+            onClick={onToggleCollapsed}
+            title={collapsed ? "Rozwiń menu" : "Zwiń menu"}
+            aria-label={collapsed ? "Rozwiń menu" : "Zwiń menu"}
+            aria-expanded={!collapsed}
+            className="rounded-md p-1.5 text-ink-secondary transition-colors hover:bg-subtle hover:text-ink"
+          >
+            <Menu className="size-5" strokeWidth={1.75} />
+          </button>
+        )}
+        {collapsed && !onToggleCollapsed && <Logo showWordmark={false} />}
       </div>
 
-      <div className="flex-1 overflow-y-auto px-3 pb-4">
-        <p className="px-2.5 pt-2 pb-1.5 text-[11px] font-medium tracking-wide text-ink-muted uppercase">
-          Moduły
-        </p>
-        <NavItems onNavigate={onNavigate} />
+      <div className={cn("flex-1 overflow-y-auto pb-4", collapsed ? "px-2" : "px-3")}>
+        {collapsed ? (
+          <div className="mx-2 mt-2 mb-2 border-t border-line" />
+        ) : (
+          <p className="px-2.5 pt-2 pb-1.5 text-[11px] font-medium tracking-wide text-ink-muted uppercase">
+            Moduły
+          </p>
+        )}
+        <NavItems onNavigate={onNavigate} collapsed={collapsed} />
       </div>
 
-      <div className="border-t border-line px-3 py-3">
+      <div className={cn("border-t border-line py-3", collapsed ? "px-2" : "px-3")}>
         <nav className="flex flex-col gap-0.5">
-          <a href="#ustawienia" className={cn(linkBase, "text-ink-secondary hover:bg-subtle hover:text-ink")}>
-            <Settings className="size-4 text-ink-muted" strokeWidth={1.75} />
-            Ustawienia
+          <a href="#ustawienia" className={secondary} title={collapsed ? "Ustawienia" : undefined}>
+            <Settings className="size-4 shrink-0 text-ink-muted" strokeWidth={1.75} />
+            {!collapsed && "Ustawienia"}
           </a>
-          <a href="#pomoc" className={cn(linkBase, "text-ink-secondary hover:bg-subtle hover:text-ink")}>
-            <LifeBuoy className="size-4 text-ink-muted" strokeWidth={1.75} />
-            Pomoc
+          <a href="#pomoc" className={secondary} title={collapsed ? "Pomoc" : undefined}>
+            <LifeBuoy className="size-4 shrink-0 text-ink-muted" strokeWidth={1.75} />
+            {!collapsed && "Pomoc"}
           </a>
         </nav>
       </div>
@@ -125,22 +185,31 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 export function Sidebar({
   mobileOpen,
   onClose,
+  collapsed,
+  onToggleCollapsed,
 }: {
   mobileOpen: boolean;
   onClose: () => void;
+  collapsed: boolean;
+  onToggleCollapsed: () => void;
 }) {
   return (
     <>
-      {/* Desktop — stały panel */}
-      <aside className="fixed inset-y-0 left-0 hidden w-60 border-r border-line bg-surface lg:block">
-        <SidebarContent />
+      {/* Desktop. Stały panel, zwijany do samych ikon */}
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-20 hidden border-r border-line bg-surface transition-[width] duration-200 lg:block",
+          collapsed ? "w-16" : "w-60",
+        )}
+      >
+        <SidebarContent collapsed={collapsed} onToggleCollapsed={onToggleCollapsed} />
       </aside>
 
-      {/* Mobile — szuflada */}
+      {/* Mobile. Szuflada */}
       {mobileOpen && (
         <div className="fixed inset-0 z-40 lg:hidden">
           <div
-            className="absolute inset-0 bg-ink/25"
+            className="absolute inset-0 bg-scrim/25"
             onClick={onClose}
             aria-hidden="true"
           />

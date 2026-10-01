@@ -5,11 +5,11 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import java.time.Duration;
 
 /**
- * Konfiguracja tokenów. Sekret NIE ma wartości domyślnej celowo — aplikacja ma
+ * Konfiguracja tokenów. Sekret NIE ma wartości domyślnej celowo. Aplikacja ma
  * się nie wstać bez jawnie ustawionego klucza, zamiast po cichu podpisywać
  * tokeny czymś, co jest w repo.
  *
- * @param secret   klucz HMAC, minimum 32 znaki (256 bitów) — wymóg HS256
+ * @param secret   klucz HMAC, minimum 32 znaki (256 bitów). Wymóg HS256
  * @param ttl      czas życia tokenu
  * @param issuer   wartość claimu `iss`, weryfikowana przy odczycie
  */

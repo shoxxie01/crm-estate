@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { GripVertical, ImagePlus, Star, X } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 
-/** Tyle materiałów przyjmuje jedna oferta — ten sam limit pilnuje backend. */
+/** Tyle materiałów przyjmuje jedna oferta. Ten sam limit pilnuje backend. */
 const MAX_MEDIA = 50;
 
 /** Limit multiparta po stronie serwera (`spring.servlet.multipart.max-file-size`). */
@@ -19,7 +19,7 @@ interface Props {
  * <p>Zdjęcie trzyma klucz obcy do oferty, więc przed jej zapisem nie ma czego
  * nim obwiesić. Zamiast kazać agentowi wracać do formularza po zapisie,
  * trzymamy pliki w pamięci przeglądarki i wysyłamy je zaraz po tym, jak serwer
- * nada ofercie identyfikator — z punktu widzenia użytkownika zdjęcia po prostu
+ * nada ofercie identyfikator. Z punktu widzenia użytkownika zdjęcia po prostu
  * zapisują się razem z ofertą.
  *
  * <p>To osobny komponent, a nie tryb {@code PropertyGallery}: tam każda operacja
@@ -48,7 +48,7 @@ export function PropertyGalleryDraft({ files, onChange }: Props) {
 
   /**
    * Wstępne sito po stronie przeglądarki. Prawdziwa walidacja (sygnatura pliku,
-   * minimalne wymiary) jest na serwerze — tu chodzi tylko o to, żeby oczywiste
+   * minimalne wymiary) jest na serwerze. Tu chodzi tylko o to, żeby oczywiste
    * pomyłki wyszły od razu, a nie dopiero po zapisaniu oferty.
    */
   function add(picked: FileList | null) {
@@ -57,7 +57,7 @@ export function PropertyGalleryDraft({ files, onChange }: Props) {
 
     if (chosen.length > remaining) {
       setError(
-        `Zostało miejsce na ${remaining} ${remaining === 1 ? "zdjęcie" : "zdjęć"} — wybrano ${chosen.length}.`,
+        `Zostało miejsce na ${remaining} ${remaining === 1 ? "zdjęcie" : "zdjęć"}. Wybrano ${chosen.length}.`,
       );
       return;
     }
@@ -100,7 +100,7 @@ export function PropertyGalleryDraft({ files, onChange }: Props) {
         <p className="text-[12px] text-ink-muted">
           {files.length === 0
             ? "Zdjęcia wgrają się razem z ofertą po kliknięciu „Zapisz ofertę”."
-            : `${files.length} z ${MAX_MEDIA} do wgrania. Pierwsze będzie zdjęciem głównym — kolejność zmienisz przeciąganiem.`}
+            : `${files.length} z ${MAX_MEDIA} do wgrania. Pierwsze będzie zdjęciem głównym. Kolejność zmienisz przeciąganiem.`}
         </p>
         <Button
           type="button"
@@ -173,7 +173,7 @@ export function PropertyGalleryDraft({ files, onChange }: Props) {
                   />
 
                   {index === 0 && (
-                    <span className="absolute left-1.5 top-1.5 inline-flex items-center gap-1 rounded-sm bg-ink/80 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                    <span className="absolute left-1.5 top-1.5 inline-flex items-center gap-1 rounded-sm bg-scrim/80 px-1.5 py-0.5 text-[10px] font-medium text-white">
                       <Star size={10} />
                       Główne
                     </span>

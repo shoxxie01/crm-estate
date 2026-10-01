@@ -5,7 +5,7 @@ import { apiFetch } from "./client";
  * samo jak w formularzu oferty, więc przepisuje się je jeden do jednego.
  *
  * Backend pomija w JSON-ie pola puste (`default-property-inclusion: non_null`),
- * stąd wszystkie są opcjonalne — brak pola znaczy „geokoder tego nie podał".
+ * stąd wszystkie są opcjonalne. Brak pola znaczy „geokoder tego nie podał".
  */
 export interface GeoLocation {
   latitude: number;
@@ -30,7 +30,7 @@ export async function reverseGeocode(
     lat: latitude.toFixed(6),
     lon: longitude.toFixed(6),
   });
-  // 204 wraca z apiFetch jako undefined — na zewnątrz ujednolicamy do null.
+  // 204 wraca z apiFetch jako undefined. Na zewnątrz ujednolicamy do null.
   const location = await apiFetch<GeoLocation | undefined>(
     `/geo/reverse?${query}`,
   );
@@ -52,7 +52,7 @@ export interface GeoQuery {
  *
  * Sama miejscowość nie wystarcza: nazwy się powtarzają (samych „Nowych Wsi"
  * jest w Polsce ponad sto), więc bez województwa pinezka lądowałaby losowo.
- * Reszta pól tylko zawęża wynik — ulica schodzi z centrum miejscowości na
+ * Reszta pól tylko zawęża wynik. Ulica schodzi z centrum miejscowości na
  * ulicę, numer budynku na budynek, a kod pocztowy rozdziela miejscowości
  * o tej samej nazwie w jednym województwie.
  */
@@ -66,7 +66,7 @@ export function searchLocation(query: GeoQuery): Promise<GeoLocation[]> {
     voivodeship: query.voivodeship,
     city: query.city.trim(),
   });
-  // Puste pola pomijamy — dla Nominatim „ulica: '' " to nie to samo co brak ulicy.
+  // Puste pola pomijamy. Dla Nominatim „ulica: '' " to nie to samo co brak ulicy.
   if (query.district?.trim()) params.set("district", query.district.trim());
   if (query.street?.trim()) params.set("street", query.street.trim());
   if (query.buildingNumber?.trim())

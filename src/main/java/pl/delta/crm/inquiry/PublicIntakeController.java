@@ -13,7 +13,7 @@ import pl.delta.crm.inquiry.dto.IntakeFormResponse;
 import pl.delta.crm.inquiry.dto.PublicInquiryRequest;
 
 /**
- * Publiczny formularz „czego szukasz" — jedyne miejsce API dostępne bez
+ * Publiczny formularz „czego szukasz". Jedyne miejsce API dostępne bez
  * logowania poza samym logowaniem (patrz {@code SecurityConfig}). Biuro
  * rozpoznajemy po losowym kluczu z adresu, a odpowiedź nie zdradza niczego
  * poza nazwą biura i treścią zgód.
@@ -33,7 +33,7 @@ public class PublicIntakeController {
         return inquiries.intakeForm(token);
     }
 
-    /** 204 bez treści — także wtedy, gdy zgłoszenie odsiała pułapka na boty. */
+    /** 204 bez treści. Także wtedy, gdy zgłoszenie odsiała pułapka na boty. */
     @PostMapping
     public ResponseEntity<Void> submit(@PathVariable String token,
                                        @Valid @RequestBody PublicInquiryRequest request,

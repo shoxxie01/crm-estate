@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
  * Tłumaczy między adresem w rozumieniu CRM-u a geokoderem.
  *
  * <p>Cała wiedza o tym, jak Nominatim nazywa polskie poziomy administracyjne,
- * siedzi tutaj — {@link NominatimClient} tylko wykonuje żądania, a kontroler
+ * siedzi tutaj. {@link NominatimClient} tylko wykonuje żądania, a kontroler
  * tylko je przyjmuje.
  */
 @Service
@@ -31,10 +31,10 @@ public class GeoService {
 
     /**
      * Nazwy województw sprowadzone do postaci bez znaków diakrytycznych i bez
-     * myślników — po takim kluczu porównujemy to, co przyszło z Nominatim.
+     * myślników. Po takim kluczu porównujemy to, co przyszło z Nominatim.
      * Odpowiedź bywa „województwo kujawsko-pomorskie", „Kujawsko-Pomorskie"
      * albo (gdy padnie Accept-Language) „Kuyavian-Pomeranian Voivodeship";
-     * dwa pierwsze warianty trafiają w słownik, trzeci nie — i wtedy pole
+     * dwa pierwsze warianty trafiają w słownik, trzeci nie. I wtedy pole
      * zostaje puste, zamiast zgadywać.
      */
     private static final Map<String, Voivodeship> BY_NAME = java.util.Arrays
@@ -104,7 +104,7 @@ public class GeoService {
         return String.join(", ", parts);
     }
 
-    /* Pakietowo-prywatne, a nie prywatne — całe mapowanie nazw OSM na nasze pola
+    /* Pakietowo-prywatne, a nie prywatne. Całe mapowanie nazw OSM na nasze pola
        sprawdza GeoServiceTest bez wychodzenia do sieci. */
     static GeoLocation toLocation(NominatimPlace place) {
         NominatimPlace.Address address = place.address();
@@ -119,7 +119,7 @@ public class GeoService {
         String commune = stripPrefix(address.municipality(), "gmina");
 
         // Miasta na prawach powiatu są same swoim powiatem, a OSM nie ma dla nich
-        // osobnego obiektu, z którego dałoby się to odczytać — szczegóły
+        // osobnego obiektu, z którego dałoby się to odczytać. Szczegóły
         // w CityCounties.
         if (county == null && CityCounties.isCityCounty(voivodeship, city)) {
             county = city;
@@ -128,19 +128,19 @@ public class GeoService {
         // OSM niesie powiat w formie zdaniowej („powiat puławski"), więc po
         // zdjęciu rodzajnika zostaje sama mała litera. Podnosimy ją na końcu,
         // po obu ścieżkach naraz, żeby wpis z pinezki wyglądał tak samo jak
-        // wpisany ręcznie — formularz robi to samo (`titleCase`) przy
+        // wpisany ręcznie. Formularz robi to samo (`titleCase`) przy
         // opuszczeniu pola.
         county = capitalize(county);
 
         /*
          * Gmina miejska: brak `municipality` przy mieście znaczy, że granica
          * gminy pokrywa się z granicą miasta, więc OSM ma jeden obiekt i opisuje
-         * go jako `city`/`town` — dokładnie ten sam mechanizm co przy miastach
+         * go jako `city`/`town`. Dokładnie ten sam mechanizm co przy miastach
          * na prawach powiatu, tylko szczebel niżej. Gmina nazywa się wtedy tak
          * jak miasto (Puławy, Zakopane, Świdnik).
          *
          * Celowo tylko dla miast: przy wsi brak `municipality` znaczy dziurę
-         * w danych, a nie że wieś jest gminą — wpisanie jej nazwy jako gminy
+         * w danych, a nie że wieś jest gminą. Wpisanie jej nazwy jako gminy
          * byłoby zgadywaniem. Gminy miejsko-wiejskie mają własny obiekt
          * i wchodzą wyżej, wartością z OSM.
          */
@@ -163,7 +163,7 @@ public class GeoService {
     }
 
     /**
-     * Miejscowość. Gmina jest ostatnią deską ratunku — jej nazwa pochodzi od
+     * Miejscowość. Gmina jest ostatnią deską ratunku. Jej nazwa pochodzi od
      * siedziby, więc „gmina Piaseczno" daje „Piaseczno" i zwykle trafia, ale
      * tylko wtedy, gdy Nominatim nie podał nic dokładniejszego.
      */
@@ -209,12 +209,12 @@ public class GeoService {
     }
 
     /**
-     * Każde słowo z wielkiej litery, reszta mała — jak `titleCase` na froncie.
+     * Każde słowo z wielkiej litery, reszta mała. Jak `titleCase` na froncie.
      *
      * <p>Granicą słowa jest spacja i myślnik, bo nazwy powiatów bywają
      * dwuczłonowe („warszawski zachodni") i łączone („Bielsko-Biała"). Reguła
      * jest bezpieczna akurat dla powiatów: nazywają się przymiotnikowo i nie
-     * mają w środku przyimków, które w polszczyźnie zostają małe — dlatego
+     * mają w środku przyimków, które w polszczyźnie zostają małe. Dlatego
      * <b>nie</b> stosujemy jej do gminy, gdzie „Nowe Miasto nad Pilicą"
      * wyszłoby z błędnym „Nad".
      */

@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 
 /**
  * Porównuje jedno poszukiwanie z jedną ofertą i tłumaczy wynik kryterium po
- * kryterium — agent ma zobaczyć nie tylko „pasuje", ale też dlaczego i gdzie
+ * kryterium. Agent ma zobaczyć nie tylko „pasuje", ale też dlaczego i gdzie
  * trzeba dopytać.
  *
  * <p>Transakcja i rodzaj nieruchomości są warunkiem wstępnym (sprawdza je już
@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
  * gdy żadne kryterium nie jest {@link MatchVerdict#MISSED}; {@code NEAR}
  * i {@code UNKNOWN} nie wykluczają, tylko ostrzegają.
  *
- * <p>Klasa bez stanu i bez dostępu do bazy — cała wiedza o dopasowaniu jest
+ * <p>Klasa bez stanu i bez dostępu do bazy. Cała wiedza o dopasowaniu jest
  * w jednym miejscu i daje się przeczytać od góry do dołu.
  */
 public final class RequirementMatcher {
@@ -100,7 +100,7 @@ public final class RequirementMatcher {
         if (!preferred.isEmpty()) {
             List<Feature> present = preferred.stream().filter(has::contains).toList();
             preferredHits = present.size();
-            // Mile widziane nigdy nie wykluczają — pokazujemy tylko, ile się zgadza.
+            // Mile widziane nigdy nie wykluczają. Pokazujemy tylko, ile się zgadza.
             criteria.add(CriterionResult.of(MatchCriterion.PREFERRED_FEATURES,
                     present.size() == preferred.size() ? MatchVerdict.MET : MatchVerdict.NEAR,
                     present.size() + " z " + preferred.size()
@@ -120,7 +120,7 @@ public final class RequirementMatcher {
 
     /**
      * Miejscowość musi się zgadzać; dzielnica tylko wtedy, gdy klient ją podał.
-     * Porównanie bez wielkości liter i polskich znaków — „Lodz" z formularza
+     * Porównanie bez wielkości liter i polskich znaków. „Lodz" z formularza
      * i „Łódź" z adresu oferty to to samo miasto.
      */
     private static CriterionResult location(List<RequirementLocation> locations, Property property) {
@@ -147,7 +147,7 @@ public final class RequirementMatcher {
         return CriterionResult.of(MatchCriterion.LOCATION, MatchVerdict.MISSED, where);
     }
 
-    /** Budżet jest w PLN — oferty w innej walucie nie przeliczamy, tylko prosimy o sprawdzenie. */
+    /** Budżet jest w PLN. Oferty w innej walucie nie przeliczamy, tylko prosimy o sprawdzenie. */
     private static CriterionResult price(ClientRequirement requirement, Property property) {
         if (property.getPricing().getPriceCurrency() != Currency.PLN) {
             return CriterionResult.of(MatchCriterion.PRICE, MatchVerdict.UNKNOWN,
@@ -167,13 +167,13 @@ public final class RequirementMatcher {
             BigDecimal over = deviation(actual, max);
             return CriterionResult.of(criterion,
                     over.compareTo(TOLERANCE) <= 0 ? MatchVerdict.NEAR : MatchVerdict.MISSED,
-                    number(actual) + " " + unit + " — o " + percent(over) + "% powyżej");
+                    number(actual) + " " + unit + ". O " + percent(over) + "% powyżej");
         }
         if (min != null && actual.compareTo(min) < 0) {
             BigDecimal under = deviation(actual, min);
             return CriterionResult.of(criterion,
                     under.compareTo(TOLERANCE) <= 0 ? MatchVerdict.NEAR : MatchVerdict.MISSED,
-                    number(actual) + " " + unit + " — o " + percent(under) + "% poniżej");
+                    number(actual) + " " + unit + ". O " + percent(under) + "% poniżej");
         }
         return CriterionResult.met(criterion);
     }
@@ -207,10 +207,10 @@ public final class RequirementMatcher {
             Short floors = property.getBuildingFloorsCount();
             if (floors == null) {
                 return CriterionResult.of(MatchCriterion.FLOOR, MatchVerdict.UNKNOWN,
-                        actual + " — nie wiadomo, czy ostatnie");
+                        actual + ". Nie wiadomo, czy ostatnie");
             }
             if (floor >= floors) {
-                return CriterionResult.of(MatchCriterion.FLOOR, MatchVerdict.MISSED, actual + " — ostatnie");
+                return CriterionResult.of(MatchCriterion.FLOOR, MatchVerdict.MISSED, actual + ". Ostatnie");
             }
         }
         return CriterionResult.met(MatchCriterion.FLOOR);

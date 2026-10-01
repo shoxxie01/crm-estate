@@ -262,7 +262,7 @@ export function ClientDetailPage() {
               }
               options={assignable.map((p) => ({
                 value: p.id,
-                label: `${p.referenceNumber} — ${p.title}`,
+                label: `${p.referenceNumber}. ${p.title}`,
               }))}
               value={selected}
               onChange={(event) => setSelected(event.target.value)}
@@ -358,7 +358,7 @@ export function ClientDetailPage() {
       </section>
 
       {/* Terminy z kalendarza. Historia kontaktu z klientem trzyma się jego karty,
-          a nie pamięci agenta — po to jest powiązanie calendar_events.client_id. */}
+          a nie pamięci agenta. Po to jest powiązanie calendar_events.client_id. */}
       <section className="card">
         <header className="border-b border-line px-4 py-3">
           <h2 className="text-[13px] font-semibold tracking-tight text-ink">
@@ -388,7 +388,7 @@ function Field({
         {label}
       </dt>
       <dd className={mono ? "tabular-nums text-ink" : "text-ink"}>
-        {value ? value : <span className="text-ink-muted">—</span>}
+        {value ? value : <span className="text-ink-muted">-</span>}
       </dd>
     </div>
   );

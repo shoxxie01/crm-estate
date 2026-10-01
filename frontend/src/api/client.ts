@@ -21,8 +21,8 @@ let onUnauthorized: (() => void) | null = null;
 
 /**
  * Wołane, gdy serwer odrzuci *nasz* token. Token żyje 12 h i przestaje być
- * ważny także wtedy, gdy backend wystartuje z innym `DELTA_JWT_SECRET` —
- * bez tej ścieżki aplikacja zostaje na ekranie zalogowanego użytkownika,
+ * ważny także wtedy, gdy backend wystartuje z innym `DELTA_JWT_SECRET`.
+ * Bez tej ścieżki aplikacja zostaje na ekranie zalogowanego użytkownika,
  * a każde żądanie po cichu wraca z 401.
  */
 export function setUnauthorizedHandler(handler: (() => void) | null) {
@@ -55,7 +55,7 @@ export async function apiFetch<T>(
   const payload = await response.json().catch(() => null);
 
   if (!response.ok) {
-    // 401 przy ustawionym tokenie znaczy, że sesja jest nieważna — nie że
+    // 401 przy ustawionym tokenie znaczy, że sesja jest nieważna. Nie że
     // użytkownik podał złe hasło (przy logowaniu tokenu jeszcze nie ma).
     if (response.status === 401 && authToken) {
       onUnauthorized?.();

@@ -14,7 +14,7 @@ import java.math.BigDecimal;
  * Przy zapisie wymagane są tylko województwo i miejscowość.
  *
  * <p>Otodom potrzebuje pełnego kompletu (kraj + województwo + powiat + miasto),
- * ale brak powiatu blokuje publikację, a nie samo istnienie oferty — pilnuje
+ * ale brak powiatu blokuje publikację, a nie samo istnienie oferty. Pilnuje
  * tego {@code Property.readyForExport()}.
  */
 public record AddressRequest(
@@ -22,7 +22,7 @@ public record AddressRequest(
         @NotNull(message = "Wybierz województwo.")
         Voivodeship voivodeship,
 
-        /* Opcjonalny — wymagany dopiero przy eksporcie na portal. */
+        /* Opcjonalny. Wymagany dopiero przy eksporcie na portal. */
         @Size(max = 80)
         String county,
 
