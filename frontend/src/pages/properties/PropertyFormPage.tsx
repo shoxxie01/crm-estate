@@ -1,6 +1,8 @@
 import {
+  useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ChangeEvent,
   type ReactNode,
@@ -16,8 +18,18 @@ import {
   type Dictionaries,
   type PropertyMedia,
 } from "../../api/properties";
+import {
+  canGeocode,
+  reverseGeocode,
+  searchLocation,
+  type GeoQuery,
+} from "../../api/geo";
 import { PropertyGallery } from "./PropertyGallery";
 import { PropertyGalleryDraft } from "./PropertyGalleryDraft";
+import {
+  LazyPropertyMap,
+  type LatLng,
+} from "../../components/map/LazyPropertyMap";
 import { ApiError } from "../../api/client";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
@@ -89,6 +101,39 @@ const INITIAL: Fields = {
   energyExemptNote: "",
 };
 
+/** Ile czekamy po ostatnim znaku, zanim ruszymy z szukaniem adresu na mapie. */
+const GEOCODE_DEBOUNCE_MS = 800;
+
+/** Pola adresu, z których składamy zapytanie do geokodera. */
+const geoQueryOf = (fields: Fields): Partial<GeoQuery> => ({
+  voivodeship: fields.voivodeship,
+  city: fields.city,
+  district: fields.district,
+  street: fields.street,
+  buildingNumber: fields.buildingNumber,
+  postalCode: fields.postalCode,
+});
+
+/**
+ * Odcisk adresu — po nim poznajemy, czy pinezka wciąż odpowiada temu, co jest
+ * w polach. Bez tego uzupełnienie pól z mapy wyglądałoby jak ręczna zmiana
+ * adresu i natychmiast odesłałoby pinezkę do geokodera, w kółko.
+ */
+const sameCity = (a: string | null, b: string | null): boolean =>
+  (a ?? "").trim().toLowerCase() === (b ?? "").trim().toLowerCase();
+
+const signatureOf = (query: Partial<GeoQuery>): string =>
+  [
+    query.voivodeship,
+    query.city,
+    query.district,
+    query.street,
+    query.buildingNumber,
+    query.postalCode,
+  ]
+    .map((value) => (value ?? "").trim().toLowerCase())
+    .join("|");
+
 export function PropertyFormPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -136,6 +181,23 @@ export function PropertyFormPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [dictError, setDictError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // --- mapa ------------------------------------------------------------------
+  const [coords, setCoords] = useState<LatLng | null>(null);
+  const [geoBusy, setGeoBusy] = useState(false);
+  // Adres spod pinezki albo powód, dla którego go nie ma — linia pod mapą.
+  const [geoNote, setGeoNote] = useState<string | null>(null);
+  const [geoError, setGeoError] = useState<string | null>(null);
+  // Odcisk adresu, do którego pasuje obecna pinezka. Równy bieżącemu znaczy
+  // „pola i pinezka są zgodne" — nie ma czego szukać.
+  const pinnedSignature = useRef<string | null>(null);
+  // Miejscowość, dla której pinezka ostatnio stanęła. Zmiana miejscowości
+  // unieważnia wszystko, co z niej wynika — powiat, gminę, dzielnicę i kod
+  // pocztowy — więc wtedy wolno je nadpisać mimo że nie są puste.
+  const pinnedCity = useRef<string | null>(null);
+  // Bieżące pola widziane z wnętrza asynchronicznych wywołań zwrotnych.
+  const fieldsRef = useRef(fields);
+  fieldsRef.current = fields;
 
   const loadDictionaries = () => {
     setDictError(null);
@@ -245,6 +307,21 @@ export function PropertyFormPage() {
           exportable: p.exportable,
         });
         setMedia(p.media);
+
+        // Zapisana pinezka opisuje zapisany adres, więc wchodząc w edycję nie
+        // mamy czego szukać — dopiero zmiana pola albo ruch pinezką coś zmienia.
+        if (p.address.latitude != null && p.address.longitude != null) {
+          setCoords({ lat: p.address.latitude, lng: p.address.longitude });
+          pinnedSignature.current = signatureOf({
+            voivodeship: p.address.voivodeship,
+            city: p.address.city,
+            district: p.address.district ?? "",
+            street: p.address.street ?? "",
+            buildingNumber: p.address.buildingNumber ?? "",
+            postalCode: p.address.postalCode ?? "",
+          });
+          pinnedCity.current = p.address.city;
+        }
       })
       .catch(() => setFormError("Nie udało się wczytać oferty do edycji."));
   }, [id]);
@@ -281,6 +358,141 @@ export function PropertyFormPage() {
     input.setSelectionRange(caret, caret);
     setFields((current) => ({ ...current, postalCode: value }));
   };
+
+  // --- mapa: pinezka → pola --------------------------------------------------
+  // Postawienie pinezki jest jednoznacznym „to jest to miejsce", więc adres
+  // spod niej zastępuje zawartość pól. Zostawianie starych wartości obok nowej
+  // pinezki dałoby ofertę, w której opis i mapa pokazują dwa różne miejsca.
+  const handlePick = useCallback(({ lat, lng }: LatLng) => {
+    setCoords({ lat, lng });
+    setGeoError(null);
+    setGeoBusy(true);
+
+    reverseGeocode(lat, lng)
+      .then((found) => {
+        if (!found) {
+          setGeoNote("W tym punkcie nie ma adresu — pola zostawiam bez zmian.");
+          return;
+        }
+
+        const current = fieldsRef.current;
+        // Czego OSM nie zna dla tego punktu, tego nie ma — pole zostaje puste.
+        // Zachowanie starej wartości obok nowej pinezki dawało adres zszyty
+        // z dwóch miejsc: powiat pruszkowski przy krakowskiej ulicy wyglądał
+        // na wpisany świadomie, a był resztką po poprzednim kliknięciu.
+        // Dotyczy też województwa: pinezka postawiona za granicą ma zostawić
+        // puste pole, a nie poprzednie polskie województwo.
+        const merged: Fields = {
+          ...current,
+          voivodeship: found.voivodeship ?? "",
+          county: found.county ?? "",
+          commune: found.commune ?? "",
+          city: found.city ?? "",
+          district: found.district ?? "",
+          street: found.street ?? "",
+          buildingNumber: found.buildingNumber ?? "",
+          postalCode: found.postalCode ?? "",
+        };
+
+        setFields(merged);
+        pinnedSignature.current = signatureOf(geoQueryOf(merged));
+        pinnedCity.current = merged.city;
+        setGeoNote(found.displayName ?? null);
+      })
+      .catch((error) =>
+        setGeoError(
+          error instanceof ApiError
+            ? error.message
+            : "Nie udało się odczytać adresu z mapy.",
+        ),
+      )
+      .finally(() => setGeoBusy(false));
+  }, []);
+
+  /**
+   * Zdejmuje pinezkę bez ruszania pól. Bieżący adres zapamiętujemy jako
+   * „obsłużony", inaczej automat postawiłby ją z powrotem sekundę później.
+   */
+  const clearPin = () => {
+    setCoords(null);
+    setGeoNote(null);
+    setGeoError(null);
+    pinnedSignature.current = signatureOf(geoQueryOf(fieldsRef.current));
+    pinnedCity.current = fieldsRef.current.city;
+  };
+
+  // --- mapa: pola → pinezka --------------------------------------------------
+  const addressSignature = signatureOf(geoQueryOf(fields));
+  const addressGeocodable = canGeocode(geoQueryOf(fields));
+
+  useEffect(() => {
+    if (!addressGeocodable) return;
+    // Te pola sami wpisaliśmy z mapy — pinezka już tam stoi.
+    if (addressSignature === pinnedSignature.current) return;
+
+    const timer = setTimeout(() => {
+      const query = geoQueryOf(fieldsRef.current);
+      if (!canGeocode(query)) return;
+
+      setGeoBusy(true);
+      setGeoError(null);
+
+      searchLocation(query)
+        .then((found) => {
+          const best = found[0];
+          if (!best) {
+            setGeoNote(
+              "Nie znaleziono tego adresu na mapie — pinezkę można postawić ręcznie.",
+            );
+            // Zapamiętujemy mimo braku wyniku, żeby nie pytać o to samo w kółko.
+            pinnedSignature.current = addressSignature;
+            pinnedCity.current = fieldsRef.current.city;
+            return;
+          }
+
+          setCoords({ lat: best.latitude, lng: best.longitude });
+
+          const current = fieldsRef.current;
+
+          // Powiat, gmina, dzielnica i kod pocztowy wynikają z miejscowości.
+          // Dopóki miejscowość się nie zmieniła, tylko uzupełniamy puste pola —
+          // agent zna adres z rozmowy z właścicielem i nie ma powodu poprawiać
+          // mu tego, co wpisał świadomie. Gdy miejscowość się zmieniła, stare
+          // wartości opisują już inne miejsce i zostają zastąpione: inaczej
+          // oferta w Krakowie zostawałaby z powiatem pruszkowskim.
+          // Pierwsze szukanie w tym formularzu to nie jest „przeprowadzka" —
+          // nie ma jeszcze poprzedniej miejscowości, więc nic nie zdezaktualizowało
+          // tego, co agent zdążył wpisać.
+          const moved =
+            pinnedCity.current !== null &&
+            !sameCity(pinnedCity.current, current.city);
+          const derived = (mine: string, found: string | undefined) =>
+            moved ? (found ?? "") : mine.trim() || found || "";
+
+          const merged: Fields = {
+            ...current,
+            county: derived(current.county, best.county),
+            commune: derived(current.commune, best.commune),
+            district: derived(current.district, best.district),
+            postalCode: derived(current.postalCode, best.postalCode),
+          };
+          setFields(merged);
+          pinnedSignature.current = signatureOf(geoQueryOf(merged));
+          pinnedCity.current = merged.city;
+          setGeoNote(best.displayName ?? null);
+        })
+        .catch((error) =>
+          setGeoError(
+            error instanceof ApiError
+              ? error.message
+              : "Nie udało się znaleźć adresu na mapie.",
+          ),
+        )
+        .finally(() => setGeoBusy(false));
+    }, GEOCODE_DEBOUNCE_MS);
+
+    return () => clearTimeout(timer);
+  }, [addressSignature, addressGeocodable]);
 
   // --- cena ↔ cena za m² -----------------------------------------------------
   // Liczba z pola (przecinek → kropka); null gdy puste/niepoprawne.
@@ -506,7 +718,10 @@ export function PropertyFormPage() {
         ["buildingFloorsCount", "area.buildingFloorsCount", buildingFloorsRequired],
         ["city", "address.city", true],
         ["postalCode", "address.postalCode", true],
-        ["street", "address.street", true],
+        // Ulica jest opcjonalna: we wsiach bez nazw ulic adres to sama
+        // miejscowość i numer („Nowa Wieś 12"). Backend jej nie wymaga,
+        // a `readyForExport()` też nie — formularz był tu surowszy niż
+        // reszta systemu i wypychał takie oferty do notatnika.
         ["buildingNumber", "address.buildingNumber", true],
       ];
       for (const [field, key, active] of required)
@@ -708,6 +923,8 @@ export function PropertyFormPage() {
           street: blank(fields.street),
           buildingNumber: blank(fields.buildingNumber),
           postalCode: blank(fields.postalCode),
+          latitude: coords?.lat ?? null,
+          longitude: coords?.lng ?? null,
           hideExactAddress: flags.hideExactAddress,
         },
         building: showBuildingSection
@@ -1205,7 +1422,7 @@ export function PropertyFormPage() {
           onChange={set("street")}
           onBlur={capitalizeOnBlur("street", "address.street")}
           error={errorFor("address.street")}
-          required
+          hint="Wieś bez nazw ulic — zostaw puste."
         />
         <Input
           label="Numer budynku"
@@ -1221,6 +1438,46 @@ export function PropertyFormPage() {
             checked={flags.hideExactAddress}
             onChange={(value) =>
               setFlags((f) => ({ ...f, hideExactAddress: value }))
+            }
+          />
+        </div>
+
+        {/* Mapa na całą szerokość sekcji i na jej dole — pod polami, które
+            uzupełnia, a nie obok nich. */}
+        <div className="md:col-span-3">
+          <LazyPropertyMap
+            position={coords}
+            onPick={handlePick}
+            height={340}
+            busy={geoBusy}
+            footer={
+              <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                <p
+                  className={
+                    geoError
+                      ? "text-[12px] text-critical"
+                      : "text-[12px] text-ink-muted"
+                  }
+                >
+                  {geoError ??
+                    geoNote ??
+                    "Kliknij w mapę lub przeciągnij pinezkę, żeby uzupełnić adres. Wpisany ręcznie adres (wystarczy województwo i miejscowość) sam ustawi pinezkę. Zoom: Ctrl + / Ctrl −, gdy kursor jest nad mapą."}
+                </p>
+                {coords && (
+                  <div className="flex items-baseline gap-3">
+                    <span className="text-[12px] tabular-nums text-ink-muted">
+                      {coords.lat.toFixed(6)}, {coords.lng.toFixed(6)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={clearPin}
+                      className="text-[12px] text-accent hover:underline"
+                    >
+                      Usuń pinezkę
+                    </button>
+                  </div>
+                )}
+              </div>
             }
           />
         </div>

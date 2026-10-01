@@ -127,6 +127,19 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Geokoder milczy albo odmówił obsługi. Osobny status od błędów walidacji:
+     * w formularzu oferty nie ma tu czego poprawiać, a sam zapis oferty nadal
+     * jest możliwy — mapa jest udogodnieniem, nie warunkiem.
+     */
+    @ExceptionHandler(GeoUnavailableException.class)
+    public ProblemDetail handleGeoUnavailable(GeoUnavailableException exception) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.SERVICE_UNAVAILABLE, exception.getMessage());
+        problem.setTitle("Usługa map niedostępna");
+        return problem;
+    }
+
+    /**
      * Plik większy niż limit multiparta. Bez tej obsługi wracał surowy błąd
      * kontenera, a formularz nie miał czego pokazać przy polu.
      */
